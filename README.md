@@ -1,4 +1,4 @@
-# satelittes-teensyMasterSlave
+# satellites-teensyMasterSlave
 
 Current setup as of 4/14:  
 
