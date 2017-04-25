@@ -353,3 +353,35 @@ void T3SPI::rxtx16(volatile uint16_t *dataIN, volatile uint16_t *dataOUT, int le
   SPI0_PUSHR_SLAVE = dataOUT[dataPointer];  
   SPI0_SR |= SPI_SR_RFDF;
 }
+
+uint8_t T3SPI::peek8(){
+    return SPI0_POPR;
+}
+
+uint16_t T3SPI::peek16(){
+    return SPI0_POPR;
+}
+
+// Slave mode: transmit dataOUT, ignoring SPI_POPR
+void T3SPI::tx8(uint8_t dataOUT){
+	SPI0_PUSHR_SLAVE = dataOUT;  
+	SPI0_SR |= SPI_SR_RFDF;
+}
+
+// Slave mode: transmit dataOUT, ignoring SPI_POPR
+void T3SPI::tx16(uint16_t dataOUT){
+  SPI0_PUSHR_SLAVE = dataOUT;  
+  SPI0_SR |= SPI_SR_RFDF;
+}
+
+uint8_t T3SPI::rxtx8(uint8_t dataOUT){
+	uint8_t dataIn = SPI0_POPR;
+    tx8(dataOUT);
+    return dataIn;
+}
+
+uint16_t T3SPI::rxtx16(uint16_t dataOUT){
+  uint16_t dataIn = SPI0_POPR;
+  tx16(dataOUT);
+  return dataIn;
+}

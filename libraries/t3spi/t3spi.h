@@ -111,6 +111,12 @@ public:
 	void rx16(volatile uint16_t *dataIN, int length);
 	void rxtx8(volatile uint8_t *dataIN, volatile uint8_t *dataOUT, int length);
 	void rxtx16(volatile uint16_t *dataIN, volatile uint16_t *dataOUT, int length);
+	uint8_t rxtx8(volatile uint8_t dataOUT);
+	uint16_t rxtx16(volatile uint16_t dataOUT);
+	uint8_t peek8();
+	uint16_t peek16();
+	void tx8(volatile uint8_t dataOUT);
+	void tx16(volatile uint16_t dataOUT);
 	
 	//Global Functions
 	static void start();
