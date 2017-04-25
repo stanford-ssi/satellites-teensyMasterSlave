@@ -41,7 +41,7 @@ void T3SPI::begin_SLAVE(uint8_t sck, uint8_t mosi, uint8_t miso, uint8_t cs) {
 void T3SPI::setMCR(bool mode){
 	stop();
 	if (mode==1){
-		SPI0_MCR=SPI_MCR_MSTR;}
+		SPI0_MCR=0x80000000;}
 	else{
 		SPI0_MCR=0x00000000;}
 	start();
@@ -293,19 +293,11 @@ void T3SPI::tx16(volatile uint16_t *dataOUT, int length, bool CTARn, uint8_t PCS
 //TRANSMIT & RECEIVE PACKET OF 8 BIT DATA
 void T3SPI::txrx8(volatile uint8_t *dataOUT, volatile uint8_t *dataIN, int length, bool CTARn, uint8_t PCS){ 
 	ctar=CTARn;
-	SPI0_MCR |= SPI_MCR_HALT; //halt the SPI module
-	while (SPI0_SR & SPI_SR_TXRXS); //wait for the SPI module to stop
-	//clear the fifo, keeping the SPI halted
-	SPI0_MCR |= SPI_MCR_CLR_RXF + SPI_MCR_HALT;
-	SPI0_MCR &= ~SPI_MCR_HALT; //Start the SPI module running again
-	while (!(SPI0_SR & SPI_SR_TXRXS)); //verify SPI module running
-
 	for (int i=0; i < length; i++){
 		SPI0_MCR |= SPI_MCR_CLR_RXF;
 		SPI_WRITE_8(dataOUT[i], CTARn, PCS);
 		SPI_WAIT();
 		delayMicroseconds(1);
-		while (!(SPI0_SR & SPI_SR_RXCTR));
 		dataIN[i]=SPI0_POPR;
 		}
 	packetCT++;
@@ -314,19 +306,11 @@ void T3SPI::txrx8(volatile uint8_t *dataOUT, volatile uint8_t *dataIN, int lengt
 //TRANSMIT & RECEIVE PACKET OF 16 BIT DATA
 void T3SPI::txrx16(volatile uint16_t *dataOUT, volatile uint16_t *dataIN, int length, bool CTARn, uint8_t PCS){ 
 	ctar=CTARn;
-	SPI0_MCR |= SPI_MCR_HALT; //halt the SPI module
-	while (SPI0_SR & SPI_SR_TXRXS); //wait for the SPI module to stop
-	//clear the fifo, keeping the SPI halted
-	SPI0_MCR |= SPI_MCR_CLR_RXF + SPI_MCR_HALT;
-	SPI0_MCR &= ~SPI_MCR_HALT; //Start the SPI module running again
-	while (!(SPI0_SR & SPI_SR_TXRXS)); //verify SPI module running
-
 	for (int i=0; i < length; i++){
 		SPI0_MCR |= SPI_MCR_CLR_RXF;
 		SPI_WRITE_16(dataOUT[i], CTARn, PCS);
 		SPI_WAIT();
 		delayMicroseconds(1);
-		while (!(SPI0_SR & SPI_SR_RXCTR));
 		dataIN[i]=SPI0_POPR;
 		}
 	packetCT++;

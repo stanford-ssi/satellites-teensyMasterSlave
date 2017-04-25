@@ -9,8 +9,8 @@ T3SPI SPI_SLAVE;
 #define dataLength  256
 
 //Initialize the arrays for incoming data
-//volatile uint8_t data[dataLength] = {};
-volatile uint16_t data[dataLength] = {};
+volatile uint8_t data[dataLength] = {};
+//volatile uint16_t data[dataLength] = {};
 
 
 void setup(){
@@ -21,8 +21,8 @@ void setup(){
   SPI_SLAVE.begin_SLAVE(SCK, MOSI, MISO, CS0);
   
   //Set the CTAR0_SLAVE0 (Frame Size, SPI Mode)
-//  SPI_SLAVE.setCTAR_SLAVE(8, SPI_MODE0);
-  SPI_SLAVE.setCTAR_SLAVE(16, SPI_MODE0);
+  SPI_SLAVE.setCTAR_SLAVE(8, SPI_MODE0);
+  //SPI_SLAVE.setCTAR_SLAVE(16, SPI_MODE0);
   
   //Enable the SPI0 Interrupt
   NVIC_ENABLE_IRQ(IRQ_SPI0);
@@ -58,6 +58,6 @@ void loop(){
 void spi0_isr(void){
   
   //Function to handle data
-//  SPI_SLAVE.rx8 (data, dataLength);
-  SPI_SLAVE.rx16(data, dataLength);
+  SPI_SLAVE.rx8 (data, dataLength);
+//  SPI_SLAVE.rx16(data, dataLength);
 }
