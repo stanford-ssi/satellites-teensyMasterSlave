@@ -99,6 +99,7 @@ public:
 	static void setCTAR(bool CTARn, uint8_t size, uint8_t dataMode, uint8_t bo, uint8_t cdiv);
 	static void enableCS(uint8_t cs, bool activeState);
 	void tx8(volatile uint8_t *dataOUT,  int length, bool CTARn, uint8_t PCS);
+	void tx8(uint8_t dataOUT, bool CTARn, uint8_t PCS);
 	void tx16(volatile uint16_t *dataOUT, int length, bool CTARn, uint8_t PCS);
 	void txrx8(volatile uint8_t *dataOUT, volatile uint8_t *dataIN, int length, bool CTARn, uint8_t PCS);
 	void txrx16(volatile uint16_t *dataOUT, volatile uint16_t *dataIN, int length, bool CTARn, uint8_t PCS);
@@ -137,7 +138,7 @@ private:
 
 
 //extern T3SPI_MASTER T3SPI;
-#define SPIClass T3SPI //_MASTER
-#define SPI T3SPI
+//#define SPIClass T3SPI //_MASTER
+//#define SPI T3SPI
 
 #endif /* _t3spi_h */

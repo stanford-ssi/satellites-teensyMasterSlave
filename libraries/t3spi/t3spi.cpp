@@ -281,6 +281,13 @@ void T3SPI::tx8(volatile uint8_t *dataOUT,   int length, bool CTARn, uint8_t PCS
 	packetCT++;
 }
 
+//TRANSMIT 8 BITS - NO BUFFER
+void T3SPI::tx8(uint8_t dataOUT, bool CTARn, uint8_t PCS){ 
+	ctar=CTARn;
+    SPI_WRITE_8(dataOUT, CTARn, PCS);
+    SPI_WAIT();
+}
+
 //TRANSMIT PACKET OF 16 BIT DATA
 void T3SPI::tx16(volatile uint16_t *dataOUT, int length, bool CTARn, uint8_t PCS){ 
 	//ctar=CTARn;
