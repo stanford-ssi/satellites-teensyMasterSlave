@@ -12,28 +12,32 @@ T3SPI::T3SPI() {
 	delay(1000);
 }
 
+void T3SPI::clearBuffer() {
+    dataPointer = 0;
+}
+
 void T3SPI::begin_MASTER() {
 	setMCR(MASTER);
-	setCTAR(CTAR_0,8,SPI_MODE0,LSB_FIRST,SPI_CLOCK_DIV8);
-	enablePins(SCK, MOSI, MISO, CS0, CS_ActiveLOW);
+	setCTAR(T3_CTAR_0,8, T3_SPI_MODE0,LSB_FIRST,T3_SPI_CLOCK_DIV8);
+	enablePins(SCK, MOSI, MISO, T3_CS0, CS_ActiveLOW);
 }
 
 void T3SPI::begin_MASTER(uint8_t sck, uint8_t mosi, uint8_t miso, uint8_t cs, bool activeState){
 	setMCR(MASTER);
-	setCTAR(CTAR_0,8,SPI_MODE0,LSB_FIRST,SPI_CLOCK_DIV8);
+	setCTAR(T3_CTAR_0,8, T3_SPI_MODE0,LSB_FIRST, T3_SPI_CLOCK_DIV8);
 	enablePins(sck, mosi, miso, cs, activeState);
 }
 
 void T3SPI::begin_SLAVE() {
 	setMCR(SLAVE);
-	setCTAR_SLAVE(8, SPI_MODE0);
+	setCTAR_SLAVE(8, T3_SPI_MODE0);
 	SPI0_RSER = 0x00020000;
-	enablePins_SLAVE(SCK, MOSI, MISO, CS0);
+	enablePins_SLAVE(SCK, MOSI, MISO, T3_CS0);
 }
 
 void T3SPI::begin_SLAVE(uint8_t sck, uint8_t mosi, uint8_t miso, uint8_t cs) {
 	setMCR(SLAVE);
-	setCTAR_SLAVE(8, SPI_MODE0);
+	setCTAR_SLAVE(8, T3_SPI_MODE0);
 	SPI0_RSER = 0x00020000;
 	enablePins_SLAVE(sck, mosi, miso, cs);
 }
@@ -60,8 +64,8 @@ void T3SPI::setCTAR(bool CTARn, uint8_t size, uint8_t dataMode, uint8_t bo, uint
 
 void T3SPI::setCTAR_SLAVE(uint8_t size, uint8_t dataMode){
 	SPI0_CTAR0_SLAVE=0;
-	setFrameSize(CTAR_SLAVE, (size - 1));
-	setMode(CTAR_SLAVE, dataMode);
+	setFrameSize(T3_CTAR_SLAVE, (size - 1));
+	setMode(T3_CTAR_SLAVE, dataMode);
 }
 
 void T3SPI::enablePins(uint8_t sck, uint8_t mosi, uint8_t miso, uint8_t cs, bool activeState){
@@ -133,7 +137,7 @@ void T3SPI::enablePins_SLAVE(uint8_t sck, uint8_t mosi, uint8_t miso, uint8_t cs
 		CORE_PIN12_CONFIG = PORT_PCR_MUX(2);}
 	if (miso == ALT_MISO){
 		CORE_PIN8_CONFIG  = PORT_PCR_MUX(2);}
-	if (cs == CS0){
+	if (cs == T3_CS0){
 		CORE_PIN10_CONFIG = PORT_PCR_MUX(2);}
 	if (cs == ALT_CS0){
 		CORE_PIN2_CONFIG  = PORT_PCR_MUX(2);}

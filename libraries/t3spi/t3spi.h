@@ -9,26 +9,26 @@
 #define MASTER				1
 #define SLAVE				0
 
-#define SPI_CLOCK_DIV2		0b0000	//24.0	MHz
-#define SPI_CLOCK_DIV4		0b0001	//12.0	MHz
-#define SPI_CLOCK_DIV6		0b0010	//08.0	MHz
-#define SPI_CLOCK_DIV8		0b0011	//05.3	MHz
-#define SPI_CLOCK_DIV16		0b0100	//03.0	MHz
-#define SPI_CLOCK_DIV32		0b0101	//01.5	MHz
-#define SPI_CLOCK_DIV64		0b0110	//750	KHz
-#define SPI_CLOCK_DIV128	0b0111	//375	Khz
+#define T3_SPI_CLOCK_DIV2		0b0000	//24.0	MHz
+#define T3_SPI_CLOCK_DIV4		0b0001	//12.0	MHz
+#define T3_SPI_CLOCK_DIV6		0b0010	//08.0	MHz
+#define T3_SPI_CLOCK_DIV8		0b0011	//05.3	MHz
+#define T3_SPI_CLOCK_DIV16		0b0100	//03.0	MHz
+#define T3_SPI_CLOCK_DIV32		0b0101	//01.5	MHz
+#define T3_SPI_CLOCK_DIV64		0b0110	//750	KHz
+#define T3_SPI_CLOCK_DIV128	0b0111	//375	Khz
 
-#define SPI_MODE0			0x00
-#define SPI_MODE1			0x01
-#define SPI_MODE2			0x02
-#define SPI_MODE3			0x03
+#define T3_SPI_MODE0			0x00
+#define T3_SPI_MODE1			0x01
+#define T3_SPI_MODE2			0x02
+#define T3_SPI_MODE3			0x03
 
 #define MSB_FIRST			0
 #define LSB_FIRST			1
 
-#define CTAR_0				0
-#define CTAR_1				1
-#define CTAR_SLAVE			2
+#define T3_CTAR_0				0
+#define T3_CTAR_1				1
+#define T3_CTAR_SLAVE			2
 
 #define	SCK					0x0D
 #define MOSI				0x0B
@@ -37,11 +37,11 @@
 #define ALT_MOSI			0x07
 #define ALT_MISO			0x08
 
-#define CS0					0x01
-#define CS1					0x02
-#define CS2					0x04
-#define CS3					0x08
-#define CS4					0x10
+#define T3_CS0					0x01
+#define T3_CS1					0x02
+#define T3_CS2					0x04
+#define T3_CS3					0x08
+#define T3_CS4					0x10
 #define ALT_CS0				0x81
 #define ALT_CS1				0x82
 #define ALT_CS2				0x84
@@ -92,6 +92,7 @@ public:
 
 
 	T3SPI();
+	void clearBuffer();
 	
 	//Functions for MASTER MODE
 	static void begin_MASTER();

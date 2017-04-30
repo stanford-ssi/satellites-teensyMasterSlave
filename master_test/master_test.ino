@@ -22,10 +22,10 @@ void setup() {
   pinMode(CHIPSELECT, OUTPUT);
 
   //Begin SPI in MASTER (SCK pin, MOSI pin, MISO pin, CS pin, Active State)
-  SPI_MASTER.begin_MASTER(SCK, MOSI, MISO, CS1, CS_ActiveLOW);
+  SPI_MASTER.begin_MASTER(SCK, MOSI, MISO, T3_CS1, CS_ActiveLOW);
 
   //Set the CTAR (CTARn, Frame Size, SPI Mode, Shift Mode, Clock Divider)
-  SPI_MASTER.setCTAR(CTAR_1, 8, SPI_MODE0, LSB_FIRST, SPI_CLOCK_DIV8);
+  SPI_MASTER.setCTAR(T3_CTAR_1, 8, T3_SPI_MODE0, LSB_FIRST, T3_SPI_CLOCK_DIV8);
   //SPI_MASTER.setCTAR(CTAR_0,16,SPI_MODE0,LSB_FIRST,SPI_CLOCK_DIV2);
 }
 
@@ -39,11 +39,11 @@ void loop() {
     //SPI.transfer(0);
     uint8_t toSend = (17*bytesSent)%255; // Arbitrary data
     checksum += toSend;
-    SPI_MASTER.tx8(toSend, CTAR_1, CS1);
+    SPI_MASTER.tx8(toSend, T3_CTAR_1, T3_CS1);
     bytesSent++;  
   }
 
-  SPI_MASTER.tx8(checksum, CTAR_1, CS1);
+  SPI_MASTER.tx8(checksum, T3_CTAR_1, T3_CS1);
   bytesSent++;
   
   delayMicroseconds(100);
