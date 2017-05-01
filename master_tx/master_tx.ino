@@ -20,7 +20,7 @@ void loop() {
   // put your main code here, to run repeatedly:
   checksum = 0;
   digitalWrite(CHIPSELECT, LOW);
-  delayMicroseconds(5000);
+  delayMicroseconds(50);
   for (int j = 0; j < 255; j++) {
     //SPI.transfer(0);
     uint8_t toSend = (j)%255; // Arbitrary data
@@ -32,14 +32,15 @@ void loop() {
   SPI.transfer(checksum);
   bytesSent++;
   
-  if (bytesSent % 10000 == 0) {
+  if (true) {
     //Serial.println(x);
-    Serial.println(bytesSent);
-    Serial.println(millis() - s);
+      Serial.println(bytesSent);
+      Serial.println(millis() - s);
   }
-  delayMicroseconds(10000);
+  delayMicroseconds(50);
   digitalWrite(CHIPSELECT, HIGH);
   delayMicroseconds(50);
+  //delay(500); // Send about twice a second
   
-  //delay(100000);
+  //delay(100);
 }

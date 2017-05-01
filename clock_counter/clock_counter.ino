@@ -1,7 +1,7 @@
 
 #include <t3spi.h>
 #include <Wire.h>
-#include <SPI.h>
+#include <ssiSpi.h>
 
 //Initialize T3SPI class as SPI_SLAVE
 T3SPI SPI_SLAVE;
@@ -19,15 +19,16 @@ int k = 0;
 volatile int bytesReceived = 0;
 volatile int packetsReceived = 0;
 volatile int timesCleared = 0;
+volatile int timesBlocked = 0;
+volatile int timesSent = 0;
 elapsedMillis em;
 elapsedMillis runtime;
+IntervalTimer timer;
 uint8_t checksum = 0;
 
 SPISettings settingsA(6250000, MSBFIRST, SPI_MODE0);
 void setup() {
   Serial.begin(115200);
-  //Wire.begin();
-  
 
   //Begin SPI in SLAVE (SCK pin, MOSI pin, MISO pin, CS pin)
   SPI_SLAVE.begin_SLAVE(SCK, MOSI, MISO, T3_CS0);
@@ -50,31 +51,37 @@ void setup() {
 
 void loop() {
   int j = analogRead(0);
-  /*int cs_state = digitalRead(10);
-  if (cs_state == 1) {
-    SPI1.transfer(0xde);
-  }*/
+  int cs_state = digitalRead(10);
   /*SPI1.transfer(0xde);
   SPI1.transfer(0xde);
   SPI1.transfer(0xde);
   SPI1.transfer(0xde);*/
-  /*Serial.println("hi");
-    Wire.beginTransmission(0x40);
-    Serial.println("hi");
-    Wire.send(0xff);
-    Serial.println("hi3");
-    Wire.endTransmission();
-    Serial.println("hi");*/
-  //Serial.flush();
-
-
+  if (cs_state == 1) {
+    int iters;
+    noInterrupts();
+    for (iters = 0; iters < 5 && (digitalRead(10) == 1); iters++) {
+      SPI1.transfer(0xde);
+      SPI1.transfer(0xde);
+    }
+    interrupts();
+    /*if (iters != 5) {
+      Serial.println("Comms cut!");
+    }*/
+    timesSent++;
+  } else {
+    timesBlocked++;
+  }
 
   if (em > 2000) {
+    noInterrupts();
     em = 0;
     bytesReceived = 0;
     packetsReceived = 0;
     timesCleared = 0;
     k = 0;
+    timesBlocked = 0;
+    timesSent = 0;
+    interrupts();
   }
 
   //Capture the time before receiving data
@@ -96,16 +103,16 @@ void loop() {
 
       }
       if (checksum != data[dataLength - 1]) {
-        for (int i = 0; i < dataLength; i++) {
+        /*for (int i = 0; i < dataLength; i+=17) {
           Serial.print("data[");
           Serial.print(i);
           Serial.print("]: ");
           Serial.println(data[i]);
           Serial.flush();
-        }
-        unsigned totalTime = runtime;
-        Serial.printf("Bad checksum: first byte %d, received %d, calculated %d, runtime %d\n", data[0], data[dataLength - 1], checksum, totalTime);
-        Serial.flush();
+        }*/
+//        unsigned totalTime = runtime;
+//        Serial.printf("Bad checksum: first byte %d, received %d, calculated %d, runtime %d\n", data[0], data[dataLength - 1], checksum, totalTime);
+//        Serial.flush();
         //while (1);
         //Serial.printf("Checksum ok? %d\n", checksum == data[dataLength - 1]);
       }
@@ -121,7 +128,8 @@ void loop() {
   }
   if (k % 20000 == 0) {
     float end_ = em / 1000.0;
-    Serial.printf("analogRead %d, numLoops %d, bytesReceived %d,\n timesCleared %d, packetsReceived %d, seconds %f, per sec %d\n", j, k, bytesReceived, timesCleared, packetsReceived, end_, (int) (k / end_));
+    Serial.printf("analogRead %d, sent %d pcent, numLoops %d, bytesReceived %d,\n timesCleared %d, packetsReceived %d, seconds %f, per sec %d\n", 
+      j, (timesSent * 100)/k, k, bytesReceived, timesCleared, packetsReceived, end_, (int) (k / end_));
     if ((bytesReceived / 256) != packetsReceived) {
       Serial.println("Missed a packet!");
     }
@@ -133,21 +141,17 @@ void loop() {
 //Interrupt Service Routine to handle incoming data
 void spi0_isr(void) {
 
-
   //Function to handle data
   SPI_SLAVE.rx8 (data, dataLength);
   bytesReceived++;
   //  SPI_SLAVE.rx16(data, dataLength);
-  if (SPI_SLAVE.dataPointer == 1 && data[0] != 0) {
-    Serial.printf("First byte: %d\n", data[0]);
-  }
+
 }
 
 void clearBuffer(void) {
   checksum = 0;
   if (SPI_SLAVE.dataPointer != 0) {
-    Serial.printf("Clearing %d bytes of received data\n", SPI_SLAVE.dataPointer);
-    Serial.flush();
+    Serial.printf("Clearing %d bytes of data\n", SPI_SLAVE.dataPointer);
   }
   SPI_SLAVE.clearBuffer();
   timesCleared++;
