@@ -199,45 +199,91 @@ public:
 	inline static uint8_t transfer(uint8_t data) {
 		SPDR = data;
 		asm volatile("nop");
-		while (!(SPSR & _BV(SPIF))) ; // wait
+        elapsedMillis timeoutTimer;
+        long timer_start = timeoutTimer;
+		while (!(SPSR & _BV(SPIF))) {
+            long timer_end = timeoutTimer;
+            if (timer_end - timer_start > 10) {
+                break;
+            }
+        }
 		return SPDR;
 	}
 	inline static uint16_t transfer16(uint16_t data) {
 		union { uint16_t val; struct { uint8_t lsb; uint8_t msb; }; } in, out;
 		in.val = data;
+        elapsedMillis timeoutTimer_16;
+        long timer_start_16 = timeoutTimer_16;
+        long timer_end16;
 		if ((SPCR & _BV(DORD))) {
 			SPDR = in.lsb;
 			asm volatile("nop");
-			while (!(SPSR & _BV(SPIF))) ;
+			while (!(SPSR & _BV(SPIF))) {
+                timer_end16 = timeoutTimer_16;
+                if (timer_end16 - timer_start_16 > 20) {
+                    break;
+                }
+            }
 			out.lsb = SPDR;
 			SPDR = in.msb;
 			asm volatile("nop");
-			while (!(SPSR & _BV(SPIF))) ;
+			while (!(SPSR & _BV(SPIF))) {
+                timer_end16 = timeoutTimer_16;
+                if (timer_end16 - timer_start_16 > 20) {
+                    break;
+                }
+            }
 			out.msb = SPDR;
 		} else {
 			SPDR = in.msb;
 			asm volatile("nop");
-			while (!(SPSR & _BV(SPIF))) ;
+			while (!(SPSR & _BV(SPIF))) {
+                timer_end16 = timeoutTimer_16;
+                if (timer_end16 - timer_start_16 > 20) {
+                    break;
+                }
+            }
 			out.msb = SPDR;
 			SPDR = in.lsb;
 			asm volatile("nop");
-			while (!(SPSR & _BV(SPIF))) ;
+			while (!(SPSR & _BV(SPIF))) {
+                timer_end16 = timeoutTimer_16;
+                if (timer_end16 - timer_start_16 > 20) {
+                    break;
+                }
+            }
 			out.lsb = SPDR;
 		}
 		return out.val;
 	}
 	inline static void transfer(void *buf, size_t count) {
-		if (count == 0) return;
+		if (count <= 0) return;
 		uint8_t *p = (uint8_t *)buf;
 		SPDR = *p;
 		while (--count > 0) {
+            elapsedMillis timeoutTimer_buf;
+            long timer_start_buf = timeoutTimer_buf;
+            long timer_end_buf;
 			uint8_t out = *(p + 1);
-			while (!(SPSR & _BV(SPIF))) ;
+			while (!(SPSR & _BV(SPIF))) {
+                timer_end_buf = timeoutTimer_buf;
+                if (timer_end_buf - timer_start_buf > 20) {
+                    break;
+                }
+            }
 			uint8_t in = SPDR;
 			SPDR = out;
 			*p++ = in;
 		}
-		while (!(SPSR & _BV(SPIF))) ;
+        elapsedMillis timeoutTimer_buf;
+        long timer_start_buf = timeoutTimer_buf;
+        long timer_end_buf;
+		while (!(SPSR & _BV(SPIF))) {
+            timer_end_buf = timeoutTimer_buf;
+            if (timer_end_buf - timer_start_buf > 20) {
+                break;
+            }
+        }
 		*p = SPDR;
 	}
 
@@ -482,13 +528,27 @@ public:
 	inline static uint8_t transfer(uint8_t data) {
 		SPI0_SR = SPI_SR_TCF;
 		SPI0_PUSHR = data;
-		while (!(SPI0_SR & SPI_SR_TCF)) ; // wait
+        elapsedMillis Spi0TimeoutTimer;
+        long Spi0Timer_start = Spi0TimeoutTimer;
+		while (!(SPI0_SR & SPI_SR_TCF)) {
+            long Spi0Timer_end = Spi0TimeoutTimer;
+            if (Spi0Timer_end - Spi0Timer_start > 10) {
+                break;
+            }
+        }
 		return SPI0_POPR;
 	}
 	inline static uint16_t transfer16(uint16_t data) {
 		SPI0_SR = SPI_SR_TCF;
 		SPI0_PUSHR = data | SPI_PUSHR_CTAS(1);
-		while (!(SPI0_SR & SPI_SR_TCF)) ; // wait
+        elapsedMillis Spi0TimeoutTimer16;
+        long Spi0Timer_start16 = Spi0TimeoutTimer16;
+		while (!(SPI0_SR & SPI_SR_TCF)) {
+            long Spi0Timer_end16 = Spi0TimeoutTimer16;
+            if (Spi0Timer_end16 - Spi0Timer_start16 > 10) {
+                break;
+            }
+        }
 		return SPI0_POPR;
 	}
 	inline static void transfer(void *buf, size_t count) {
@@ -496,13 +556,27 @@ public:
 		uint8_t *p = (uint8_t *)buf;
 		SPDR = *p;
 		while (--count > 0) {
+            elapsedMillis Spi0TimeoutTimerBuf;
+            long Spi0TimerStartBuf = Spi0TimeoutTimerBuf;
 			uint8_t out = *(p + 1);
-			while (!(SPSR & _BV(SPIF))) ;
+			while (!(SPSR & _BV(SPIF))) {
+                long Spi0TimerEndBuf = Spi0TimeoutTimerBuf;
+                if (Spi0TimerEndBuf - Spi0TimerStartBuf > 10) {
+                    break;
+                }
+            }
 			uint8_t in = SPDR;
 			SPDR = out;
 			*p++ = in;
 		}
-		while (!(SPSR & _BV(SPIF))) ;
+        elapsedMillis Spi0TimeoutTimerBuf;
+        long Spi0TimerStartBuf = Spi0TimeoutTimerBuf;
+		while (!(SPSR & _BV(SPIF))) {
+            long Spi0TimerEndBuf = Spi0TimeoutTimerBuf;
+            if (Spi0TimerEndBuf - Spi0TimerStartBuf > 10) {
+                break;
+            }
+        }
 		*p = SPDR;
 	}
 
@@ -688,9 +762,12 @@ public:
         elapsedMillis em_SPI1;
         unsigned startTime_SPI1 = em_SPI1;
 		while (!(SPI1_SR & SPI_SR_TCF)) {
-            if ((em_SPI1 - startTime_SPI1) > 1000) {
+            if ((em_SPI1 - startTime_SPI1) > 10) {
                 Serial.println("ssiSpi.h:692; TIMEOUT");
-                while (1);
+                Serial.println("ssiSpi.h:692; TIMEOUT");
+                Serial.println("ssiSpi.h:692; TIMEOUT");
+                Serial.println("ssiSpi.h:692; TIMEOUT");
+                Serial.println("ssiSpi.h:692; TIMEOUT");
                 return 0;
             }
         } // wait
@@ -702,7 +779,7 @@ public:
         elapsedMillis em_SPI1;
         unsigned startTime_SPI1 = em_SPI1;
 		while (!(SPI1_SR & SPI_SR_TCF)) {
-            if ((em_SPI1 - startTime_SPI1) > 1000) {
+            if ((em_SPI1 - startTime_SPI1) > 10) {
                 Serial.println("ssiSpi.h:692; TIMEOUT");
                 return 0;
             }
@@ -710,6 +787,9 @@ public:
 		return SPI1_POPR;
 	}
 	inline static void transfer(void *buf, size_t count) {
+        if (count <= 0) {
+            return;
+        }
 		uint8_t *p = (uint8_t *)buf;
 		while (count--) {
 			*p = transfer(*p);

@@ -39,7 +39,7 @@ void loop() {
   }
   delayMicroseconds(50);
   digitalWrite(CHIPSELECT, HIGH);
-  delayMicroseconds(50);
+  delayMicroseconds(1000);
   //delay(500); // Send about twice a second
   
   //delay(100);
