@@ -13,6 +13,6 @@ void setup() {
 }
 
 void loop() {
-  Serial.printf("State: %x\n", state);
-  delay(5000);
+    debugPrintf("State: %x\n", state);
+    delay(5000);
 }

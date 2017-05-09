@@ -12,16 +12,14 @@ volatile int packetPointer = 0;
 #define outBufferLength  300
 volatile uint16_t outData[outBufferLength] = {};
 volatile uint16_t *outBody = outData + OUT_PACKET_BODY_BEGIN;
-volatile int outPointer = 0;
+volatile unsigned int outPointer = 0;
 volatile uint16_t transmissionSize = 0;
 volatile bool transmitting = false;
 
 int k = 0;
-volatile int bytesReceived = 0;
-volatile int packetsReceived = 0;
-volatile int timesCleared = 0;
-volatile int timesBlocked = 0;
-volatile int timesSent = 0;
+volatile unsigned int bytesReceived = 0;
+volatile unsigned int packetsReceived = 0;
+volatile unsigned int timesCleared = 0;
 
 void packet_setup(void) {
     SPI_SLAVE.begin_SLAVE(SCK, MOSI, MISO, T3_CS0);
@@ -42,6 +40,9 @@ void packet_setup(void) {
 
 //Interrupt Service Routine to handle incoming data
 void spi0_isr(void) {
+  assert(outPointer <= transmissionSize);
+  assert(packetPointer <= PACKET_SIZE);
+  assert(transmitting || outPointer == 0);
   //Function to handle data
   uint16_t to_send = EMPTY_WORD;
   if (transmitting && outPointer < transmissionSize) {
@@ -49,7 +50,7 @@ void spi0_isr(void) {
     outPointer++;
   }
   uint16_t received = SPI_SLAVE.rxtx16(to_send);
-  Serial.printf("Received %x\n", received);
+  debugPrintf("Received %x\n", received);
   if (packetPointer < PACKET_SIZE) {
     packet[packetPointer] = received;
     packetPointer++;
@@ -60,6 +61,7 @@ void spi0_isr(void) {
 }
 
 void packetReceived() {
+  assert(packetPointer == PACKET_SIZE);
   noInterrupts();
   digitalWrite(PACKET_RECEIVED_TRIGGER, HIGH);
   digitalWrite(PACKET_RECEIVED_TRIGGER, LOW);
@@ -67,20 +69,21 @@ void packetReceived() {
 }
 
 void handlePacket() {
-  Serial.println("Received a packet!");
+  debugPrintln("Received a packet!");
+  assert(packetPointer == PACKET_SIZE);
   if (transmitting || outPointer != 0) {
     responseBadPacket(INTERNAL_ERROR);
-    Serial.println("I'm already transmitting!");
+    debugPrintln("I'm already transmitting!");
     return;
   }
   if (packetPointer != PACKET_SIZE) {
     responseBadPacket(INTERNAL_ERROR);
-    Serial.printf("Recieved %d bytes, expected %d\n", packetPointer, PACKET_SIZE);
+    debugPrintf("Received %d bytes, expected %d\n", packetPointer, PACKET_SIZE);
     return;
   }
   if (packet[0] != FIRST_WORD || packet[PACKET_SIZE - 1] != LAST_WORD) {
     responseBadPacket(INVALID_BORDER);
-    Serial.printf("Invalid packet endings: start %x, end %x\n", packet[0], packet[PACKET_SIZE - 1]);
+    debugPrintf("Invalid packet endings: start %x, end %x\n", packet[0], packet[PACKET_SIZE - 1]);
     return;
   }
   uint16_t receivedChecksum = 0;
@@ -104,6 +107,8 @@ void clearSendBuffer() {
 }
 
 void response_echo() {
+    assert(packetPointer == PACKET_SIZE);
+    assert(!transmitting);
     clearSendBuffer();
     int bodySize = 7;
     for (int i = 0; i < bodySize; i++) {
@@ -117,18 +122,22 @@ void response_echo() {
 }
 
 void responseBadPacket(uint16_t flag) {
+    assert(packetPointer == PACKET_SIZE);
+    assert(!transmitting);
     clearSendBuffer();
-    Serial.printf("Bad packet: flag %d\n", flag);
-    int bodySize = 4;
+    debugPrintf("Bad packet: flag %d\n", flag);
+    unsigned int bodySize = 4;
     outBody[0] = flag;
-    for (int i = 1; i < bodySize; i++) {
+    for (unsigned int i = 1; i < bodySize; i++) {
         outBody[i] = 0;
     }
     setupTransmission(RESPONSE_BAD_PACKET, bodySize);
 }
 
 // Call this after body of transmission is filled
-void setupTransmission(uint16_t header, int bodyLength) {
+void setupTransmission(uint16_t header, unsigned int bodyLength) {
+    assert(header <= MAX_HEADER);
+    assert(bodyLength <= outBufferLength - OUT_PACKET_OVERHEAD);
     outPointer = 0;
     transmissionSize = bodyLength + OUT_PACKET_OVERHEAD;
     uint16_t checksum = 0;
@@ -140,20 +149,18 @@ void setupTransmission(uint16_t header, int bodyLength) {
     }
     outData[transmissionSize - 2] = checksum;
     outData[transmissionSize - 1] = LAST_WORD;
-    Serial.printf("Sending checksum: %x\n", checksum);
+    debugPrintf("Sending checksum: %x\n", checksum);
     transmitting = true;
 }
 
 void clearBuffer(void) {
   if (packetPointer != 0 && packetPointer != PACKET_SIZE) {
-    Serial.printf("Clearing %d bytes of data\n", packetPointer);
+    debugPrintf("Clearing %d bytes of data\n", packetPointer);
   }
+  noInterrupts();
   packetPointer = 0;
   outPointer = 0;
   transmissionSize = 0;
   transmitting = false;
-}
-
-void clearBuffer2(void) {
-  SPI_SLAVE.clearBuffer();
+  interrupts();
 }

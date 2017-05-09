@@ -29,6 +29,9 @@ extern T3SPI SPI_SLAVE;
 #define OUT_PACKET_BODY_END_SIZE 2
 #define OUT_PACKET_OVERHEAD (OUT_PACKET_BODY_END_SIZE + OUT_PACKET_BODY_BEGIN)
 
+// Headers
+#define MIN_HEADER 0
+#define MAX_HEADER 1
 #define RESPONSE_OK 0
 #define RESPONSE_BAD_PACKET 1
 
@@ -37,7 +40,7 @@ extern T3SPI SPI_SLAVE;
 #define INTERNAL_ERROR 2
 
 void packet_setup(void);
-void setupTransmission(uint16_t header, int bodyLength);
+void setupTransmission(uint16_t header, unsigned int bodyLength);
 void response_echo();
 void responseBadPacket(uint16_t flag);
 
