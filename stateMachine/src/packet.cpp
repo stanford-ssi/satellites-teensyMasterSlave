@@ -4,6 +4,8 @@
 
 T3SPI SPI_SLAVE;
 
+volatile unsigned int packetsReceived = 0;
+
 // Incoming
 volatile uint16_t packet[PACKET_SIZE + 10] = {}; // buffer just in case we overflow or something
 volatile int packetPointer = 0;
@@ -16,12 +18,10 @@ volatile unsigned int outPointer = 0;
 volatile uint16_t transmissionSize = 0;
 volatile bool transmitting = false;
 
-int k = 0;
-volatile unsigned int bytesReceived = 0;
-volatile unsigned int packetsReceived = 0;
-volatile unsigned int timesCleared = 0;
-
 void packet_setup(void) {
+    assert(outPointer == 0);
+    assert(transmissionSize == 0);
+    assert(transmitting == false);
     SPI_SLAVE.begin_SLAVE(SCK, MOSI, MISO, T3_CS0);
     SPI_SLAVE.setCTAR_SLAVE(16, T3_SPI_MODE0);
     NVIC_ENABLE_IRQ(IRQ_SPI0);
@@ -43,15 +43,14 @@ void spi0_isr(void) {
   assert(outPointer <= transmissionSize);
   assert(packetPointer <= PACKET_SIZE);
   assert(transmitting || outPointer == 0);
-  //Function to handle data
   uint16_t to_send = EMPTY_WORD;
   if (transmitting && outPointer < transmissionSize) {
     to_send = outData[outPointer];
     outPointer++;
   }
   uint16_t received = SPI_SLAVE.rxtx16(to_send);
-  debugPrintf("Received %x\n", received);
   if (packetPointer < PACKET_SIZE) {
+    debugPrintf("Received %x\n", received);
     packet[packetPointer] = received;
     packetPointer++;
     if (packetPointer == PACKET_SIZE) {
@@ -62,28 +61,30 @@ void spi0_isr(void) {
 
 void packetReceived() {
   assert(packetPointer == PACKET_SIZE);
+  //handlePacket();
   noInterrupts();
   digitalWrite(PACKET_RECEIVED_TRIGGER, HIGH);
   digitalWrite(PACKET_RECEIVED_TRIGGER, LOW);
   interrupts();
+  packetsReceived++;
 }
 
 void handlePacket() {
   debugPrintln("Received a packet!");
   assert(packetPointer == PACKET_SIZE);
   if (transmitting || outPointer != 0) {
-    responseBadPacket(INTERNAL_ERROR);
     debugPrintln("I'm already transmitting!");
+    responseBadPacket(INTERNAL_ERROR);
     return;
   }
   if (packetPointer != PACKET_SIZE) {
-    responseBadPacket(INTERNAL_ERROR);
     debugPrintf("Received %d bytes, expected %d\n", packetPointer, PACKET_SIZE);
+    responseBadPacket(INTERNAL_ERROR);
     return;
   }
   if (packet[0] != FIRST_WORD || packet[PACKET_SIZE - 1] != LAST_WORD) {
-    responseBadPacket(INVALID_BORDER);
     debugPrintf("Invalid packet endings: start %x, end %x\n", packet[0], packet[PACKET_SIZE - 1]);
+    responseBadPacket(INVALID_BORDER);
     return;
   }
   uint16_t receivedChecksum = 0;
@@ -157,10 +158,10 @@ void clearBuffer(void) {
   if (packetPointer != 0 && packetPointer != PACKET_SIZE) {
     debugPrintf("Clearing %d bytes of data\n", packetPointer);
   }
-  noInterrupts();
+  //noInterrupts();
   packetPointer = 0;
   outPointer = 0;
   transmissionSize = 0;
   transmitting = false;
-  interrupts();
+  //interrupts();
 }

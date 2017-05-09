@@ -4,6 +4,11 @@
 #define PACKET_H
 //Initialize T3SPI class as SPI_SLAVE
 extern T3SPI SPI_SLAVE;
+extern volatile unsigned int packetsReceived;
+extern volatile int packetPointer;
+extern volatile unsigned int outPointer;
+extern volatile uint16_t transmissionSize;
+extern volatile bool transmitting;
 
 #define SLAVE_CHIP_SELECT 10
 #define PACKET_RECEIVED_PIN 26

@@ -16,6 +16,7 @@
 // Inspired by JPL power of ten document
 #define assert(e) (((e) || !DEBUG) ? (true) : Serial.printf("%s, %d: assertion '%s' failed\n", __FILE__, __LINE__, #e), false)
 
+void heartbeat(void);
 void clearBuffer(void);
 void handlePacket(void);
 void packetReceived(void);
