@@ -6,6 +6,7 @@
 #define SETUP_STATE 1
 #define IMU_STATE 2
 #define ANOMALY_STATE 3
+#define SHUTDOWN_STATE 4
 
 #define PERFORM_IMU_COMMAND 0
 

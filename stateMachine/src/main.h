@@ -1,5 +1,6 @@
 #include <Wire.h>
 #include <ssiSpi.h>
+#include <string.h>
 #ifndef MAIN_H
 #define MAIN_H
 
@@ -14,8 +15,13 @@
 #endif
 
 // Inspired by JPL power of ten document
-#define assert(e) (((e) || !DEBUG) ? (true) : Serial.printf("%s, %d: assertion '%s' failed\n", __FILE__, __LINE__, #e), false)
+#define assert(e) (((e) || !DEBUG) ? (true) : assertionError(__FILE__, __LINE__, #e), false)
 
+extern volatile unsigned int timeAlive;
+extern volatile unsigned int lastLoopTime;
+extern volatile int errors;
+
+bool assertionError(const char* file, int line, const char* assertion);
 void heartbeat(void);
 void clearBuffer(void);
 void handlePacket(void);

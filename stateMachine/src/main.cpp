@@ -4,6 +4,12 @@
 
 IntervalTimer timer;
 volatile uint16_t state = SETUP_STATE;
+elapsedMicros micro = 0;
+volatile unsigned int timeAlive = 0;
+volatile int errors = 0;
+volatile int bugs = 0;
+volatile unsigned int lastLoopTime = 0;
+volatile unsigned int lastAnalogRead = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -11,17 +17,37 @@ void setup() {
   analogReadResolution(16);
   SPI1.begin();
   state = IDLE_STATE;
-  timer.begin(heartbeat, 3000000);
+  timer.begin(heartbeat, 10000000); // Every 10 seconds
+}
+
+bool assertionError(const char* file, int line, const char* assertion) {
+    errors++;
+    bugs++;
+    Serial.printf("%s, %d: assertion 'assertion' failed, total errors %d, bugs %d\n", file, line, errors, bugs);
+    return false;
 }
 
 void heartbeat() {
-    debugPrintf("Received %d words, sent %d, transmissionSize %d, transmitting %d, packetsReceived %d\n", packetPointer, outPointer, transmissionSize, transmitting, packetsReceived);
+    debugPrintf("State %d,"/*, received %d words, sent %d, transmissionSize %d, "*/, state/*, packetPointer, outPointer, transmissionSize*/);
+    debugPrintf("transmitting %d, packetsReceived %d, ", transmitting, packetsReceived);
+    debugPrintf("%d errors, bugs %d, last loop %d micros", errors, bugs, lastLoopTime);
+    debugPrintf(", last read %d\n", lastAnalogRead);
+}
+
+void checkTasks(void) {
+    long startOfLoop = micro;
+    if (state == IDLE_STATE) {
+        SPI1.transfer16(0xbeef);
+        lastAnalogRead = analogRead(14);
+    }
+
+    // Save this into a long because elapsedMillis is not guaranteed in interrupts
+    timeAlive = micro;
+    lastLoopTime = timeAlive - startOfLoop;
+    // For now just assert, there isn't really a way to recover from a long main loop
+    assert(lastLoopTime <= 1000.0);
 }
 
 void loop() {
-    debugPrintf("State: %x\n", state);
-    for (int i = 0; i < 400000; i++) {
-        SPI1.transfer16(0xbeef);
-    }
-    delay(5000);
+    checkTasks();
 }

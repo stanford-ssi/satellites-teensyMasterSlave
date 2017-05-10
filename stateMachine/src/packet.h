@@ -23,7 +23,7 @@ extern volatile bool transmitting;
 #define EMPTY_WORD 0xabcd
 
 #define PACKET_SIZE 5 // Fixed size incoming packet
-// First word in packet body; word 0 is FIRST_WORD
+// Index of first word in packet body; word 0 is FIRST_WORD
 #define PACKET_BODY_BEGIN 1
 // Exclusive; last two words are checksum and LAST_WORD
 #define PACKET_BODY_END (PACKET_SIZE - 2)
@@ -34,19 +34,29 @@ extern volatile bool transmitting;
 #define OUT_PACKET_BODY_END_SIZE 2
 #define OUT_PACKET_OVERHEAD (OUT_PACKET_BODY_END_SIZE + OUT_PACKET_BODY_BEGIN)
 
-// Headers
+// Commands
+#define COMMAND_ECHO 0
+#define COMMAND_STATUS 1
+#define COMMAND_IDLE 2
+#define COMMAND_SHUTDOWN 3
+
+// Response Headers
 #define MIN_HEADER 0
 #define MAX_HEADER 1
 #define RESPONSE_OK 0
 #define RESPONSE_BAD_PACKET 1
 
+// Error numbers
 #define INVALID_BORDER 0
 #define INVALID_CHECKSUM 1
 #define INTERNAL_ERROR 2
+#define INVALID_COMMAND 3
 
 void packet_setup(void);
 void setupTransmission(uint16_t header, unsigned int bodyLength);
 void response_echo();
+void response_status();
 void responseBadPacket(uint16_t flag);
+void create_response();
 
 #endif
