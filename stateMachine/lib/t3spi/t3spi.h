@@ -37,6 +37,10 @@
 #define ALT_MOSI			0x07
 #define ALT_MISO			0x08
 
+#define SCK1                32
+#define MOSI1               0
+#define MISO1               1
+
 #define T3_CS0					0x01
 #define T3_CS1					0x02
 #define T3_CS2					0x04
@@ -46,6 +50,7 @@
 #define ALT_CS1				0x82
 #define ALT_CS2				0x84
 #define ALT_CS3				0x88
+#define T3_SPI1_CS0             31
 
 #define CS_ActiveLOW		1
 #define CS_ActiveHIGH		0
@@ -84,16 +89,13 @@ public:
 
 	volatile int dataPointer;
 	volatile int packetCT;
-	volatile int data16;
-	
-	unsigned long timeStamp1;
-	unsigned long timeStamp2;
+
 	uint8_t ctar;
 
 
 	T3SPI();
 	void clearBuffer();
-	
+
 	//Functions for MASTER MODE
 	static void begin_MASTER();
 	void begin_MASTER(uint8_t sck, uint8_t mosi, uint8_t miso, uint8_t cs, bool activeState);
@@ -115,16 +117,17 @@ public:
 	void rxtx16(volatile uint16_t *dataIN, volatile uint16_t *dataOUT, int length);
 	uint8_t rxtx8(volatile uint8_t dataOUT);
 	uint16_t rxtx16(volatile uint16_t dataOUT);
+    /*
 	uint8_t peek8();
 	uint16_t peek16();
+    */
 	void tx8(volatile uint8_t dataOUT);
 	void tx16(volatile uint16_t dataOUT);
-	
+
 	//Global Functions
 	static void start();
 	static void stop();
 	static void end();
-	void printStatistics(int length);
 
 private:
 	static void setMCR(bool mode);

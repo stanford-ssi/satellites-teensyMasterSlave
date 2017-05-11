@@ -1,11 +1,13 @@
 #include "t3spi.h"
+
+// todo: consider swapping this out with kinetis.h
 #include "mk20dx128.h"
 #include "core_pins.h"
 #include "arduino.h"
 
 
 T3SPI::T3SPI() {
-	SIM_SCGC6 |= SIM_SCGC6_SPI0;	// enable clock to SPI.
+	SIM_SCGC6 |= SIM_SCGC6_SPI1;	// enable clock to SPI.
 	dataPointer=0;
 	packetCT=0;
 	ctar=0;
@@ -31,31 +33,31 @@ void T3SPI::begin_MASTER(uint8_t sck, uint8_t mosi, uint8_t miso, uint8_t cs, bo
 void T3SPI::begin_SLAVE() {
 	setMCR(SLAVE);
 	setCTAR_SLAVE(8, T3_SPI_MODE0);
-	SPI0_RSER = 0x00020000;
+	SPI1_RSER = 0x00020000;
 	enablePins_SLAVE(SCK, MOSI, MISO, T3_CS0);
 }
 
 void T3SPI::begin_SLAVE(uint8_t sck, uint8_t mosi, uint8_t miso, uint8_t cs) {
 	setMCR(SLAVE);
 	setCTAR_SLAVE(8, T3_SPI_MODE0);
-	SPI0_RSER = 0x00020000;
+	SPI1_RSER = 0x00020000;
 	enablePins_SLAVE(sck, mosi, miso, cs);
 }
 
 void T3SPI::setMCR(bool mode){
 	stop();
 	if (mode==1){
-		SPI0_MCR=0x80000000;}
+		SPI1_MCR=0x80000000;}
 	else{
-		SPI0_MCR=0x00000000;}
+		SPI1_MCR=0x00000000;}
 	start();
 }
 
 void T3SPI::setCTAR(bool CTARn, uint8_t size, uint8_t dataMode, uint8_t bo, uint8_t cdiv){
 	if (CTARn == 0){
-		SPI0_CTAR0=0;}
+		SPI1_CTAR0=0;}
 	if (CTARn == 1){
-		SPI0_CTAR1=0;}
+		SPI1_CTAR1=0;}
 	setFrameSize(CTARn, (size - 1));
 	setMode(CTARn, dataMode);
 	setBitOrder(CTARn, bo);
@@ -63,7 +65,7 @@ void T3SPI::setCTAR(bool CTARn, uint8_t size, uint8_t dataMode, uint8_t bo, uint
 }
 
 void T3SPI::setCTAR_SLAVE(uint8_t size, uint8_t dataMode){
-	SPI0_CTAR0_SLAVE=0;
+	SPI1_CTAR0_SLAVE=0;
 	setFrameSize(T3_CTAR_SLAVE, (size - 1));
 	setMode(T3_CTAR_SLAVE, dataMode);
 }
@@ -129,34 +131,42 @@ void T3SPI::enablePins_SLAVE(uint8_t sck, uint8_t mosi, uint8_t miso, uint8_t cs
 		CORE_PIN13_CONFIG = PORT_PCR_MUX(2);}
 	if (sck == ALT_SCK){
 		CORE_PIN14_CONFIG = PORT_PCR_MUX(2);}
+    if (sck == SCK1){
+		CORE_PIN32_CONFIG = PORT_PCR_MUX(2);}
 	if (mosi == MOSI){
 		CORE_PIN11_CONFIG = PORT_PCR_DSE | PORT_PCR_MUX(2);}
 	if (mosi == ALT_MOSI){
 		CORE_PIN7_CONFIG  = PORT_PCR_DSE | PORT_PCR_MUX(2);}
+    if (mosi == MOSI1){
+		CORE_PIN0_CONFIG  = PORT_PCR_DSE | PORT_PCR_MUX(2);}
 	if (miso == MISO){
 		CORE_PIN12_CONFIG = PORT_PCR_MUX(2);}
 	if (miso == ALT_MISO){
 		CORE_PIN8_CONFIG  = PORT_PCR_MUX(2);}
+    if (miso == MISO1){
+		CORE_PIN1_CONFIG  = PORT_PCR_MUX(2);}
 	if (cs == T3_CS0){
 		CORE_PIN10_CONFIG = PORT_PCR_MUX(2);}
 	if (cs == ALT_CS0){
 		CORE_PIN2_CONFIG  = PORT_PCR_MUX(2);}
+    if (cs == T3_SPI1_CS0){
+		CORE_PIN31_CONFIG  = PORT_PCR_MUX(2);}
 }
 
 void T3SPI::setCS_ActiveLOW(uint32_t pin){
 	stop();
-	SPI0_MCR |= (pin);
+	SPI1_MCR |= (pin);
 	start();
 }
 
 void T3SPI::setFrameSize(uint8_t CTARn, uint8_t size) {
 	stop();
 	if (CTARn==0){
-		SPI0_CTAR0 |= SPI_CTAR_FMSZ(size);}
+		SPI1_CTAR0 |= SPI_CTAR_FMSZ(size);}
 	if (CTARn==1){
-		SPI0_CTAR1 |= SPI_CTAR_FMSZ(size);}
+		SPI1_CTAR1 |= SPI_CTAR_FMSZ(size);}
 	if (CTARn==2){
-		SPI0_CTAR0_SLAVE |= SPI_CTAR_FMSZ(size);}
+		SPI1_CTAR0_SLAVE |= SPI_CTAR_FMSZ(size);}
 	start();
 }
 //(((size) & 31) << 27);
@@ -164,11 +174,11 @@ void T3SPI::setFrameSize(uint8_t CTARn, uint8_t size) {
 void T3SPI::setMode(uint8_t CTARn, uint8_t dataMode) {
 	stop();
 	if (CTARn==0){
-		SPI0_CTAR0 = SPI0_CTAR0 & ~(SPI_CTAR_CPOL | SPI_CTAR_CPHA) | dataMode << 25;}
+		SPI1_CTAR0 = (SPI1_CTAR0 & ~(SPI_CTAR_CPOL | SPI_CTAR_CPHA)) | dataMode << 25;}
 	if (CTARn==1){
-		SPI0_CTAR1 = SPI0_CTAR1 & ~(SPI_CTAR_CPOL | SPI_CTAR_CPHA) | dataMode << 25;}
+		SPI1_CTAR1 = (SPI1_CTAR1 & ~(SPI_CTAR_CPOL | SPI_CTAR_CPHA)) | dataMode << 25;}
 	if (CTARn==2){
-		SPI0_CTAR0_SLAVE = SPI0_CTAR0_SLAVE & ~(SPI_CTAR_CPOL | SPI_CTAR_CPHA) | dataMode << 25;}
+		SPI1_CTAR0_SLAVE = (SPI1_CTAR0_SLAVE & ~(SPI_CTAR_CPOL | SPI_CTAR_CPHA)) | dataMode << 25;}
 	start();
 }
 
@@ -176,108 +186,41 @@ void T3SPI::setBitOrder(bool CTARn, uint8_t bo) {
 	stop();
 	if (CTARn==0){
 		if (bo == LSBFIRST) {
-			SPI0_CTAR0 |= SPI_CTAR_LSBFE;}
+			SPI1_CTAR0 |= SPI_CTAR_LSBFE;}
 		if (bo == MSBFIRST) {
-			SPI0_CTAR0 &= ~SPI_CTAR_LSBFE;}}
+			SPI1_CTAR0 &= ~SPI_CTAR_LSBFE;}}
 	if (CTARn==1){
 		if (bo == LSBFIRST) {
-			SPI0_CTAR1 |= SPI_CTAR_LSBFE;}
+			SPI1_CTAR1 |= SPI_CTAR_LSBFE;}
 		if (bo == MSBFIRST) {
-			SPI0_CTAR1 &= ~SPI_CTAR_LSBFE;}}
+			SPI1_CTAR1 &= ~SPI_CTAR_LSBFE;}}
 	start();
 }
 
 void T3SPI::setClockDivider(bool CTARn, uint8_t cdiv) {
 	stop();
 	if (CTARn==0){
-		SPI0_CTAR0 |= SPI_CTAR_DBR | SPI_CTAR_CSSCK(cdiv) | SPI_CTAR_BR(cdiv);}
+		SPI1_CTAR0 |= SPI_CTAR_DBR | SPI_CTAR_CSSCK(cdiv) | SPI_CTAR_BR(cdiv);}
 	if (CTARn==1){
-		SPI0_CTAR1 |= SPI_CTAR_DBR | SPI_CTAR_CSSCK(cdiv) | SPI_CTAR_BR(cdiv);}
+		SPI1_CTAR1 |= SPI_CTAR_DBR | SPI_CTAR_CSSCK(cdiv) | SPI_CTAR_BR(cdiv);}
 	start();
 }
 
 void T3SPI::start() {
-	SPI0_MCR &= ~SPI_MCR_HALT & ~SPI_MCR_MDIS;
+	SPI1_MCR &= ~SPI_MCR_HALT & ~SPI_MCR_MDIS;
 }
 
 void T3SPI::stop() {
-	SPI0_MCR |= SPI_MCR_HALT | SPI_MCR_MDIS;
+	SPI1_MCR |= SPI_MCR_HALT | SPI_MCR_MDIS;
 }
 
 void T3SPI::end() {
-	SPI0_SR &= ~SPI_SR_TXRXS;
+	SPI1_SR &= ~SPI_SR_TXRXS;
 	stop();
 }
 
-void T3SPI::printStatistics(int length) {
-	uint32_t CTAR=0;
-	int bytesSent=0;
-	float uSecsByte=0;
-	float bytesSec=0;
-	unsigned long timeElapsed=0;
-	float Mbps=0;
-
-	if (((SPI0_CTAR0 & 0x78000000)>>27)==7){
-		bytesSent = (packetCT * length);}
-	if (((SPI0_CTAR0 & 0x78000000)>>27)==15){
-		bytesSent = (packetCT * length*2);}
-	timeElapsed = timeStamp2-timeStamp1;
-	uSecsByte= ((float)timeElapsed / (float)bytesSent);
-	Mbps= ((float)bytesSent) / (float)timeElapsed;
-	Serial.println();
-	Serial.println();
-	Serial.println("                 33222222222211111111110000000000");
-	Serial.println("                 10987654321098765432109876543210");
-	Serial.println("                 --------------------------------");
-	Serial.print("SPIO_MCR:        ");
-	for (unsigned int mask = 0x80000000; mask; mask >>= 1) {
-		Serial.print(mask&SPI0_MCR?'1':'0');}
-	Serial.println();
-	
-	if(0x80000000 & SPI0_MCR){
-		if (ctar==0){
-			Serial.print("SPIO_CTAR0:      ");		
-			CTAR = SPI0_CTAR0;}
-		if (ctar==1){
-			Serial.print("SPIO_CTAR1:      ");
-			CTAR = SPI0_CTAR1;}}
-		else {
-			Serial.print("SPIO_CTAR_SLAVE: ");
-			CTAR = SPI0_CTAR0_SLAVE;}
-
-	for (unsigned int mask = 0x80000000; mask; mask >>= 1) {
-		Serial.print(mask&CTAR?'1':'0');}
-			
-	Serial.println();
-	Serial.print("SPI0_SR:         ");
-	for (unsigned int mask = 0x80000000; mask; mask >>= 1) {
-		Serial.print(mask&SPI0_SR?'1':'0');}
-	Serial.println();
-	Serial.print("SPI0_RSER:       ");
-	for (unsigned int mask = 0x80000000; mask; mask >>= 1) {
-		Serial.print(mask&SPI0_RSER?'1':'0');}
-	Serial.println();
-	Serial.println();
-	Serial.print("Frame Size:      ");
-	Serial.println(((CTAR & 0x78000000)>>27)+1);
-	Serial.print("Data Length:     ");
-	Serial.println(length);
-	Serial.print("Packets:         ");
-	Serial.println(packetCT);
-	Serial.print("Bytes Sent:      ");
-	Serial.println(bytesSent);
-	Serial.print("Time Elapsed:    ");
-	Serial.println(timeElapsed);
-	Serial.print("uSecs/Byte:      ");
-	Serial.println(uSecsByte);
-	Serial.print("Mbps:            ");
-	Serial.println(Mbps);
-	Serial.println();
-	Serial.flush();
-}
-
 //TRANSMIT PACKET OF 8 BIT DATA
-void T3SPI::tx8(volatile uint8_t *dataOUT,   int length, bool CTARn, uint8_t PCS){ 
+void T3SPI::tx8(volatile uint8_t *dataOUT,   int length, bool CTARn, uint8_t PCS){
 	ctar=CTARn;
 	for (int i=0; i < length; i++){
 		SPI_WRITE_8(dataOUT[i], CTARn, PCS);
@@ -286,14 +229,14 @@ void T3SPI::tx8(volatile uint8_t *dataOUT,   int length, bool CTARn, uint8_t PCS
 }
 
 //TRANSMIT 8 BITS - NO BUFFER
-void T3SPI::tx8(uint8_t dataOUT, bool CTARn, uint8_t PCS){ 
+void T3SPI::tx8(uint8_t dataOUT, bool CTARn, uint8_t PCS){
 	ctar=CTARn;
     SPI_WRITE_8(dataOUT, CTARn, PCS);
     SPI_WAIT();
 }
 
 //TRANSMIT PACKET OF 16 BIT DATA
-void T3SPI::tx16(volatile uint16_t *dataOUT, int length, bool CTARn, uint8_t PCS){ 
+void T3SPI::tx16(volatile uint16_t *dataOUT, int length, bool CTARn, uint8_t PCS){
 	//ctar=CTARn;
 	for (int i=0; i < length; i++){
 		SPI_WRITE_16(dataOUT[i], CTARn, PCS);
@@ -302,97 +245,98 @@ void T3SPI::tx16(volatile uint16_t *dataOUT, int length, bool CTARn, uint8_t PCS
 }
 
 //TRANSMIT & RECEIVE PACKET OF 8 BIT DATA
-void T3SPI::txrx8(volatile uint8_t *dataOUT, volatile uint8_t *dataIN, int length, bool CTARn, uint8_t PCS){ 
+void T3SPI::txrx8(volatile uint8_t *dataOUT, volatile uint8_t *dataIN, int length, bool CTARn, uint8_t PCS){
 	ctar=CTARn;
 	for (int i=0; i < length; i++){
-		SPI0_MCR |= SPI_MCR_CLR_RXF;
+		SPI1_MCR |= SPI_MCR_CLR_RXF;
 		SPI_WRITE_8(dataOUT[i], CTARn, PCS);
 		SPI_WAIT();
 		delayMicroseconds(1);
-		dataIN[i]=SPI0_POPR;
+		dataIN[i]=SPI1_POPR;
 		}
 	packetCT++;
 }
 
 //TRANSMIT & RECEIVE PACKET OF 16 BIT DATA
-void T3SPI::txrx16(volatile uint16_t *dataOUT, volatile uint16_t *dataIN, int length, bool CTARn, uint8_t PCS){ 
+void T3SPI::txrx16(volatile uint16_t *dataOUT, volatile uint16_t *dataIN, int length, bool CTARn, uint8_t PCS){
 	ctar=CTARn;
 	for (int i=0; i < length; i++){
-		SPI0_MCR |= SPI_MCR_CLR_RXF;
+		SPI1_MCR |= SPI_MCR_CLR_RXF;
 		SPI_WRITE_16(dataOUT[i], CTARn, PCS);
 		SPI_WAIT();
 		delayMicroseconds(1);
-		dataIN[i]=SPI0_POPR;
+		dataIN[i]=SPI1_POPR;
 		}
 	packetCT++;
 }
 
 void T3SPI::rx8(volatile uint8_t *dataIN, int length){
-	dataIN[dataPointer] = SPI0_POPR;
+	dataIN[dataPointer] = SPI1_POPR;
 	dataPointer++;
 	if (dataPointer == length){
 		dataPointer=0;
 		packetCT++;}
-	SPI0_SR |= SPI_SR_RFDF;
+	SPI1_SR |= SPI_SR_RFDF;
 }
 
 void T3SPI::rx16(volatile uint16_t *dataIN, int length){
-	dataIN[dataPointer] = SPI0_POPR;
+	dataIN[dataPointer] = SPI1_POPR;
 	dataPointer++;
 	if (dataPointer == length){
 		dataPointer=0;
 		packetCT++;}
-	SPI0_SR |= SPI_SR_RFDF;
+	SPI1_SR |= SPI_SR_RFDF;
 }
 
 void T3SPI::rxtx8(volatile uint8_t *dataIN, volatile uint8_t *dataOUT, int length){
-	dataIN[dataPointer] = SPI0_POPR;
+	dataIN[dataPointer] = SPI1_POPR;
 	dataPointer++;
 	if (dataPointer == length){
 		dataPointer=0;
 		packetCT++;}
-	SPI0_PUSHR_SLAVE = dataOUT[dataPointer];  
-	SPI0_SR |= SPI_SR_RFDF;
+	SPI1_PUSHR_SLAVE = dataOUT[dataPointer];
+	SPI1_SR |= SPI_SR_RFDF;
 }
 
 void T3SPI::rxtx16(volatile uint16_t *dataIN, volatile uint16_t *dataOUT, int length){
-	dataIN[dataPointer] = SPI0_POPR;
+	dataIN[dataPointer] = SPI1_POPR;
 	dataPointer++;
 	if (dataPointer == length){
 		dataPointer=0;
 		packetCT++;}
-  SPI0_PUSHR_SLAVE = dataOUT[dataPointer];  
-  SPI0_SR |= SPI_SR_RFDF;
+  SPI1_PUSHR_SLAVE = dataOUT[dataPointer];
+  SPI1_SR |= SPI_SR_RFDF;
 }
-
+/*
 uint8_t T3SPI::peek8(){
-    return SPI0_POPR;
+    return SPI1_POPR;
 }
 
 uint16_t T3SPI::peek16(){
-    return SPI0_POPR;
+    return SPI1_POPR;
 }
+*/
 
 // Slave mode: transmit dataOUT, ignoring SPI_POPR
 void T3SPI::tx8(uint8_t dataOUT){
-	SPI0_PUSHR_SLAVE = dataOUT;  
-	SPI0_SR |= SPI_SR_RFDF;
+	SPI1_PUSHR_SLAVE = dataOUT;
+	SPI1_SR |= SPI_SR_RFDF;
 }
 
 // Slave mode: transmit dataOUT, ignoring SPI_POPR
 void T3SPI::tx16(uint16_t dataOUT){
-  SPI0_PUSHR_SLAVE = dataOUT;  
-  SPI0_SR |= SPI_SR_RFDF;
+  SPI1_PUSHR_SLAVE = dataOUT;
+  SPI1_SR |= SPI_SR_RFDF;
 }
 
 uint8_t T3SPI::rxtx8(uint8_t dataOUT){
-	uint8_t dataIn = SPI0_POPR;
+	uint8_t dataIn = SPI1_POPR;
     tx8(dataOUT);
     return dataIn;
 }
 
 uint16_t T3SPI::rxtx16(uint16_t dataOUT){
-  uint16_t dataIn = SPI0_POPR;
+  uint16_t dataIn = SPI1_POPR;
   tx16(dataOUT);
   return dataIn;
 }

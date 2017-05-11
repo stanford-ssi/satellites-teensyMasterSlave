@@ -13,11 +13,11 @@ volatile unsigned int lastAnalogRead = 0;
 
 void setup() {
   Serial.begin(115200);
+  timer.begin(heartbeat, 2000000); // Every 1 seconds
   packet_setup();
   analogReadResolution(16);
-  SPI1.begin();
+  //SPI1.begin();
   state = IDLE_STATE;
-  timer.begin(heartbeat, 10000000); // Every 10 seconds
 }
 
 bool assertionError(const char* file, int line, const char* assertion) {
@@ -37,17 +37,19 @@ void heartbeat() {
 void checkTasks(void) {
     long startOfLoop = micro;
     if (state == IDLE_STATE) {
-        SPI1.transfer16(0xbeef);
+        //SPI1.transfer16(0xbeef);
         lastAnalogRead = analogRead(14);
     }
 
     // Save this into a long because elapsedMillis is not guaranteed in interrupts
     timeAlive = micro / 1000000;
-    lastLoopTime = timeAlive - startOfLoop;
+    lastLoopTime = micro - startOfLoop;
     // For now just assert, there isn't really a way to recover from a long main loop
-    assert(lastLoopTime <= 1000.0);
+    assert(lastLoopTime <= 1000000.0);
 }
 
 void loop() {
+    Serial.printf("%s\n", "hey");
+    delay(2000);
     checkTasks();
 }

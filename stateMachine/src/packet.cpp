@@ -25,10 +25,10 @@ void packet_setup(void) {
     assert(outPointer == 0);
     assert(transmissionSize == 0);
     assert(transmitting == false);
-    SPI_SLAVE.begin_SLAVE(SCK, MOSI, MISO, T3_CS0);
+    SPI_SLAVE.begin_SLAVE(SCK1, MOSI1, MISO1, T3_SPI1_CS0);
     SPI_SLAVE.setCTAR_SLAVE(16, T3_SPI_MODE0);
-    NVIC_ENABLE_IRQ(IRQ_SPI0);
-    NVIC_SET_PRIORITY(IRQ_SPI0, 0);
+    NVIC_ENABLE_IRQ(IRQ_SPI1);
+    NVIC_SET_PRIORITY(IRQ_SPI1, 16);
 
     pinMode(PACKET_RECEIVED_TRIGGER, OUTPUT);
     digitalWrite(PACKET_RECEIVED_TRIGGER, LOW);
@@ -42,7 +42,8 @@ void packet_setup(void) {
 }
 
 //Interrupt Service Routine to handle incoming data
-void spi0_isr(void) {
+void spi1_isr(void) {
+  debugPrintf("Hey\n");
   assert(outPointer <= transmissionSize);
   assert(packetPointer <= PACKET_SIZE);
   assert(transmitting || outPointer == 0);
