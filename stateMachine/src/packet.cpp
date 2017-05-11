@@ -153,7 +153,7 @@ void response_status() {
     assert(packetPointer == PACKET_SIZE);
     assert(!transmitting);
     clearSendBuffer();
-    int bodySize = 8;
+    int bodySize = 9;
     outBody[0] = state;
     outBody[1] = packetsReceived / (1 << 16);
     outBody[2] = packetsReceived % (1 << 16);
@@ -163,8 +163,8 @@ void response_status() {
     outBody[5] = timeAliveSave / (1 << 16);
     outBody[6] = timeAliveSave % (1 << 16);
     volatile unsigned int lastLoopSave = lastLoopTime;
-    outBody[6] = lastLoopSave / (1 << 16);
-    outBody[7] = lastLoopSave % (1 << 16);
+    outBody[7] = lastLoopSave / (1 << 16);
+    outBody[8] = lastLoopSave % (1 << 16);
     assert(outBody[bodySize] == 0xbeef);
     setupTransmission(RESPONSE_OK, bodySize);
 }

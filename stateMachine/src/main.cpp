@@ -28,7 +28,7 @@ bool assertionError(const char* file, int line, const char* assertion) {
 }
 
 void heartbeat() {
-    debugPrintf("State %d,"/*, received %d words, sent %d, transmissionSize %d, "*/, state/*, packetPointer, outPointer, transmissionSize*/);
+    debugPrintf("State %d,", state);
     debugPrintf("transmitting %d, packetsReceived %d, ", transmitting, packetsReceived);
     debugPrintf("%d errors, bugs %d, last loop %d micros", errors, bugs, lastLoopTime);
     debugPrintf(", last read %d\n", lastAnalogRead);
@@ -42,7 +42,7 @@ void checkTasks(void) {
     }
 
     // Save this into a long because elapsedMillis is not guaranteed in interrupts
-    timeAlive = micro;
+    timeAlive = micro / 1000000;
     lastLoopTime = timeAlive - startOfLoop;
     // For now just assert, there isn't really a way to recover from a long main loop
     assert(lastLoopTime <= 1000.0);

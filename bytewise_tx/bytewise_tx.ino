@@ -42,7 +42,7 @@ void transmit(uint16_t *buf) {
 void transmitH(uint16_t *buf, bool verbos) {
   digitalWrite(CHIPSELECT, HIGH);
   digitalWrite(CHIPSELECT, LOW);
-  delayMicroseconds(40);
+  delayMicroseconds(80);
   send16(0x1234, verbos);
   uint16_t checksum = 0;
   for (int i = 0; i < PACKET_BODY_LENGTH; i++) {
@@ -57,7 +57,7 @@ void transmitH(uint16_t *buf, bool verbos) {
   if(verbos) {
     Serial.println("---------------------------------");
   }
-  delayMicroseconds(40);
+  delayMicroseconds(80);
   digitalWrite(CHIPSELECT, HIGH);
 }
 
@@ -81,6 +81,25 @@ void transmitCrappy(uint16_t *buf) {
   digitalWrite(CHIPSELECT, HIGH);
 }
 
+void rando() {
+  Serial.println("begin random");
+  int i = 0;
+  while (Serial.available() <= 0) {
+    int nextCommand = random(4);
+    if (nextCommand == 0) {
+      transmitH(echo, false);
+    } else if (nextCommand == 1) {
+      transmitH(stat, false);
+    } else if (nextCommand == 2) {
+      transmitH(idle_, false);
+    } else if (nextCommand == 3) {
+      transmitH(shutdown_, false);
+    }
+    i++;
+  }
+  Serial.printf("end random, send %d packets\n", i);
+}
+
 void loop() {
   // send data only when you receive data:
   if (Serial.available() > 0) {
@@ -97,6 +116,11 @@ void loop() {
         transmit(shutdown_);
       } else if (incomingByte == '5') {
         transmitCrappy(echo);
+      } else if (incomingByte == 'r') {
+        while (Serial.available() > 0) {
+          Serial.read();
+        }
+        rando();
       } else if (incomingByte == 'm') {
         transmitMany = true;
       }
