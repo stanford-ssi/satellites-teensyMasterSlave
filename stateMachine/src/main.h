@@ -10,8 +10,8 @@
 #define DEBUG true
 
 #if DEBUG
-    #define debugPrintf(...) Serial.printf(__VA_ARGS__)
-    #define debugPrintln(x) Serial.println(x)
+    #define debugPrintf(...) do {if (Serial) { Serial.printf(__VA_ARGS__); }} while (0);
+    #define debugPrintln(x) do {if (Serial) { Serial.println(x); }} while (0);
 #else
     #define debugPrintf(...) do {} while (0)
     #define debugPrintln(x) do {} while (0)

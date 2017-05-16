@@ -19,7 +19,7 @@ void setup() {
   packet_setup();
   analogReadResolution(16);
   SPI2.begin();
-  dmaSetup();
+  //dmaSetup();
   state = IDLE_STATE;
   unsigned int startTimeCheck = micro;
   for (int i = 0; !(SPI2_SR & SPI_SR_TCF); i++) {
@@ -56,14 +56,14 @@ void taskIdle(void) {
     //DmaSpi::Transfer trx(nullptr, 0, nullptr);
 
     // TODO: error recovery on dma error
-    assert(trx.m_state != DmaSpi::Transfer::State::error);
+    /*assert(trx.m_state != DmaSpi::Transfer::State::error);
     if (trx.done()) {
         compareBuffers(dmaSrc, dmaDest);
         trx = DmaSpi::Transfer((const unsigned uint8_t *) dmaSrc, DMASIZE, dmaDest);
         clrDest((uint8_t*)dmaDest);
         DMASPI0.registerTransfer(trx);
         completedDmaTransfers++;
-    }
+    }*/
 }
 
 void checkTasks(void) {

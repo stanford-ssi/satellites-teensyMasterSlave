@@ -12,10 +12,11 @@
 #include "DMAChannel.h"
 #include "ChipSelect.h"
 
+// DANGER!
 #define DEBUG_DMASPI 1
 
 #if defined(DEBUG_DMASPI)
-  #define DMASPI_PRINT(x) do {Serial.printf x ; Serial.flush();} while (0);
+  #define DMASPI_PRINT(x) do {if (Serial) {Serial.printf x ; Serial.flush();}} while (0);
 #else
   #define DMASPI_PRINT(x) do {} while (0);
 #endif
@@ -54,7 +55,7 @@ namespace DmaSpi
                   const uint16_t& transferCount = 0,
                   volatile uint8_t* pDest = nullptr,
                   const uint8_t& fill = 0,
-                  AbstractChipSelect* cs = (AbstractChipSelect*) nullptr
+                  AbstractChipSelect* cs = nullptr
       ) : m_state(State::idle),
         m_pSource(pSource),
         m_transferCount(transferCount),
@@ -63,7 +64,9 @@ namespace DmaSpi
         m_pNext(nullptr),
         m_pSelect(cs)
       {
-          DMASPI_PRINT(("Transfer @ %p\n", this));
+          // DANGER! If a transfer is allocated globally, this code executes
+          // before serial is available
+          //DMASPI_PRINT(("Transfer @ %p\n", this));
       };
 
       /** \brief Check if the Transfer is busy, i.e. may not be modified.

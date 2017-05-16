@@ -15,5 +15,4 @@ void dmaSetup();
 void setSrc();
 void clrDest(volatile uint8_t* dest_);
 void compareBuffers(volatile const uint8_t* src_, const volatile uint8_t* dest_);
-
 #endif // DMA_H

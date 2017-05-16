@@ -1,10 +1,11 @@
+
 #include "dma.h"
 #include <DmaSpi.h>
 
 #define DMASIZE 100
 volatile uint8_t dmaSrc[DMASIZE];
 volatile uint8_t dmaDest[DMASIZE];
-DmaSpi::Transfer trx;
+DmaSpi::Transfer trx(nullptr, 0, nullptr);
 
 void dmaSetup() {
     setSrc();
