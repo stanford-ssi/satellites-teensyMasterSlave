@@ -8,11 +8,11 @@
   #error This library is for teensyduino 1.21 on Teensy 3.0, 3.1 and Teensy LC only.
 #endif
 
-#include <SPI.h>
+#include <ssiSpi.h>
 #include "DMAChannel.h"
 #include "ChipSelect.h"
 
-//#define DEBUG_DMASPI 1
+#define DEBUG_DMASPI 1
 
 #if defined(DEBUG_DMASPI)
   #define DMASPI_PRINT(x) do {Serial.printf x ; Serial.flush();} while (0);
@@ -54,7 +54,7 @@ namespace DmaSpi
                   const uint16_t& transferCount = 0,
                   volatile uint8_t* pDest = nullptr,
                   const uint8_t& fill = 0,
-                  AbstractChipSelect* cs = nullptr
+                  AbstractChipSelect* cs = (AbstractChipSelect*) nullptr
       ) : m_state(State::idle),
         m_pSource(pSource),
         m_transferCount(transferCount),
@@ -399,6 +399,7 @@ class AbstractDmaSpi
 
     static void rxIsr_()
     {
+      DMASPI_PRINT(("rxisr called"));
       DMASPI_PRINT(("DmaSpi::rxIsr_()\n"));
       rxChannel_()->clearInterrupt();
       // end current transfer: deselect and mark as done
@@ -571,7 +572,7 @@ private:
 extern DmaSpi0 DMASPI0;
 
 #if defined(__MK64FX512__) || defined(__MK66FX1M0__)
-
+/*
 class DmaSpi1 : public AbstractDmaSpi<DmaSpi1, SPI1Class, SPI1>
 {
 public:
@@ -614,7 +615,7 @@ public:
 private:
 };
 
-/*
+*
 class DmaSpi2 : public AbstractDmaSpi<DmaSpi2, SPI2Class, SPI2>
 {
 public:
@@ -656,13 +657,15 @@ public:
 
 private:
 };
-*/
+*
 
 extern DmaSpi1 DMASPI1;
 //extern DmaSpi2 DMASPI2;
+*/
 #endif // defined(__MK64FX512__) || defined(__MK66FX1M0__)
 
 #elif defined(KINETISL)
+/*
 class DmaSpi0 : public AbstractDmaSpi<DmaSpi0, SPIClass, SPI>
 {
 public:
@@ -749,14 +752,14 @@ public:
   }
 private:
 };
-
+*/
 extern DmaSpi0 DMASPI0;
-extern DmaSpi1 DMASPI1;
+//extern DmaSpi1 DMASPI1;
 
 #else
 
 #error Unknown chip
 
-#endif // KINETISK else KINETISL 
+#endif // KINETISK else KINETISL
 
 #endif // DMASPI_H

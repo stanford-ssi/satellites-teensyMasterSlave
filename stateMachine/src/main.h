@@ -1,6 +1,9 @@
 #include <Wire.h>
 #include <ssiSpi.h>
 #include <string.h>
+#include <dma.h>
+#include <ChipSelect.h>
+
 #ifndef MAIN_H
 #define MAIN_H
 
