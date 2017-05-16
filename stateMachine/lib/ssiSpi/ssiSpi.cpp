@@ -20,6 +20,7 @@
 /*     32 bit Teensy-3.5/3.6                              */
 /**********************************************************/
 #if defined(__MK64FX512__) || defined(__MK66FX1M0__)
+/*
 SPI1Class SPI1;
 
 uint8_t SPI1Class::interruptMasksUsed = 0;
@@ -152,8 +153,8 @@ uint8_t SPI1Class::setCS(uint8_t pin)
 	  case 63: CORE_PIN63_CONFIG = PORT_PCR_MUX(2); return 0x04;	//CS2
 	}
 	return 0;
-}
-/* We don't use this class.
+}*/
+
 //  SPI2 Class
 SPI2Class SPI2;
 
@@ -285,5 +286,4 @@ uint8_t SPI2Class::setCS(uint8_t pin)
 	return 0;
 }
 
-*/
 #endif

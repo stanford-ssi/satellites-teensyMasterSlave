@@ -10,7 +10,7 @@ extern volatile unsigned int outPointer;
 extern volatile uint16_t transmissionSize;
 extern volatile bool transmitting;
 
-#define SLAVE_CHIP_SELECT 10
+#define SLAVE_CHIP_SELECT 31
 #define PACKET_RECEIVED_PIN 26
 // This pin will loopback to PACKET_RECEIVED_PIN to signal a packet is received
 #define PACKET_RECEIVED_TRIGGER 27

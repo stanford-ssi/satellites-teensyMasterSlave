@@ -7,6 +7,8 @@
 #define IMU_STATE 2
 #define ANOMALY_STATE 3
 #define SHUTDOWN_STATE 4
+// state must be between 0 and MAX_STATE
+#define MAX_STATE 4
 
 #define PERFORM_IMU_COMMAND 0
 

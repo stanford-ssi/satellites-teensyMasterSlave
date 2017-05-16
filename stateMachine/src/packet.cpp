@@ -43,7 +43,6 @@ void packet_setup(void) {
 
 //Interrupt Service Routine to handle incoming data
 void spi1_isr(void) {
-  debugPrintf("Hey\n");
   assert(outPointer <= transmissionSize);
   assert(packetPointer <= PACKET_SIZE);
   assert(transmitting || outPointer == 0);
