@@ -5,7 +5,7 @@
 // Code taken from https://github.com/crteensy/DmaSpi/blob/master/examples/DMASpi_example1/DMASpi_example1.ino
 // See lib/DmaSpi/LICENSE
 
-#define DMASIZE 100
+#define DMASIZE 1000
 extern volatile uint8_t dmaSrc[DMASIZE];
 extern volatile uint8_t dmaDest[DMASIZE];
 //extern volatile uint8_t dmaDest1[DMASIZE];

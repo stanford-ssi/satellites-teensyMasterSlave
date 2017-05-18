@@ -2,7 +2,6 @@
 #include "dma.h"
 #include <DmaSpi.h>
 
-#define DMASIZE 100
 volatile uint8_t dmaSrc[DMASIZE];
 volatile uint8_t dmaDest[DMASIZE];
 DmaSpi::Transfer trx(nullptr, 0, nullptr);
@@ -30,14 +29,5 @@ void clrDest(volatile uint8_t* dest_)
 void compareBuffers(const volatile uint8_t* src_, const volatile uint8_t* dest_)
 {
   int n = memcmp((const void*)src_, (const void*)dest_, DMASIZE);
-  if (n == 0)
-  {
-    Serial.println("src and dest match");
-  }
-  else
-  {
-    Serial.println("src and dest don't match");
-    // dumpBuffer(src_, " src: " );
-    // dumpBuffer(dest_, "dest: ");
-  }
+  assert(n == 0);
 }

@@ -13,9 +13,9 @@
 #include "ChipSelect.h"
 
 // DANGER!
-#define DEBUG_DMASPI 1
+#define DEBUG_DMASPI 0
 
-#if defined(DEBUG_DMASPI)
+#if DEBUG_DMASPI
   #define DMASPI_PRINT(x) do {if (Serial) {Serial.printf x ; Serial.flush();}} while (0);
 #else
   #define DMASPI_PRINT(x) do {} while (0);
@@ -110,7 +110,7 @@ class AbstractDmaSpi
         return true; // this is not particularly bad, so we can return true
       }
       init_count_++;
-      DMASPI_PRINT(("DmaSpi::begin() : "));
+      // DMASPI_PRINT(("DmaSpi::begin() : "));
       // create DMA channels, might fail
       if (!createDmaChannels())
       {
@@ -192,24 +192,26 @@ class AbstractDmaSpi
     **/
     static bool registerTransfer(Transfer& transfer)
     {
-      DMASPI_PRINT(("DmaSpi::registerTransfer(%p)\n", &transfer));
+      //DMASPI_PRINT(("DmaSpi::registerTransfer(%p)\n", &transfer));
       if ((transfer.busy())
        || (transfer.m_transferCount == 0) // no zero length transfers allowed
        || (transfer.m_transferCount >= 0x8000)) // max CITER/BITER count with ELINK = 0 is 0x7FFF, so reject
       {
-        DMASPI_PRINT(("  Transfer is busy or invalid, dropped\n"));
+        //DMASPI_PRINT(("  Transfer is busy or invalid, dropped\n"));
         transfer.m_state = Transfer::State::error;
         return false;
       }
+      //DMASPI_PRINT(("DmaSpi Checkpoint\n"));
       addTransferToQueue(transfer);
+
       if ((state_ == eRunning) && (!busy()))
       {
-        DMASPI_PRINT(("  starting transfer\n"));
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-        {
-          beginPendingTransfer();
-        }
-      }
+        //DMASPI_PRINT(("  starting transfer\n"));
+
+        noInterrupts();
+        beginPendingTransfer();
+        interrupts();
+    }
       return true;
     }
 
@@ -443,14 +445,15 @@ class AbstractDmaSpi
         DMASPI_PRINT(("DmaSpi::beginNextTransfer: no pending transfer\n"));
         return;
       }
-
+      noInterrupts();
       m_pCurrentTransfer = m_pNextTransfer;
-      DMASPI_PRINT(("DmaSpi::beginNextTransfer: starting transfer @ %p\n", m_pCurrentTransfer));
+      //DMASPI_PRINT(("DmaSpi::beginNextTransfer: starting transfer @ %p\n", m_pCurrentTransfer));
+
       m_pCurrentTransfer->m_state = Transfer::State::inProgress;
       m_pNextTransfer = m_pNextTransfer->m_pNext;
       if (m_pNextTransfer == nullptr)
       {
-        DMASPI_PRINT(("  this was the last in the queue\n"));
+        //DMASPI_PRINT(("  this was the last in the queue\n"));
         m_pLastTransfer = nullptr;
       }
 
@@ -458,14 +461,14 @@ class AbstractDmaSpi
       if (m_pCurrentTransfer->m_pDest != nullptr)
       {
         // real data sink
-        DMASPI_PRINT(("  real sink\n"));
+        //DMASPI_PRINT(("  real sink\n"));
         rxChannel_()->destinationBuffer(m_pCurrentTransfer->m_pDest,
                                         m_pCurrentTransfer->m_transferCount);
       }
       else
       {
         // dummy data sink
-        DMASPI_PRINT(("  dummy sink\n"));
+        //DMASPI_PRINT(("  dummy sink\n"));
         rxChannel_()->destination(m_devNull);
         rxChannel_()->transferCount(m_pCurrentTransfer->m_transferCount);
       }
@@ -474,18 +477,18 @@ class AbstractDmaSpi
       if (m_pCurrentTransfer->m_pSource != nullptr)
       {
         // real data source
-        DMASPI_PRINT(("  real source\n"));
+        //DMASPI_PRINT(("  real source\n"));
         txChannel_()->sourceBuffer(m_pCurrentTransfer->m_pSource,
                                    m_pCurrentTransfer->m_transferCount);
       }
       else
       {
         // dummy data source
-        DMASPI_PRINT(("  dummy source\n"));
+        //DMASPI_PRINT(("  dummy source\n"));
         txChannel_()->source(m_pCurrentTransfer->m_fill);
         txChannel_()->transferCount(m_pCurrentTransfer->m_transferCount);
       }
-
+      noInterrupts();
       pre_cs();
 
       // Select Chip
@@ -497,7 +500,6 @@ class AbstractDmaSpi
       {
         m_Spi.beginTransaction(SPISettings());
       }
-
       post_cs();
     }
 
