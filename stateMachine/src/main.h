@@ -8,6 +8,7 @@
 #include <ChipSelect.h>
 #include <imu.h>
 #include <tests.h>
+#include <packet.h>
 
 #define DEBUG true
 

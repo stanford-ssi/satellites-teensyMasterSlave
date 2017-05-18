@@ -21,6 +21,7 @@ void setup() {
   analogReadResolution(16);
   SPI2.begin();
   SPI.begin(); // For dma
+  imuSetup();
   dmaSetup();
   state = IDLE_STATE;
 

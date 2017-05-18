@@ -6,9 +6,9 @@ void testDmaStop() {
       DMASPI0.stop();
     }
     assert(DMASPI0.stopped());
-    debugPrintf("Booting up dma\n");
+    //debugPrintf("Booting up dma\n");
     DMASPI0.start();
-    trx = DmaSpi::Transfer((const unsigned uint8_t *) nullptr, IMU_BUFFER_SIZE / 100, imuSamples, 0xff);
+    trx = DmaSpi::Transfer((const unsigned uint8_t *) nullptr, DMASIZE / 100, dmaDest, 0xff);
     DMASPI0.registerTransfer(trx);
     while (trx.busy()) {
     }
@@ -17,32 +17,33 @@ void testDmaStop() {
     assert(DMASPI0.stopped());
     for (int i = 0; i < 5; i++) {
         DMASPI0.start();
-        Serial.println("DMA started!\n");
-        trx = DmaSpi::Transfer((const unsigned uint8_t *) nullptr, IMU_BUFFER_SIZE, imuSamples, 0xff);
+        //Serial.println("DMA started!\n");
+        trx = DmaSpi::Transfer((const unsigned uint8_t *) nullptr, DMASIZE / 100, dmaDest, 0xff);
         DMASPI0.registerTransfer(trx);
         delay(1);
-        debugPrintf("DMA state before stop: %d\n", DMASPI0.state_);
+        //debugPrintf("DMA state before stop: %d\n", DMASPI0.state_);
+        assert(DMASPI0.running());
         DMASPI0.stop();
-        debugPrintf("DMA state: %d\n", DMASPI0.state_);
+        //debugPrintf("DMA state: %d\n", DMASPI0.state_);
         assert(DMASPI0.stopped());
         assert(trx.busy());
         assert(trx.m_state == DmaSpi::Transfer::error);
     }
     DMASPI0.start();
-    assert(DMASPI0.stopped());
+    assert(DMASPI0.running());
 }
 
 void testBreakingLoop() {
     unsigned int startTimeCheck = micro;
     for (int i = 0; !(SPI2_SR & SPI_SR_TCF); i++) {
-        if (i > 100000) {
+        if (i > 10000) {
             debugPrintf("Note: loop broken\n"); // Test guaranteed termination on loop
             break;
         }
-    }
+    } // About 800 micros
     unsigned int timeSpent = micro - startTimeCheck;
     debugPrintf("Time spent: %d\n", (unsigned int) timeSpent);
-    assert(timeSpent > 500);
+    assert(timeSpent > 100);
 }
 
 void runTests() {

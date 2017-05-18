@@ -1,7 +1,7 @@
-#include <t3spi.h>
-
 #ifndef PACKET_H
 #define PACKET_H
+#include <t3spi.h>
+
 //Initialize T3SPI class as SPI_SLAVE
 extern T3SPI SPI_SLAVE;
 extern volatile unsigned int packetsReceived;

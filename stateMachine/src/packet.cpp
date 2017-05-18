@@ -79,7 +79,7 @@ void handlePacket() {
 
   // Check for erroneous data
   if (transmitting || outPointer != 0) {
-    debugPrintln("I'm already transmitting!");
+    debugPrintln("Error: I'm already transmitting!");
     // No response because we're presumably already transmitting
     // responseBadPacket(INTERNAL_ERROR);
     return;
