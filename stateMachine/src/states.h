@@ -10,8 +10,6 @@
 // state must be between 0 and MAX_STATE
 #define MAX_STATE 4
 
-#define PERFORM_IMU_COMMAND 0
-
 extern volatile uint16_t state;
 
 #endif

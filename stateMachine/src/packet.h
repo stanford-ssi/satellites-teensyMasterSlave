@@ -35,16 +35,19 @@ extern volatile bool transmitting;
 #define OUT_PACKET_OVERHEAD (OUT_PACKET_BODY_END_SIZE + OUT_PACKET_BODY_BEGIN)
 
 // Commands
+#define MIN_COMMAND 0
 #define COMMAND_ECHO 0
 #define COMMAND_STATUS 1
 #define COMMAND_IDLE 2
 #define COMMAND_SHUTDOWN 3
+#define COMMAND_IMU 4
+#define MAX_COMMAND 4
 
 // Response Headers
 #define MIN_HEADER 0
-#define MAX_HEADER 1
 #define RESPONSE_OK 0
 #define RESPONSE_BAD_PACKET 1
+#define MAX_HEADER 1
 
 // Error numbers
 #define INVALID_BORDER 0

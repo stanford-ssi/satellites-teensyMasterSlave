@@ -13,6 +13,21 @@ void dmaSetup() {
     DMASPI0.start();
 }
 
+void clearDma() {
+    assert(trx.m_state != DmaSpi::Transfer::State::error);
+    trx = DmaSpi::Transfer(nullptr, 0, nullptr);
+    assert(!DMASPI0.errored());
+    if (DMASPI0.busy()) {
+        DMASPI0.stop();
+    }
+    assert(DMASPI0.errored());
+    // TODO: handle halting time on dmaspi
+    if (DMASPI0.errored() || DMASPI0.stopped()) {
+        DMASPI0.start();
+    }
+    assert(DMASPI0.stopped());
+}
+
 void setSrc()
 {
   for (size_t i = 0; i < DMASIZE; i++)

@@ -18,6 +18,7 @@ void setup() {
   SPI.beginTransaction(settingsA);
   delay(1000);
   digitalWrite(CHIPSELECT, HIGH);
+  rando();
 }
 
 void send16(uint16_t to_send, bool verbos) {

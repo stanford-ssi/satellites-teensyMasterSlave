@@ -1,11 +1,13 @@
+#ifndef MAIN_H
+#define MAIN_H
+
 #include <Wire.h>
 #include <ssiSpi.h>
 #include <string.h>
 #include <dma.h>
 #include <ChipSelect.h>
-
-#ifndef MAIN_H
-#define MAIN_H
+#include <imu.h>
+#include <tests.h>
 
 #define DEBUG true
 
@@ -23,6 +25,7 @@
 extern volatile unsigned int timeAlive;
 extern volatile unsigned int lastLoopTime;
 extern volatile int errors;
+extern elapsedMicros micro;
 
 bool assertionError(const char* file, int line, const char* assertion);
 void heartbeat(void);

@@ -23,16 +23,9 @@ void setup() {
   SPI.begin(); // For dma
   dmaSetup();
   state = IDLE_STATE;
-  unsigned int startTimeCheck = micro;
-  for (int i = 0; !(SPI2_SR & SPI_SR_TCF); i++) {
-      if (i > 100000) {
-          debugPrintf("Note: loop broken\n"); // Test guaranteed termination on loop
-          break;
-      }
-  }
-  unsigned int timeSpent = micro - startTimeCheck;
-  debugPrintf("Time spent: %d\n", (unsigned int) timeSpent);
-  assert(timeSpent > 500);
+
+  delay(1000);
+  runTests();
 }
 
 bool assertionError(const char* file, int line, const char* assertion) {
@@ -60,7 +53,7 @@ void taskIdle(void) {
     }
 
     // TODO: error recovery on dma error
-    assert(trx.m_state != DmaSpi::Transfer::State::error);
+
     if (!trx.busy()) {
 
         if (trx.done()) {

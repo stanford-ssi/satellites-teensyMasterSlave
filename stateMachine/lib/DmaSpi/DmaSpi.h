@@ -265,6 +265,8 @@ class AbstractDmaSpi
       }
     }
 
+    static bool errored() { return (state_ == eError); }
+
     /** \brief See if the DMA SPI is currently switching from running to stopped state
      * \return true if the DMA SPI is switching from running to stopped state
      * \see start()
@@ -318,7 +320,7 @@ class AbstractDmaSpi
       return m_devNull;
     }
 
-  protected:
+  public:
     enum EState
     {
       eStopped,
