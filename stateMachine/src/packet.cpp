@@ -184,26 +184,36 @@ void responseBadPacket(uint16_t flag) {
     setupTransmission(RESPONSE_BAD_PACKET, bodySize);
 }
 
-// Call this after body of transmission is filled
-void setupTransmission(uint16_t header, unsigned int bodyLength) {
+void setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uint16_t bodyChecksum, volatile uint16_t *packetBuffer, volatile bool& isTransmitting, volatile unsigned int& packetOutPointer, volatile uint16_t& packetTransmissionSize) {
     assert(header <= MAX_HEADER);
-    assert(bodyLength <= outBufferLength - OUT_PACKET_OVERHEAD);
+    assert(bodyLength <= 500);
     assert(bodyLength > 0);
-    outPointer = 0;
-    transmissionSize = bodyLength + OUT_PACKET_OVERHEAD;
-    outData[0] = FIRST_WORD;
-    outData[1] = transmissionSize;
-    outData[2] = header;
-    assert(outBody[0] != 0xbeef);
-    assert(outBody[bodyLength - 1] != 0xbeef);
-    uint16_t checksum = transmissionSize + header;
-    for (int i = OUT_PACKET_BODY_BEGIN; i < transmissionSize - OUT_PACKET_BODY_END_SIZE; i++) {
-      checksum += outData[i];
-    }
-    outData[transmissionSize - 2] = checksum;
-    outData[transmissionSize - 1] = LAST_WORD;
+    packetOutPointer = 0;
+    packetTransmissionSize = bodyLength + OUT_PACKET_OVERHEAD;
+    packetBuffer[0] = FIRST_WORD;
+    packetBuffer[1] = packetTransmissionSize;
+    packetBuffer[2] = header;
+    assert(packetBuffer[OUT_PACKET_BODY_BEGIN] != 0xbeef);
+    assert(packetBuffer[OUT_PACKET_BODY_BEGIN + bodyLength - 1] != 0xbeef);
+    uint16_t checksum = bodyChecksum + packetTransmissionSize + header;
+    packetBuffer[packetTransmissionSize - 2] = checksum;
+    packetBuffer[packetTransmissionSize - 1] = LAST_WORD;
     //debugPrintf("Sending checksum: %x\n", checksum);
-    transmitting = true;
+    isTransmitting = true;
+}
+
+// Call this after body of transmission is filled
+void setupTransmissionWithBuffer(uint16_t header, unsigned int bodyLength, volatile uint16_t *packetBuffer, volatile bool& isTransmitting, volatile unsigned int& packetOutPointer, volatile uint16_t& packetTransmissionSize) {
+    packetTransmissionSize = bodyLength + OUT_PACKET_OVERHEAD;
+    uint16_t bodyChecksum = packetTransmissionSize + header;
+    for (unsigned int i = OUT_PACKET_BODY_BEGIN; i < (unsigned int) (packetTransmissionSize - OUT_PACKET_BODY_END_SIZE); i++) {
+      bodyChecksum += packetBuffer[i];
+    }
+    setupTransmissionWithChecksum(header, bodyLength, bodyChecksum, packetBuffer, isTransmitting, packetOutPointer, packetTransmissionSize);
+}
+
+void setupTransmission(uint16_t header, unsigned int bodyLength){
+    setupTransmissionWithBuffer(header, bodyLength, outData, transmitting, outPointer, transmissionSize);
 }
 
 void clearBuffer(void) {

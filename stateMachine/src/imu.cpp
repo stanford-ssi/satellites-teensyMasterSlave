@@ -1,7 +1,9 @@
 #include <main.h>
-volatile uint16_t imuSamples[IMU_BUFFER_SIZE];
-volatile uint16_t imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD];
+// Add some extra space on the end in case we overflow
+volatile uint16_t imuSamples[IMU_BUFFER_SIZE + 10];
+volatile uint16_t imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
 volatile uint16_t *imuDumpPacketBody = imuDumpPacket + OUT_PACKET_BODY_BEGIN;
+volatile uint16_t imuPacketChecksum = 0;
 volatile unsigned int imuPacketBodyPointer = 0;
 volatile bool imuPacketReady = false;
 
@@ -28,14 +30,29 @@ void checkDataDump() {
     assert(imuDataPointer % IMU_SAMPLE_SIZE == 0);
     if ((imuPacketBodyPointer != IMU_DATA_DUMP_SIZE) && imuSentDataPointer != imuDataPointer) {
         for (int i = 0; i < IMU_NUM_CHANNELS; i++) {
-            imuDumpPacketBody[imuPacketBodyPointer] = imuSamples[imuSentDataPointer];
+            uint16_t sample = imuSamples[imuSentDataPointer];
+            imuPacketChecksum += sample;
+            imuDumpPacketBody[imuPacketBodyPointer] = sample;
             imuPacketBodyPointer++;
             imuSentDataPointer++;
         }
     }
+    imuSentDataPointer = imuSentDataPointer % IMU_BUFFER_SIZE;
+    assert(imuPacketBodyPointer <= IMU_DATA_DUMP_SIZE);
+    if (imuPacketBodyPointer >= IMU_DATA_DUMP_SIZE) {
+        noInterrupts();
+        //////////////////////////////imuDumpPacket[] = ;
+        imuPacketReady = true;
+        digitalWriteFast(IMU_DATA_READY_PIN, HIGH);
+        interrupts();
+    }
 }
 
 bool shouldSample() {
+    if ((imuDataPointer + IMU_SAMPLE_SIZE) % IMU_BUFFER_SIZE == imuSentDataPointer) {
+        // Buffer is full
+        sampling = false;
+    }
     if (!sampling) {
         return false;
     }
@@ -77,19 +94,31 @@ void taskIMU() {
         sample();
     }
     checkDataDump();
+    checkDataDump();
+}
+
+void imuPacketSent() {
+    if (assert(imuPacketReady == true)) {
+        imuPacketChecksum = 0;
+        imuPacketBodyPointer = 0;
+        imuPacketReady = false;
+        imuPacketChecksum = 0;
+    }
 }
 
 void enterIMU() {
+    digitalWriteFast(IMU_DATA_READY_PIN, LOW);
+    imuPacketChecksum = 0;
     imuPacketReady = false;
-    imuSentDataPointer;
+    imuSentDataPointer = 0;
     imuDataPointer = 0;
     timeSinceLastRead = 0;
-    digitalWrite(IMU_CS_PIN, HIGH);
+    digitalWriteFast(IMU_CS_PIN, HIGH);
     sampling = true;
 }
 
 void leaveIMU() {
-    // These are all optional
+    digitalWriteFast(IMU_DATA_READY_PIN, LOW);
     imuPacketReady = false;
     sampling = false;
     imuDataPointer = 0;

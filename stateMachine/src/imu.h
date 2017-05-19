@@ -10,10 +10,12 @@
 #define IMU_SAMPLE_FREQUENCY 5000 // Hz
 #define IMU_SAMPLE_PERIOD 1000000/IMU_SAMPLE_FREQUENCY // micros
 #define IMU_CS_PIN 6
+#define IMU_DATA_READY_PIN 7
 
 // Only variable visible should be packet related
 extern volatile bool imuPacketReady;
-extern volatile uint16_t imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD];
+extern volatile uint16_t imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
 
 void imuSetup();
+void imuPacketSent();
 #endif // IMU
