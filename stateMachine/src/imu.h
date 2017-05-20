@@ -15,7 +15,10 @@
 // Only variable visible should be packet related
 extern volatile bool imuPacketReady;
 extern volatile uint16_t imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
+extern volatile uint16_t imuPacketChecksum;
 
 void imuSetup();
 void imuPacketSent();
+void enterIMU();
+void leaveIMU();
 #endif // IMU

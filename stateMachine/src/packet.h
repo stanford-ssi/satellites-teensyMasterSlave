@@ -41,25 +41,23 @@ extern volatile bool transmitting;
 #define COMMAND_IDLE 2
 #define COMMAND_SHUTDOWN 3
 #define COMMAND_IMU 4
-#define MAX_COMMAND 4
+#define COMMAND_IMU_DUMP 5
+#define MAX_COMMAND 5
 
 // Response Headers
 #define MIN_HEADER 0
 #define RESPONSE_OK 0
 #define RESPONSE_BAD_PACKET 1
-#define MAX_HEADER 1
+#define RESPONSE_IMU_DATA 2
+#define MAX_HEADER 2
 
 // Error numbers
 #define INVALID_BORDER 0
 #define INVALID_CHECKSUM 1
 #define INTERNAL_ERROR 2
 #define INVALID_COMMAND 3
+#define DATA_NOT_READY 4
 
 void packet_setup(void);
-void setupTransmission(uint16_t header, unsigned int bodyLength);
-void response_echo();
-void response_status();
-void responseBadPacket(uint16_t flag);
-void create_response();
 
 #endif

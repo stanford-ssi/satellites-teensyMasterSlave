@@ -8,6 +8,10 @@ uint16_t echo[PACKET_BODY_LENGTH] = {0x0, 0xbbbb};
 uint16_t stat[PACKET_BODY_LENGTH] = {0x1, 0xaaaa};
 uint16_t idle_[PACKET_BODY_LENGTH] = {0x2, 0xcccc};
 uint16_t shutdown_[PACKET_BODY_LENGTH] = {0x3, 0xdddd};
+uint16_t enterImu[PACKET_BODY_LENGTH] = {0x4, 0xcccc};
+uint16_t getImuData[PACKET_BODY_LENGTH] = {0x5, 0xeeee};
+
+void rando();
 
 SPISettings settingsA(6250000, MSBFIRST, SPI_MODE0);
 void setup() {
@@ -18,7 +22,7 @@ void setup() {
   SPI.beginTransaction(settingsA);
   delay(1000);
   digitalWrite(CHIPSELECT, HIGH);
-  rando();
+  //rando();
 }
 
 void send16(uint16_t to_send, bool verbos) {
@@ -52,7 +56,11 @@ void transmitH(uint16_t *buf, bool verbos) {
   }
   send16(checksum, verbos);
   send16(0x4321, verbos);
-  for (int i = 0; i < 30; i++) {
+  int numIters = 30;
+  if (buf == getImuData) {
+    numIters = 110;
+  }
+  for (int i = 0; i < numIters; i++) {
     send16(0xffff, verbos);
   }
   if(verbos) {
@@ -86,16 +94,19 @@ void rando() {
   Serial.println("begin random");
   int i = 0;
   while (Serial.available() <= 0) {
-    int nextCommand = random(4);
+    int nextCommand = random(3);
     if (nextCommand == 0) {
       transmitH(echo, false);
     } else if (nextCommand == 1) {
       transmitH(stat, false);
     } else if (nextCommand == 2) {
       transmitH(idle_, false);
-    } else if (nextCommand == 3) {
-      transmitH(shutdown_, false);
+    } else {
+      return;
+    }/*else if (nextCommand == 3) {
     }
+      transmitH(shutdown_, false);
+    }*/
     i++;
   }
   Serial.printf("end random, send %d packets\n", i);
@@ -114,8 +125,10 @@ void loop() {
       } else if (incomingByte == '3') {
         transmit(idle_);
       } else if (incomingByte == '4') {
-        transmit(shutdown_);
+        transmit(enterImu);
       } else if (incomingByte == '5') {
+        transmit(getImuData);
+      } else if (incomingByte == '6') {
         transmitCrappy(echo);
       } else if (incomingByte == 'r') {
         while (Serial.available() > 0) {

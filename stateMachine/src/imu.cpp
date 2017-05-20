@@ -1,34 +1,41 @@
 #include <main.h>
-// Add some extra space on the end in case we overflow
-volatile uint16_t imuSamples[IMU_BUFFER_SIZE + 10];
+
+// Imu samples go here
+// These are processed on the same main thread so hopefully no race conditions
+// Indexes into imuSamples; Marks index of next data point to transmit to audacy
+// If sentDataPointer == dataPointer, buffer is empty
+// If dataPointer == sentDataPointer - IMU_SAMPLE_SIZE, buffer is full
+volatile unsigned int imuSentDataPointer = 0;
+volatile unsigned int imuDataPointer = 0; // Marks index of next place to read into
+volatile uint16_t imuSamples[IMU_BUFFER_SIZE + 10]; // Add some extra space on the end in case we overflow
+volatile bool sampling = false;
+elapsedMicros timeSinceLastRead;
+
+// This packet ships out directly to audacy
 volatile uint16_t imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
 volatile uint16_t *imuDumpPacketBody = imuDumpPacket + OUT_PACKET_BODY_BEGIN;
 volatile uint16_t imuPacketChecksum = 0;
 volatile unsigned int imuPacketBodyPointer = 0;
 volatile bool imuPacketReady = false;
 
-// These are processed on the same main thread so hopefully no race conditions
-// Indexes into imuSamples; Marks index of next data point to transmit to audacy
-volatile unsigned int imuSentDataPointer = 0;
-volatile unsigned int imuDataPointer = 0; // Marks index of next place to read
-// If sentDataPointer == dataPointer, buffer is empty
-// If dataPointer == sentDataPointer - IMU_SAMPLE_SIZE, buffer is full
-
-volatile bool sampling = false;
-elapsedMicros timeSinceLastRead;
-volatile int samplePointer = 0;
+// Telemetry
 volatile unsigned int imuSamplesRead = 0;
 volatile unsigned int imuSamplesQueued = 0;
 
 // Runs in main's setup()
 void imuSetup() {
     pinMode(IMU_CS_PIN, OUTPUT);
+    for (int i = 0; i < 10; i++) {
+        imuSamples[IMU_BUFFER_SIZE + i] = 0xbeef;
+        imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + i] = 0xbeef;
+    }
 }
 
 void checkDataDump() {
     assert(imuSentDataPointer % IMU_SAMPLE_SIZE == 0);
     assert(imuDataPointer % IMU_SAMPLE_SIZE == 0);
-    if ((imuPacketBodyPointer != IMU_DATA_DUMP_SIZE) && imuSentDataPointer != imuDataPointer) {
+    assert((imuPacketBodyPointer < IMU_DATA_DUMP_SIZE) == imuPacketReady);
+    if ((imuPacketBodyPointer < IMU_DATA_DUMP_SIZE) && imuSentDataPointer != imuDataPointer) {
         for (int i = 0; i < IMU_NUM_CHANNELS; i++) {
             uint16_t sample = imuSamples[imuSentDataPointer];
             imuPacketChecksum += sample;
@@ -40,8 +47,9 @@ void checkDataDump() {
     imuSentDataPointer = imuSentDataPointer % IMU_BUFFER_SIZE;
     assert(imuPacketBodyPointer <= IMU_DATA_DUMP_SIZE);
     if (imuPacketBodyPointer >= IMU_DATA_DUMP_SIZE) {
+        // Prepare packet!
         noInterrupts();
-        //////////////////////////////imuDumpPacket[] = ;
+        //setupTransmissionWithChecksum(RESPONSE_IMU_DATA, IMU_DATA_DUMP_SIZE, imuPacketChecksum, imuDumpPacket);
         imuPacketReady = true;
         digitalWriteFast(IMU_DATA_READY_PIN, HIGH);
         interrupts();
@@ -56,7 +64,7 @@ bool shouldSample() {
     if (!sampling) {
         return false;
     }
-    assert(timeSinceLastRead > 1.2 * IMU_SAMPLE_PERIOD);
+    assert(timeSinceLastRead > 1.05 * IMU_SAMPLE_PERIOD);
     if (!(assert(timeSinceLastRead > 2 * IMU_SAMPLE_PERIOD))) { // ruh roh
         timeSinceLastRead = 0;
         return true;
@@ -74,12 +82,12 @@ void sample() {
     for (int i = 0; i < IMU_NUM_CHANNELS; i++) {
         uint16_t channelRead = SPI2.transfer16(0xffff);
         (void) channelRead; // TODO: right now we log increasing counter to check correct circular buffer
-        imuSamples[samplePointer] = imuSamplesRead;
-        samplePointer++;
+        imuSamples[imuDataPointer] = imuSamplesRead;
+        imuDataPointer++;
         imuSamplesRead++;
     }
-    assert(samplePointer <= IMU_BUFFER_SIZE);
-    if (samplePointer >= IMU_BUFFER_SIZE) {
+    assert(imuDataPointer <= IMU_BUFFER_SIZE);
+    if (imuDataPointer >= IMU_BUFFER_SIZE) {
         sampling = false;
     }
     digitalWrite(IMU_CS_PIN, HIGH);
@@ -87,9 +95,11 @@ void sample() {
 
 // Runs in main loop
 void taskIMU() {
-    assert (samplePointer % IMU_SAMPLE_SIZE == 0);
-    assert (samplePointer <= IMU_BUFFER_SIZE);
-    assert (!(sampling && samplePointer >= IMU_BUFFER_SIZE));
+    assert (imuSamples[IMU_BUFFER_SIZE] == 0xbeef);
+    assert (imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD] == 0xbeef);
+    assert (imuDataPointer % IMU_SAMPLE_SIZE == 0);
+    assert (imuDataPointer <= IMU_BUFFER_SIZE);
+    assert (!(sampling && (imuDataPointer >= IMU_BUFFER_SIZE)));
     if (shouldSample()) {
         sample();
     }
@@ -98,7 +108,7 @@ void taskIMU() {
 }
 
 void imuPacketSent() {
-    if (assert(imuPacketReady == true)) {
+    if (assert(imuPacketReady)) {
         imuPacketChecksum = 0;
         imuPacketBodyPointer = 0;
         imuPacketReady = false;
@@ -113,6 +123,7 @@ void enterIMU() {
     imuSentDataPointer = 0;
     imuDataPointer = 0;
     timeSinceLastRead = 0;
+    imuPacketBodyPointer = 0;
     digitalWriteFast(IMU_CS_PIN, HIGH);
     sampling = true;
 }
