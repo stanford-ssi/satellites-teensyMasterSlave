@@ -42,6 +42,9 @@ void heartbeat() {
     debugPrintf("%d errors, bugs %d, last loop %d micros", errors, bugs, lastLoopTime);
     debugPrintf(", last state %d, last read %d", lastLoopState, lastAnalogRead);
     debugPrintf(", completed transfers %d, %d loops, time alive %d\n", completedDmaTransfers, numIdles, timeAlive);
+    if (state == IMU_STATE) {
+        imuHeartbeat();
+    }
 }
 
 void taskIdle(void) {
@@ -74,6 +77,8 @@ void checkTasks(void) {
     assert(state <= MAX_STATE);
     if (state == IDLE_STATE) {
         taskIdle();
+    } else if (state == IMU_STATE) {
+        taskIMU();
     }
 
     // Save this into a long because elapsedMillis is not guaranteed in interrupts

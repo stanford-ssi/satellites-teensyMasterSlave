@@ -21,4 +21,6 @@ void imuSetup();
 void imuPacketSent();
 void enterIMU();
 void leaveIMU();
+void taskIMU();
+void imuHeartbeat();
 #endif // IMU

@@ -34,7 +34,7 @@ void imuSetup() {
 void checkDataDump() {
     assert(imuSentDataPointer % IMU_SAMPLE_SIZE == 0);
     assert(imuDataPointer % IMU_SAMPLE_SIZE == 0);
-    assert((imuPacketBodyPointer < IMU_DATA_DUMP_SIZE) == imuPacketReady);
+    assert((imuPacketBodyPointer == IMU_DATA_DUMP_SIZE) == imuPacketReady);
     if ((imuPacketBodyPointer < IMU_DATA_DUMP_SIZE) && imuSentDataPointer != imuDataPointer) {
         for (int i = 0; i < IMU_NUM_CHANNELS; i++) {
             uint16_t sample = imuSamples[imuSentDataPointer];
@@ -133,4 +133,8 @@ void leaveIMU() {
     imuPacketReady = false;
     sampling = false;
     imuDataPointer = 0;
+}
+
+void imuHeartbeat() {
+    Serial.printf("IMU front of buffer %d, back of buffer %d, packet ready? %d, chksum %d, packet pointer %d, sampling %d\n");
 }
