@@ -47,6 +47,8 @@ void heartbeat() {
         imuHeartbeat();
     } else if (state == TRACKING_STATE) {
         trackingHeartbeat();
+    } else if (state == CALIBRATION_STATE) {
+        calibrationHeartbeat();
     }
 }
 
@@ -86,6 +88,8 @@ void checkTasks(void) {
         taskIMU();
     } else if (state == TRACKING_STATE) {
         taskTracking();
+    } else if (state == CALIBRATION_STATE) {
+        taskCalibration();
     }
 
     // Save this into a long because elapsedMillis is not guaranteed in interrupts

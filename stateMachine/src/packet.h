@@ -42,8 +42,9 @@ extern volatile bool transmitting;
 #define COMMAND_SHUTDOWN 3
 #define COMMAND_IMU 4
 #define COMMAND_IMU_DUMP 5
-#define COMMAND_POINT_TRACK 6
-#define MAX_COMMAND 6
+#define COMMAND_CALIBRATE 6
+#define COMMAND_POINT_TRACK 7
+#define MAX_COMMAND 7
 
 // Response Headers
 #define MIN_HEADER 0

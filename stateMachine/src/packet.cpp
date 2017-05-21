@@ -133,6 +133,8 @@ void leaveCurrentState() {
         leaveIMU();
     } else if (state == TRACKING_STATE) {
         leaveTracking();
+    } else if (state == CALIBRATION_STATE) {
+        leaveCalibration();
     }
 }
 
@@ -156,6 +158,11 @@ void create_response() {
         leaveCurrentState();
         state = TRACKING_STATE;
         enterTracking();
+        response_status();
+    } else if (command == COMMAND_CALIBRATE) {
+        leaveCurrentState();
+        state = CALIBRATION_STATE;
+        enterCalibration();
         response_status();
     } else if (command == COMMAND_IMU) {
         leaveCurrentState();
