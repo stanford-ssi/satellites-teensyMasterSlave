@@ -1,0 +1,7 @@
+slave 11 to 12 loopback (testing)
+ground to ground
+slave 0 to master 12
+slave 1 to master 11
+slave 32 to master 13
+slave 31 to master 16
+slave 44 to 43 loopback

@@ -49,7 +49,9 @@ void heartbeat() {
 
 void taskIdle(void) {
     // I can't put pins on SPI2 for now so just pray it works?
-    SPI2.transfer16(0xbeef);
+    uint16_t rando = random(60000);
+    uint16_t receivedTransfer = SPI2.transfer16(rando);
+    assert(receivedTransfer == rando);
     lastAnalogRead = analogRead(14);
     volatile int garbage = 0;
     for (int i = 0; i < 100000; i++) {
