@@ -45,6 +45,8 @@ void heartbeat() {
     debugPrintf(", completed transfers %d, %d loops, time alive %d\n", completedDmaTransfers, numIdles, timeAlive);
     if (state == IMU_STATE) {
         imuHeartbeat();
+    } else if (state == TRACKING_STATE) {
+        trackingHeartbeat();
     }
 }
 
@@ -82,6 +84,8 @@ void checkTasks(void) {
         taskIdle();
     } else if (state == IMU_STATE) {
         taskIMU();
+    } else if (state == TRACKING_STATE) {
+        taskTracking();
     }
 
     // Save this into a long because elapsedMillis is not guaranteed in interrupts
