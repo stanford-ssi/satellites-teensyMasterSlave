@@ -58,7 +58,7 @@ void transmitH(uint16_t *buf, bool verbos) {
   send16(0x4321, verbos);
   int numIters = 30;
   if (buf == getImuData) {
-    numIters = 110;
+    numIters = 310;
   }
   for (int i = 0; i < numIters; i++) {
     send16(0xffff, verbos);
