@@ -86,13 +86,10 @@ void packetReceived() {
   packetsReceived++;
 
   handlePacket();
-  /*noInterrupts();
-  digitalWrite(PACKET_RECEIVED_TRIGGER, HIGH);
-  digitalWrite(PACKET_RECEIVED_TRIGGER, LOW);
-  interrupts();*/
 }
 
 void handlePacket() {
+  unsigned int startTimePacketPrepare = micros();
   //debugPrintln("Received a packet!");
   assert(packetPointer == PACKET_SIZE);
 
@@ -121,6 +118,9 @@ void handlePacket() {
       responseBadPacket(INVALID_CHECKSUM);
       return;
   }
+
+  unsigned int endTimePacketPrepare = micros();
+  assert (endTimePacketPrepare - startTimePacketPrepare <= 1);
 
   create_response();
 }

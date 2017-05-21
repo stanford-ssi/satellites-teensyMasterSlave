@@ -3,6 +3,7 @@
 // Imu code includes a lot of buffers moving around
 // Currently not circular
 // Very bug prone; needs more testing
+// Maybe add timestamps?
 
 // Imu samples go here
 // These are processed on the same main thread so hopefully no race conditions
@@ -68,7 +69,7 @@ bool shouldSample() {
     if (!sampling) {
         return false;
     }
-    assert(timeSinceLastRead < 1.01 * IMU_SAMPLE_PERIOD);
+    assert(timeSinceLastRead < 1.05 * IMU_SAMPLE_PERIOD);
     if (!(assert(timeSinceLastRead < 2 * IMU_SAMPLE_PERIOD))) { // ruh roh
         timeSinceLastRead = 0;
         return true;
