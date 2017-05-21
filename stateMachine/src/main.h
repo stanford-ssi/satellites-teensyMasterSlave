@@ -9,6 +9,7 @@
 #include <imu.h>
 #include <tests.h>
 #include <packet.h>
+#include <tracking.h>
 
 #define DEBUG true
 

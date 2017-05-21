@@ -131,8 +131,8 @@ void leaveCurrentState() {
         //leaveIdle(); // Nothing to do here
     } else if (state == IMU_STATE) {
         leaveIMU();
-    } else if (state == ANOMALY_STATE) {
-        //leaveAnomaly(); // Nothing to do here
+    } else if (state == TRACKING_STATE) {
+        leaveTracking();
     }
 }
 
@@ -151,6 +151,11 @@ void create_response() {
     } else if (command == COMMAND_IDLE) {
         leaveCurrentState();
         state = IDLE_STATE;
+        response_status();
+    } else if (command == COMMAND_POINT_TRACK) {
+        leaveCurrentState();
+        state = TRACKING_STATE;
+        enterTracking();
         response_status();
     } else if (command == COMMAND_IMU) {
         leaveCurrentState();
