@@ -21,7 +21,7 @@
 #endif
 
 // Inspired by JPL power of ten document
-#define assert(e) (((e) || !DEBUG) ? (true) : assertionError(__FILE__, __LINE__, #e), false)
+#define assert(e) (((e) || !DEBUG) ? (true) : (assertionError(__FILE__, __LINE__, #e), false))
 
 extern volatile unsigned int timeAlive;
 extern volatile unsigned int lastLoopTime;

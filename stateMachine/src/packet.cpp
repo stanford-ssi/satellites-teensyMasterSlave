@@ -45,7 +45,7 @@ void packet_setup(void) {
 
     // Not sure what priority this should be; this shouldn't fire at the same time as IRQ_SPI0
     attachInterrupt(SLAVE_CHIP_SELECT, clearBuffer, FALLING);
-    attachInterrupt(PACKET_RECEIVED_PIN, handlePacket, FALLING);
+    //attachInterrupt(PACKET_RECEIVED_PIN, handlePacket, FALLING);
 
     // Low priority for pin 26 -- packet received interrupt
     NVIC_SET_PRIORITY(IRQ_PORTE, 144);
@@ -85,10 +85,11 @@ void packetReceived() {
   assert(packetPointer == PACKET_SIZE);
   packetsReceived++;
 
-  noInterrupts();
+  handlePacket();
+  /*noInterrupts();
   digitalWrite(PACKET_RECEIVED_TRIGGER, HIGH);
   digitalWrite(PACKET_RECEIVED_TRIGGER, LOW);
-  interrupts();
+  interrupts();*/
 }
 
 void handlePacket() {

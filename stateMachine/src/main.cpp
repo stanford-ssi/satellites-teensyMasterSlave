@@ -27,6 +27,7 @@ void setup() {
 
   delay(1000);
   runTests();
+  //debugPrintf("Hey %d\n", assert(state != IDLE_STATE));
 }
 
 bool assertionError(const char* file, int line, const char* assertion) {

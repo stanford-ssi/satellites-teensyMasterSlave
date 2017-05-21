@@ -35,7 +35,7 @@ void checkDataDump() {
     assert(imuSentDataPointer % IMU_SAMPLE_SIZE == 0);
     assert(imuDataPointer % IMU_SAMPLE_SIZE == 0);
     assert((imuPacketBodyPointer == IMU_DATA_DUMP_SIZE) == imuPacketReady);
-    if ((imuPacketBodyPointer < IMU_DATA_DUMP_SIZE) && imuSentDataPointer != imuDataPointer) {
+    if ((imuPacketBodyPointer < IMU_DATA_DUMP_SIZE) && (imuSentDataPointer % IMU_BUFFER_SIZE) != (imuDataPointer % IMU_BUFFER_SIZE)) {
         for (int i = 0; i < IMU_NUM_CHANNELS; i++) {
             uint16_t sample = imuSamples[imuSentDataPointer];
             imuPacketChecksum += sample;
@@ -64,8 +64,8 @@ bool shouldSample() {
     if (!sampling) {
         return false;
     }
-    assert(timeSinceLastRead > 1.05 * IMU_SAMPLE_PERIOD);
-    if (!(assert(timeSinceLastRead > 2 * IMU_SAMPLE_PERIOD))) { // ruh roh
+    assert(timeSinceLastRead < 1.05 * IMU_SAMPLE_PERIOD);
+    if (!(assert(timeSinceLastRead < 2 * IMU_SAMPLE_PERIOD))) { // ruh roh
         timeSinceLastRead = 0;
         return true;
     }
@@ -104,15 +104,16 @@ void taskIMU() {
         sample();
     }
     checkDataDump();
-    checkDataDump();
 }
 
 void imuPacketSent() {
-    if (assert(imuPacketReady)) {
+    if ((assert(imuPacketReady))) {
+        noInterrupts();
         imuPacketChecksum = 0;
         imuPacketBodyPointer = 0;
         imuPacketReady = false;
         imuPacketChecksum = 0;
+        interrupts();
     }
 }
 
@@ -136,5 +137,5 @@ void leaveIMU() {
 }
 
 void imuHeartbeat() {
-    Serial.printf("IMU front of buffer %d, back of buffer %d, packet ready? %d, chksum %d, packet pointer %d, sampling %d\n");
+    Serial.printf("IMU front of buffer %d, back of buffer %d, packet ready? %d, chksum %d, packet pointer %d, sampling %d, packet %d\n", imuDataPointer, imuSentDataPointer, imuPacketReady, imuPacketChecksum, imuPacketBodyPointer, sampling, imuPacketBodyPointer);
 }
