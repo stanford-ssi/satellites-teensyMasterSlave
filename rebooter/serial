@@ -1,0 +1,9 @@
+#!/usr/bin/python
+import os
+import sys
+import subprocess
+
+if sys.argv[1] == 'list':
+	subprocess.call("ls /dev/ttyACM*", shell=True)
+else:
+	subprocess.call("pio device monitor --port=/dev/ttyACM" + sys.argv[1] + " | tee " + sys.argv[1] + ".log", shell=True)
