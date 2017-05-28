@@ -52,7 +52,7 @@ void transmit(uint16_t *buf) {
 void transmitH(uint16_t *buf, bool verbos) {
   digitalWrite(CHIPSELECT, HIGH);
   digitalWrite(CHIPSELECT, LOW);
-  delayMicroseconds(80);
+  delayMicroseconds(20);
   send16(0x1234, verbos);
   uint16_t checksum = 0;
   for (int i = 0; i < PACKET_BODY_LENGTH; i++) {
@@ -84,7 +84,7 @@ void transmitH(uint16_t *buf, bool verbos) {
   if(verbos) {
     Serial.println("---------------------------------");
   }
-  delayMicroseconds(80);
+  delayMicroseconds(20);
   digitalWrite(CHIPSELECT, HIGH);
 }
 
