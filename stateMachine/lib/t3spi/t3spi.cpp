@@ -3,7 +3,7 @@
 // todo: consider swapping this out with kinetis.h
 #include "mk20dx128.h"
 #include "core_pins.h"
-#include "arduino.h"
+//#include "arduino.h"
 
 
 T3SPI::T3SPI() {

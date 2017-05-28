@@ -4,6 +4,7 @@ bool transmitMany = false;
 int bytesSent = 0;
 int CHIPSELECT = 16;
 int incomingByte = 0;
+int numError = 0;
 uint16_t echo[PACKET_BODY_LENGTH] = {0x0, 0xbbbb};
 uint16_t stat[PACKET_BODY_LENGTH] = {0x1, 0xaaaa};
 uint16_t idle_[PACKET_BODY_LENGTH] = {0x2, 0xcccc};
@@ -25,11 +26,12 @@ void setup() {
   //rando();
 }
 
-void send16(uint16_t to_send, bool verbos) {
+uint16_t send16(uint16_t to_send, bool verbos) {
   uint16_t dat = SPI.transfer16(to_send);
   if (verbos) {
     Serial.printf("Sent: %x, received: %x\n", to_send, dat);
   }
+  return dat;
 }
 
 void transmit(uint16_t *buf) {
@@ -60,7 +62,20 @@ void transmitH(uint16_t *buf, bool verbos) {
   if (buf == getImuData) {
     numIters = 310;
   }
+  uint16_t received;
   for (int i = 0; i < numIters; i++) {
+    received = send16(0xffff, verbos);
+    if (received == 0x1234) {
+      break;
+    }
+  }
+  if (received != 0x1234) {
+    Serial.println("bad");
+    numErrors++;
+  }
+  uint16_t len = send16(0xffff, verbos);
+  uint16_t reponseNumber = send16(0xffff, verbos);
+  for (int i = 0; i < len - 2; i++) {
     send16(0xffff, verbos);
   }
   if(verbos) {

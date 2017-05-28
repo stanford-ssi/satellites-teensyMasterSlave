@@ -15,3 +15,15 @@ void taskTracking() {
 
 void trackingHeartbeat() {
 }
+
+void enterCalibration() {
+}
+
+void leaveCalibration() {
+}
+
+void taskCalibration() {
+}
+
+void calibrationHeartbeat() {
+}

@@ -44,14 +44,17 @@ extern volatile bool transmitting;
 #define COMMAND_IMU_DUMP 5
 #define COMMAND_CALIBRATE 6
 #define COMMAND_POINT_TRACK 7
-#define MAX_COMMAND 7
+#define COMMAND_REPORT_TRACKING 8
+#define MAX_COMMAND 8
 
 // Response Headers
 #define MIN_HEADER 0
 #define RESPONSE_OK 0
 #define RESPONSE_BAD_PACKET 1
 #define RESPONSE_IMU_DATA 2
-#define MAX_HEADER 2
+#define RESPONSE_MIRROR_DATA 3
+#define RESPONSE_ADCS_REQUEST 4
+#define MAX_HEADER 4
 
 // Error numbers
 #define INVALID_BORDER 0
