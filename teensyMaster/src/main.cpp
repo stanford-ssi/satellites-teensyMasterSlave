@@ -5,7 +5,6 @@ int bytesSent = 0;
 int CHIPSELECT = 16;
 int incomingByte = 0;
 int numError = 0;
-int numIter = 0;
 uint16_t echo[PACKET_BODY_LENGTH] = {0x0, 0xbbbb};
 uint16_t stat[PACKET_BODY_LENGTH] = {0x1, 0xaaaa};
 uint16_t idle_[PACKET_BODY_LENGTH] = {0x2, 0xcccc};
@@ -132,8 +131,6 @@ void rando() {
 }
 
 void loop() {
-  Serial.printf("hey%d\n", numIter);
-  numIter++;
   // send data only when you receive data:
   if (Serial.available() > 0) {
       // read the incoming byte:
