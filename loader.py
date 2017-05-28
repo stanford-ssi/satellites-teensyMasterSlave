@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import RPi.GPIO as GPIO
 import time
 import subprocess
@@ -13,6 +14,10 @@ def reboot(pin, platformio_base, serialNumber):
 	GPIO.output(pin,GPIO.LOW)
 	time.sleep(1)
 	GPIO.output(pin,GPIO.HIGH)
+	print('-------------')
+	print("Serials available after killing ", platformio_base, ":")
+	subprocess.call("ls /dev/ttyACM*", shell=True)
+	print('-------------')
 	time.sleep(1)
 	subprocess.call("cd " + platformio_base + " && platformio run && cd ../ && ./teensy_loader_cli --mcu=TEENSY36 " + platformio_base + ".pioenvs/teensy36/firmware.hex", shell=True)
 	time.sleep(1)
