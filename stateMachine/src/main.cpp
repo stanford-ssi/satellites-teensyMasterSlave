@@ -11,7 +11,6 @@ volatile int bugs = 0;
 volatile unsigned int lastLoopTime = 0;
 volatile unsigned int lastLoopState = state;
 volatile unsigned int lastAnalogRead = 0;
-volatile unsigned int completedDmaTransfers = 0;
 volatile unsigned int numIdles = 0; // Mostly just to count % of loops that we need to clear dma buffer
 
 void setup() {
@@ -42,7 +41,7 @@ void heartbeat() {
     debugPrintf("transmitting %d, packetsReceived %d, ", transmitting, packetsReceived);
     debugPrintf("%d errors, bugs %d, last loop %d micros", errors, bugs, lastLoopTime);
     debugPrintf(", last state %d, last read %d", lastLoopState, lastAnalogRead);
-    debugPrintf(", completed transfers %d, %d loops, time alive %d\n", completedDmaTransfers, numIdles, timeAlive);
+    debugPrintf(", %d loops, time alive %d\n", numIdles, timeAlive);
     if (state == IMU_STATE) {
         imuHeartbeat();
     } else if (state == TRACKING_STATE) {
@@ -63,19 +62,6 @@ void taskIdle(void) {
         garbage += i;
     }
 
-    // TODO: error recovery on dma error
-
-    if (!trx.busy()) {
-
-        if (trx.done()) {
-            compareBuffers(dmaSrc, dmaDest);
-        }
-
-        trx = DmaSpi::Transfer((const unsigned uint8_t *) dmaSrc, DMASIZE, dmaDest);
-        clrDest((uint8_t*)dmaDest);
-        DMASPI0.registerTransfer(trx);
-        completedDmaTransfers++;
-    }
     numIdles++;
 }
 
