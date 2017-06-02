@@ -1,5 +1,12 @@
 #include <main.h>
 
+extern uint32_t backOfBuffer;
+
+void testDma() {
+    assert(backOfBuffer == 0);
+    assert(!dmaSampleReady());
+}
+
 void testBreakingLoop() {
     unsigned int startTimeCheck = micro;
     for (int i = 0; !(SPI2_SR & SPI_SR_TCF); i++) {
@@ -15,6 +22,7 @@ void testBreakingLoop() {
 
 void runTests() {
     if (DEBUG) {
+        testDma();
         testBreakingLoop();
     }
 }

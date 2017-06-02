@@ -2,6 +2,9 @@
 #include "main.h"
 #include "states.h"
 
+const volatile bool SPI2_LOOPBACK = false;
+const volatile bool DMA_TRIGGER_LOOPBACK = false; // pin 17 to 18
+
 IntervalTimer timer;
 volatile uint16_t state = SETUP_STATE;
 elapsedMicros micro = 0;
@@ -19,8 +22,9 @@ void setup() {
   packet_setup();
   analogReadResolution(16);
   SPI2.begin();
-  SPI.begin(); // For dma
   imuSetup();
+  pinMode(17, OUTPUT); // DMA loopback test
+  digitalWriteFast(17, HIGH);
   dmaSetup();
   state = IDLE_STATE;
 
@@ -40,7 +44,7 @@ void heartbeat() {
     debugPrintf("State %d,", state);
     debugPrintf("transmitting %d, packetsReceived %d, ", transmitting, packetsReceived);
     debugPrintf("%d errors, bugs %d, last loop %d micros", errors, bugs, lastLoopTime);
-    debugPrintf(", last state %d, last read %d", lastLoopState, lastAnalogRead);
+    debugPrintf(", last state %d, last read %d, dma offset %d", lastLoopState, lastAnalogRead, dmaGetOffset());
     debugPrintf(", %d loops, time alive %d\n", numIdles, timeAlive);
     if (state == IMU_STATE) {
         imuHeartbeat();
@@ -52,16 +56,26 @@ void heartbeat() {
 }
 
 void taskIdle(void) {
-    // I can't put pins on SPI2 for now so just pray it works?
     uint16_t rando = random(60000);
     uint16_t receivedTransfer = SPI2.transfer16(rando);
-    assert(receivedTransfer == rando);
+    assert(!SPI2_LOOPBACK || receivedTransfer == rando);
     lastAnalogRead = analogRead(14);
+    if (DMA_TRIGGER_LOOPBACK) {
+        assert(!dmaSampleReady());
+        for (int i = 0; i < DMA_SAMPLE_NUMAXES; i++) {
+            digitalWriteFast(17, LOW);
+            delayMicroseconds(100);
+            digitalWriteFast(17, HIGH);
+            delayMicroseconds(1000);
+        }
+        assert(dmaSampleReady());
+        dmaGetSample();
+        assert(!dmaSampleReady());
+    }
     volatile int garbage = 0;
-    for (int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 100000; i++) { // Do some work
         garbage += i;
     }
-
     numIdles++;
 }
 
