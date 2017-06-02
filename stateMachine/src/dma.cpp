@@ -68,11 +68,6 @@ void dmaSetup() {
 
     SPI.beginTransaction(spi_settings);
 
-    // for testing, pin 31 connected to 32, send t in serial monitor to initiate SPI transfer
-    const uint8_t trigger_pin_out = 31;
-    pinMode(trigger_pin_out, OUTPUT);
-    digitalWriteFast(trigger_pin_out, LOW);
-
     pinMode(trigger_pin, INPUT_PULLUP);
     volatile uint32_t *pin_config = portConfigRegister(trigger_pin);
     *pin_config |= PORT_PCR_IRQC(0b0010); // DMA on falling edge
