@@ -18,7 +18,7 @@ volatile unsigned int numIdles = 0; // Mostly just to count % of loops that we n
 
 void setup() {
   Serial.begin(115200);
-  timer.begin(heartbeat, 5000000); // Every 5 seconds
+  timer.begin(heartbeat, 3000000); // Every 3 seconds
   analogReadResolution(16);
   SPI2.begin();
   packet_setup();

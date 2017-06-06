@@ -21,6 +21,10 @@ uint32_t dmaGetOffset() {
     uint32_t dma_rx_pos = (uint32_t) dma_rx.destinationAddress();
     uint32_t offset;
     assert(dma_rx_pos >= rx_begin);
+    if (!(dma_rx_pos >= rx_begin)) {
+        debugPrintf("Start %d, currently %d\n", rx_begin, dma_rx_pos);
+    }
+
     uint32_t index = dma_rx_pos - rx_begin;
     if (index >= backOfBuffer) {
         offset = index - backOfBuffer;
@@ -53,7 +57,51 @@ void startSampling() { // Clears out old samples so the first sample you read is
     backOfBuffer = offset;
 }
 
-void dmaSetup() {
+void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phase-correct-PWM?styleid=2
+
+ FTM0_SC = 0;
+ FTM1_SC = 0;
+
+ analogWriteFrequency(22, 5000); // FTM0 channel 0
+ analogWriteFrequency(3, 20000); // FTM1 channel 0
+ FTM0_POL = 0;                  // Positive Polarity
+ FTM0_OUTMASK = 0xFF;           // Use mask to disable outputs
+ FTM0_CNTIN = 0;                // Counter initial value
+ FTM0_COMBINE = 0x00003333;     // COMBINE=1, COMP=1, DTEN=1, SYNCEN=1
+ FTM0_MODE = 0x01;              // Enable FTM0
+ FTM0_SYNC = 0x02;              // PWM sync @ max loading point enable
+ uint32_t mod = FTM0_MOD;
+ uint32_t mod2 = FTM1_MOD;
+ Serial.printf("mod %d, mod2 %d\n", mod, mod2);
+ Serial.printf("clock source %d, 2 %d\n", FTM0_SC, FTM1_SC);
+ FTM0_C0V = mod/4;                  // Combine mode, pulse-width controlled by...
+ FTM0_C1V = mod * 3/4;           //   odd channel.
+ FTM0_C2V = 0;                  // Combine mode, pulse-width controlled by...
+ FTM0_C3V = mod/2;           //   odd channel.
+ FTM0_SYNC |= 0x80;             // set PWM value update
+ FTM0_C0SC = 0x28;              // PWM output, edge aligned, positive signal
+ FTM0_C1SC = 0x28;              // PWM output, edge aligned, positive signal
+ FTM0_C2SC = 0x28;              // PWM output, edge aligned, positive signal
+ FTM0_C3SC = 0x28;              // PWM output, edge aligned, positive signal
+ FTM0_OUTMASK = 0x0;            // Turns on PWM output
+ analogWrite(3, 128);           // FTM1 50% duty cycle
+
+ FTM0_CONF = ((FTM0_CONF | FTM_CONF_GTBEEN) & ~(FTM_CONF_GTBEOUT));             // GTBEOUT 0 and GTBEEN 1
+ FTM1_CONF = ((FTM1_CONF | FTM_CONF_GTBEEN) & ~(FTM_CONF_GTBEOUT));             // GTBEOUT 0 and GTBEEN 1
+ //FTM1_CONF |= FTM_CONF_GTBEOUT;             // GTBEOUT 1
+
+ CORE_PIN22_CONFIG = PORT_PCR_MUX(4) | PORT_PCR_DSE | PORT_PCR_SRE;    //config teensy output port pins
+ CORE_PIN23_CONFIG = PORT_PCR_MUX(4) | PORT_PCR_DSE | PORT_PCR_SRE;   //config teensy output port pins
+ CORE_PIN9_CONFIG = PORT_PCR_MUX(4) | PORT_PCR_DSE | PORT_PCR_SRE;    //config teensy output port pins
+ CORE_PIN10_CONFIG = PORT_PCR_MUX(4) | PORT_PCR_DSE | PORT_PCR_SRE;   //config teensy output port pins
+
+ FTM0_CNT = 0;
+ FTM1_CNT = 0;
+
+ FTM0_CONF |= FTM_CONF_GTBEOUT;             // GTBEOUT 1
+}
+
+void dmaReceiveSetup() {
     Serial.println("Starting.");
 
     SPI.begin();
@@ -101,4 +149,12 @@ void dmaSetup() {
     dma_rx.enable();
     dma_tx.enable();
     dma_start_spi.enable();
+}
+
+void dmaSetup() {
+    debugPrintf("Setup up dma.\n");
+    dmaReceiveSetup();
+    debugPrintf("Dma setup complete. Setting up ftm timers.\n");
+    init_FTM0();
+    debugPrintf("FTM timer setup complete.\n");
 }

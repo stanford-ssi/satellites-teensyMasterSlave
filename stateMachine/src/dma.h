@@ -2,7 +2,7 @@
 #define DMA_H
 #include "main.h"
 
-#define DMASIZE 1000 // in uint32s
+#define DMASIZE 10000 // in uint32s
 #define DMA_SAMPLE_DEPTH 4 // bytes
 #define DMA_SAMPLE_NUMAXES 4 // uint32s
 
