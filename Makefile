@@ -1,2 +1,2 @@
 install:
-	cp -r libraries/* ~/Documents/Arduino/libraries/
+	./loader.py && ./serial 0
