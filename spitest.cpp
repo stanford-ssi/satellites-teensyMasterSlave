@@ -79,6 +79,13 @@ void setBuf(uint16_t* to_send, int& j, uint16_t val) {
     j++;
 }
 
+uint16_t getBuf(uint16_t* buf, int j) {
+    uint8_t * bytes = (uint8_t *) buf;
+    uint16_t val = ((uint16_t) bytes[2 * j]) << 8;
+    val += bytes[2 * j + 1];
+    return val;
+}
+
 void transmitH(uint16_t *buf, bool verbos) {
   digitalWrite(CHIPSELECT, HIGH);
   digitalWrite(CHIPSELECT, LOW);
@@ -99,12 +106,17 @@ void transmitH(uint16_t *buf, bool verbos) {
   int numIters = 300;
 
   memset(to_send + j, 0xff, 2 * numIters);
+  uint16_t to_send_copy[10000];
+  memcpy(to_send_copy, to_send, 2 * numIters + 100);
   wiringPiSPIDataRW(CHANNEL, (unsigned char *) to_send, 2 * (numIters));
 
   int i;
   for (i = 0; i < numIters; i++) {
       if (verbos) {
-          cout << "Received: " << to_send[i] << endl;
+          printf("Sent: %x, received %x\n", getBuf(to_send_copy, i), getBuf(to_send, i));
+      }
+      if (getBuf(to_send, i) == 0x4321) {
+          break;
       }
   }
 
