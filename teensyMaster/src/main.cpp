@@ -5,12 +5,20 @@ int bytesSent = 0;
 int CHIPSELECT = 16;
 int incomingByte = 0;
 int numError = 0;
+
+#define RESPONSE_OK 0
+#define RESPONSE_BAD_PACKET 1
+#define RESPONSE_IMU_DATA 2
+#define RESPONSE_MIRROR_DATA 3
+#define RESPONSE_ADCS_REQUEST 4
+
 uint16_t echo[PACKET_BODY_LENGTH] = {0x0, 0xbbbb};
 uint16_t stat[PACKET_BODY_LENGTH] = {0x1, 0xaaaa};
 uint16_t idle_[PACKET_BODY_LENGTH] = {0x2, 0xcccc};
 uint16_t shutdown_[PACKET_BODY_LENGTH] = {0x3, 0xdddd};
 uint16_t enterImu[PACKET_BODY_LENGTH] = {0x4, 0xcccc};
 uint16_t getImuData[PACKET_BODY_LENGTH] = {0x5, 0xeeee};
+uint16_t enterPointTrack[PACKET_BODY_LENGTH] = {0x7, 0xffff};
 
 void rando();
 
@@ -77,7 +85,20 @@ void transmitH(uint16_t *buf, bool verbos) {
     numError++;
   }
   uint16_t len = send16(0xffff, verbos);
-  uint16_t reponseNumber = send16(0xffff, verbos);
+  uint16_t responseNumber = send16(0xffff, verbos);
+  Serial.printf("Response header %d ", responseNumber);
+  if (responseNumber == RESPONSE_OK) {
+      Serial.print("Ok");
+  } else if (responseNumber == RESPONSE_BAD_PACKET) {
+      Serial.print("Bad packet");
+  } else if (responseNumber == RESPONSE_MIRROR_DATA) {
+      Serial.print("Mirror data");
+  } else if (responseNumber == RESPONSE_ADCS_REQUEST) {
+      Serial.print("ADCS request");
+  } else {
+      Serial.print("Bad header");
+  }
+  Serial.println("");
   for (int i = 0; i < len - 2; i++) {
     send16(0xffff, verbos);
   }
@@ -147,6 +168,8 @@ void loop() {
       } else if (incomingByte == '5') {
         transmit(getImuData);
       } else if (incomingByte == '6') {
+        transmit(enterPointTrack);
+      } else if (incomingByte == '7') {
         transmitCrappy(echo);
       } else if (incomingByte == 'r') {
         while (Serial.available() > 0) {

@@ -1,5 +1,7 @@
 #ifndef TRACK_H
 #define TRACK_H
+#include <mirrorDriver.h>
+
 void trackingSetup();
 void enterTracking();
 void leaveTracking();

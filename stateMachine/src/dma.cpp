@@ -43,14 +43,14 @@ bool dmaSampleReady() {
     return dmaGetOffset() >= 4;
 }
 
-volatile uint32_t* dmaGetSample() {
+volatile adcSample* dmaGetSample() {
     assert(dmaSampleReady());
     volatile uint32_t* toReturn = &spi_rx_dest[backOfBuffer];
     backOfBuffer = (backOfBuffer + DMA_SAMPLE_NUMAXES * DMA_SAMPLE_DEPTH) % (DMA_SAMPLE_DEPTH * DMASIZE);
-    return toReturn;
+    return (adcSample *) toReturn;
 }
 
-void startSampling() { // Clears out old samples so the first sample you read is fresh
+void dmaStartSampling() { // Clears out old samples so the first sample you read is fresh
     uint32_t offset = dmaGetOffset();
     offset -= offset % DMA_SAMPLE_DEPTH;
     assert(offset % DMA_SAMPLE_DEPTH == 0);
