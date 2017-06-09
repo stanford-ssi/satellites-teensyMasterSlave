@@ -21,7 +21,10 @@ void trackingSetup() {
 }
 
 void enterTracking() {
+    debugPrintf("About to clear dma: offset is (this might be high) %d\n", dmaGetOffset());
     dmaStartSampling();
+    assert(!dmaSampleReady());
+    debugPrintf("Cleared dma: offset is (this should be <= 4) %d\n", dmaGetOffset());
 }
 
 void leaveTracking() {
@@ -42,6 +45,9 @@ void writePidOutput() {
 
 void taskTracking() {
     assert(dmaGetOffset() < 5); // We should be able to keep up with data generation
+    if (dmaGetOffset() >= 5) {
+        debugPrintf("Offset is too high! It is %d\n", dmaGetOffset());
+    }
     if (dmaSampleReady()) {
         volatile adcSample s = *dmaGetSample();
         pidProcess(s);

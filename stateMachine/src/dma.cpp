@@ -15,10 +15,10 @@ uint32_t rx_begin = uint32_t(spi_rx_dest.data());
 SPISettings spi_settings(10, MSBFIRST, SPI_MODE0);
 uint32_t start_spi_sr = 0xFF0F0000;
 
-uint32_t backOfBuffer = 0;
+uint32_t backOfBuffer = 0; // unsigned char* pointer
 
 uint32_t dmaGetOffset() {
-    uint32_t dma_rx_pos = (uint32_t) dma_rx.destinationAddress();
+    uint32_t dma_rx_pos = (uint32_t) dma_rx.destinationAddress(); // Pointer, in bytes
     uint32_t offset;
     assert(dma_rx_pos >= rx_begin);
     if (!(dma_rx_pos >= rx_begin)) {
@@ -52,9 +52,10 @@ volatile adcSample* dmaGetSample() {
 
 void dmaStartSampling() { // Clears out old samples so the first sample you read is fresh
     uint32_t offset = dmaGetOffset();
-    offset -= offset % DMA_SAMPLE_DEPTH;
-    assert(offset % DMA_SAMPLE_DEPTH == 0);
-    backOfBuffer = offset;
+    offset -= offset % DMA_SAMPLE_NUMAXES; // Only clear out in increments of DMA_SAMPLE_NUMAXES
+    assert(offset % DMA_SAMPLE_NUMAXES == 0);
+    assert(backOfBuffer < DMASIZE * DMA_SAMPLE_DEPTH); // Should index somewhere in the buffer
+    backOfBuffer = (backOfBuffer + 4 * offset) % (DMASIZE * DMA_SAMPLE_DEPTH);
 }
 
 void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phase-correct-PWM?styleid=2
