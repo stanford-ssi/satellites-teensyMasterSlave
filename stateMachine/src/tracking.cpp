@@ -6,6 +6,7 @@ void writePidOutput();
 volatile int lastPidOut = -1;
 volatile int lastAdcRead = -1;
 volatile unsigned samplesProcessed = 0;
+volatile bool enteringTracking = false;
 
 // Most significant bit first
 void send32(uint32_t toSend) {
@@ -21,10 +22,16 @@ void trackingSetup() {
 }
 
 void enterTracking() {
+    enteringTracking = true; // Set this flag that we want to enter tracking mode, but the real setup work is done in firstLoopTracking()
+    // This is because enterTracking() is called in an interrupt before the main loop is finished doing its thing
+}
+
+void firstLoopTracking() {
     debugPrintf("About to clear dma: offset is (this might be high) %d\n", dmaGetOffset());
     dmaStartSampling();
     assert(!dmaSampleReady());
     debugPrintf("Cleared dma: offset is (this should be <= 4) %d\n", dmaGetOffset());
+    assert(!enteringTracking);
 }
 
 void leaveTracking() {
@@ -44,6 +51,10 @@ void writePidOutput() {
 }
 
 void taskTracking() {
+    if (enteringTracking) {
+        enteringTracking = false;
+        firstLoopTracking();
+    }
     assert(dmaGetOffset() < 5); // We should be able to keep up with data generation
     if (dmaGetOffset() >= 5) {
         debugPrintf("Offset is too high! It is %d\n", dmaGetOffset());
