@@ -3,8 +3,8 @@
 
 void writePidOutput();
 
-volatile int lastPidOut = -1;
-volatile int lastAdcRead = -1;
+mirrorOutput lastPidOut;
+adcSample lastAdcRead;
 volatile unsigned samplesProcessed = 0;
 volatile bool enteringTracking = false;
 
@@ -35,9 +35,12 @@ void firstLoopTracking() {
 }
 
 void leaveTracking() {
+    enteringTracking = false;
 }
 
 void pidProcess(const volatile adcSample& s) {
+    mirrorOutput out;
+    lastPidOut.copy(out);
     writePidOutput();
     samplesProcessed++;
 }
@@ -66,7 +69,11 @@ void taskTracking() {
 }
 
 void trackingHeartbeat() {
-    debugPrintf("Last pid output %d, last adc read %d, samples processed\n", lastPidOut, lastAdcRead, samplesProcessed);
+    char lastAdcReadBuf[40];
+    char lastPidOutBuf[40];
+    lastAdcRead.toString(lastAdcReadBuf, 40);
+    lastPidOut.toString(lastPidOutBuf, 40);
+    debugPrintf("Last pid output %s, last adc read %s, samples processed %d\n", lastPidOutBuf, lastAdcReadBuf, samplesProcessed);
 }
 
 void enterCalibration() {

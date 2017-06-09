@@ -18,12 +18,15 @@ typedef struct mirrorOutput {
         this->y_high = s.y_high;
         this->y_low = s.y_low;
     }
-    mirrorOutput(volatile mirrorOutput& s) {
+    mirrorOutput(const volatile mirrorOutput& s) {
         copy(s);
     }
     mirrorOutput& operator =(const volatile mirrorOutput& s) {
         copy(s);
         return *this;
+    }
+    void toString(char* buf, int len) {
+        snprintf(buf, len - 1, "x_high %u, x_low %u, y_high %u, y_low %u\n", (unsigned int) x_high, (unsigned int) x_low, (unsigned int) y_high, (unsigned int) y_low);
     }
 } mirrorOutput;
 

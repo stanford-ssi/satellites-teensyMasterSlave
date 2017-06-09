@@ -18,17 +18,25 @@ volatile unsigned int numIdles = 0; // Mostly just to count % of loops that we n
 
 void setup() {
   Serial.begin(115200);
+  debugPrintf("Serial is on\n");
   timer.begin(heartbeat, 3000000); // Every 3 seconds
+  debugPrintf("Set up heartbeat interrupt\n");
   analogReadResolution(16);
+  debugPrintf("Begin Spi2\n");
   SPI2.begin();
+  debugPrintf("Setting up packet:\n");
   packet_setup();
+  debugPrintf("Setting up imu state:\n");
   imuSetup();
+  debugPrintf("Done.\n");
   pinMode(17, OUTPUT); // DMA loopback test
   digitalWriteFast(17, HIGH);
+  debugPrintf("Setting up dma:\n");
   dmaSetup();
+  debugPrintf("Done!\n");
   state = IDLE_STATE;
   delay(1000);
-
+  debugPrintf("Running tests:\n");
   runTests();
   //debugPrintf("Hey %d\n", assert(state != IDLE_STATE));
 }
