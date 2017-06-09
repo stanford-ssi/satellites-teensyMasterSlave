@@ -21,6 +21,7 @@ def reboot(pin, platformio_base, serialNumber):
 	time.sleep(1)
 	subprocess.call("cd " + platformio_base + " && platformio run && cd ../ && ./teensy_loader_cli --mcu=TEENSY36 " + platformio_base + ".pioenvs/teensy36/firmware.hex", shell=True)
 	time.sleep(1)
+    #subprocess.call("g++ spitest.cpp -std=c++11 -lwiringPi -o spitest", shell=True) # compile master mode
 
 reboot(2, "teensyMaster/", 0) #master
 reboot(3, "stateMachine/", 1)
