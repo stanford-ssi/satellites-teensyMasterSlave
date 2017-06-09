@@ -18,6 +18,7 @@ volatile unsigned int numIdles = 0; // Mostly just to count % of loops that we n
 
 void setup() {
   Serial.begin(115200);
+  delay(500);
   debugPrintf("Serial is on\n");
   timer.begin(heartbeat, 3000000); // Every 3 seconds
   debugPrintf("Set up heartbeat interrupt\n");

@@ -73,8 +73,9 @@ void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phas
  FTM0_SYNC = 0x02;              // PWM sync @ max loading point enable
  uint32_t mod = FTM0_MOD;
  uint32_t mod2 = FTM1_MOD;
- Serial.printf("mod %d, mod2 %d\n", mod, mod2);
- Serial.printf("clock source %d, 2 %d\n", FTM0_SC, FTM1_SC);
+ (void) mod2;
+ debugPrintf("mod %d, mod2 %d\n", mod, mod2);
+ debugPrintf("clock source %d, 2 %d\n", FTM0_SC, FTM1_SC);
  FTM0_C0V = mod/4;                  // Combine mode, pulse-width controlled by...
  FTM0_C1V = mod * 3/4;           //   odd channel.
  FTM0_C2V = 0;                  // Combine mode, pulse-width controlled by...
@@ -90,7 +91,7 @@ void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phas
  FTM0_CONF = ((FTM0_CONF | FTM_CONF_GTBEEN) & ~(FTM_CONF_GTBEOUT));             // GTBEOUT 0 and GTBEEN 1
  FTM1_CONF = ((FTM1_CONF | FTM_CONF_GTBEEN) & ~(FTM_CONF_GTBEOUT));             // GTBEOUT 0 and GTBEEN 1
  //FTM1_CONF |= FTM_CONF_GTBEOUT;             // GTBEOUT 1
-
+ debugPrintf("Setting up pins\n");
  CORE_PIN22_CONFIG = PORT_PCR_MUX(4) | PORT_PCR_DSE | PORT_PCR_SRE;    //config teensy output port pins
  CORE_PIN23_CONFIG = PORT_PCR_MUX(4) | PORT_PCR_DSE | PORT_PCR_SRE;   //config teensy output port pins
  CORE_PIN9_CONFIG = PORT_PCR_MUX(4) | PORT_PCR_DSE | PORT_PCR_SRE;    //config teensy output port pins
@@ -99,11 +100,13 @@ void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phas
  FTM0_CNT = 0;
  FTM1_CNT = 0;
 
+ debugPrintf("Starting global clock\n");
  FTM0_CONF |= FTM_CONF_GTBEOUT;             // GTBEOUT 1
+
 }
 
 void dmaReceiveSetup() {
-    Serial.println("Starting.");
+    debugPrintln("Starting.");
 
     SPI.begin();
 
@@ -117,6 +120,7 @@ void dmaReceiveSetup() {
 
     SPI.beginTransaction(spi_settings);
 
+    debugPrintln("Setting up trigger pin.");
     pinMode(trigger_pin, INPUT_PULLUP);
     volatile uint32_t *pin_config = portConfigRegister(trigger_pin);
     *pin_config |= PORT_PCR_IRQC(0b0010); // DMA on falling edge
@@ -138,18 +142,22 @@ void dmaReceiveSetup() {
     // one major loop iteration
     dma_tx.TCD->BITER = 1;
     dma_tx.TCD->CITER = 1;
+    debugPrintln("Setting up trigger...");
     dma_tx.triggerAtCompletionOf(dma_start_spi);
 
     dma_rx.source((uint16_t&) KINETISK_SPI0.POPR);
     dma_rx.destinationBuffer((uint16_t*) spi_rx_dest.data(), sizeof(spi_rx_dest));
     dma_rx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI0_RX);
 
+    debugPrintln("Set up dma on receive fifo...");
     SPI0_RSER = SPI_RSER_RFDF_RE | SPI_RSER_RFDF_DIRS; // DMA on receive FIFO drain flag
     SPI0_SR = 0xFF0F0000;
 
+    debugPrintln("Enabling...");
     dma_rx.enable();
     dma_tx.enable();
     dma_start_spi.enable();
+    debugPrintln("Done!");
 }
 
 void dmaSetup() {
