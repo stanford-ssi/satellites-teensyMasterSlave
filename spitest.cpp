@@ -25,8 +25,8 @@ static const int CHANNEL = 0;
 bool transmitMany = false;
 int bytesSent = 0;
 const int KILLSWITCH = 8; // wiringPi 8, pin 3 sda1
-const int CHIPSELECT = 15; // wiringPi 15, pin 8 txd0
-const int REVERSECS = 16; // wiringPi 16, pin 10 rxd0
+const int CHIPSELECT = 25; // wiringPi 15, pin 8 txd0
+const int REVERSECS = 24; // wiringPi 16, pin 10 rxd0
 int incomingByte = 0;
 int numError = 0;
 

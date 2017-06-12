@@ -82,7 +82,7 @@ void taskIdle(void) {
         assert(!dmaSampleReady());
     }
     volatile int garbage = 0;
-    for (int i = 0; i < 100000; i++) { // Do some work
+    for (int i = 0; i < 50000; i++) { // Do some work
         garbage += i;
     }
     numIdles++;
