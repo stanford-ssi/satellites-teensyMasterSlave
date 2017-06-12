@@ -24,7 +24,9 @@ static const int CHANNEL = 0;
 #define PACKET_BODY_LENGTH 2
 bool transmitMany = false;
 int bytesSent = 0;
-int CHIPSELECT = 16;
+const int KILLSWITCH = 8; // wiringPi 8, pin 3 sda1
+const int CHIPSELECT = 15; // wiringPi 15, pin 8 txd0
+const int REVERSECS = 16; // wiringPi 16, pin 10 rxd0
 int incomingByte = 0;
 int numError = 0;
 
@@ -48,14 +50,20 @@ void loop();
 int main()
 {
     wiringPiSetup () ;
-    wiringPiSPISetup(CHANNEL, 6250000);
-    pinMode(5, INPUT);
+    wiringPiSPISetup(CHANNEL, 500000);
+    pinMode(REVERSECS, INPUT);
     pinMode(CHIPSELECT, OUTPUT);
+    pinMode(KILLSWITCH, OUTPUT);
+    digitalWrite(KILLSWITCH, HIGH);
     digitalWrite(CHIPSELECT, HIGH);
     cout << "Starting" << endl;
+    //unsigned char buf[2];
     while (1) {
+        /*buf[0] = 0x12;
+        buf[1] = 0xab;
+       wiringPiSPIDataRW(CHANNEL, (unsigned char *) buf, 2 );*/
        loop();
-    }
+   }
 }
 
 void transmitH(uint16_t *buf, bool verbos);
@@ -74,8 +82,9 @@ void transmit(uint16_t *buf) {
 
 void setBuf(uint16_t* to_send, int& j, uint16_t val) {
     unsigned char * bytes = (unsigned char *) to_send;
-    bytes[2 * j] = val >> 8;
-    bytes[2 * j + 1] = val % (1 << 8);
+    bytes[2 * j] = (unsigned char) (val >> 8);
+    bytes[2 * j + 1] = (unsigned char) (val % (1 << 8));
+    printf("Converted %x to %x, %x\n", val, bytes[2*j], bytes[2*j+1]);
     j++;
 }
 
