@@ -1,5 +1,6 @@
 *.ftpconfig
 spitest
+master
 stateMachine/log.txt
 0.log
 1.log

@@ -17,6 +17,19 @@
 
 using namespace std;
 
+unsigned int errors = 0;
+unsigned int bugs = 0;
+const int spiSpeed = 1000000;
+
+bool assertionError(const char* file, int line, const char* assertion) {
+    errors++;
+    bugs++;
+    printf("%s, %d: assertion 'assertion' failed, total errors %u, bugs %u\n", file, line, errors, bugs);
+    return false;
+}
+#define DEBUG true
+#define assert(e) (((e) || !DEBUG) ? (true) : (assertionError(__FILE__, __LINE__, #e), false));
+
 // channel is the wiringPi name for the chip select (or chip enable) pin.
 // Set this to 0 or 1, depending on how it's connected.
 static const int CHANNEL = 0;
@@ -50,7 +63,7 @@ void loop();
 int main()
 {
     wiringPiSetup () ;
-    wiringPiSPISetup(CHANNEL, 500000);
+    wiringPiSPISetup(CHANNEL, spiSpeed);
     pinMode(REVERSECS, INPUT);
     pinMode(CHIPSELECT, OUTPUT);
     pinMode(KILLSWITCH, OUTPUT);
@@ -84,7 +97,6 @@ void setBuf(uint16_t* to_send, int& j, uint16_t val) {
     unsigned char * bytes = (unsigned char *) to_send;
     bytes[2 * j] = (unsigned char) (val >> 8);
     bytes[2 * j + 1] = (unsigned char) (val % (1 << 8));
-    printf("Converted %x to %x, %x\n", val, bytes[2*j], bytes[2*j+1]);
     j++;
 }
 
@@ -96,67 +108,72 @@ uint16_t getBuf(uint16_t* buf, int j) {
 }
 
 void transmitH(uint16_t *buf, bool verbos) {
-  digitalWrite(CHIPSELECT, HIGH);
-  digitalWrite(CHIPSELECT, LOW);
-  delayMicroseconds(20);
-  int j = 0;
-  uint16_t to_send[10000];
-  setBuf(to_send, j, 0x1234);
-  uint16_t checksum = 0;
-  for (int i = 0; i < PACKET_BODY_LENGTH; i++) {
-      setBuf(to_send, j, buf[i]);
+    digitalWrite(CHIPSELECT, HIGH);
+    digitalWrite(CHIPSELECT, LOW);
+    delayMicroseconds(1);
+    int j = 0;
+    uint16_t to_send[10000];
+    setBuf(to_send, j, 0x1234);
+    uint16_t checksum = 0;
+    for (int i = 0; i < PACKET_BODY_LENGTH; i++) {
+        setBuf(to_send, j, buf[i]);
 
-    checksum += buf[i];
-  }
-  setBuf(to_send, j, checksum);
+        checksum += buf[i];
+    }
+    setBuf(to_send, j, checksum);
+    setBuf(to_send, j, 0x4321);
 
-  setBuf(to_send, j, 0x4321);
+    int numIters = 30;
 
-  int numIters = 300;
+    memset(to_send + j, 0xff, 2 * numIters);
+    uint16_t to_send_copy[10000];
+    memcpy(to_send_copy, to_send, 2 * numIters + 100);
+    wiringPiSPIDataRW(CHANNEL, (unsigned char *) to_send, 2 * (numIters));
 
-  memset(to_send + j, 0xff, 2 * numIters);
-  uint16_t to_send_copy[10000];
-  memcpy(to_send_copy, to_send, 2 * numIters + 100);
-  wiringPiSPIDataRW(CHANNEL, (unsigned char *) to_send, 2 * (numIters));
+    int i;
 
-  int i;
-  for (i = 0; i < numIters; i++) {
-      if (verbos) {
-          printf("Sent: %x, received %x\n", getBuf(to_send_copy, i), getBuf(to_send, i));
-      }
-      if (getBuf(to_send, i) == 0x4321) {
-          break;
-      }
-  }
+    // Track to beginning of response
+    for (i = 0; i < numIters; i++) {
+        if (getBuf(to_send, i) == 0x1234) {
+            break;
+        }
+    }
+    if (i == numIters) {
+        cout << "No response" << endl;
+    }
+    uint16_t len = getBuf(to_send, i+1);
+    assert(len < 300);
+    if (len > 300) {
+        len = 30;
+    }
+    uint16_t responseNumber = getBuf(to_send, i+2);
+    uint16_t numToPrint = len + i + 2;
+    assert(getBuf(to_send, len + i - 1) == 0x4321);
 
-  for (i = 0; i < numIters; i++) {
-      if (to_send[i] == 0x1234) {
-          break;
-      }
-  }
-  if (i == numIters) {
-      cout << "No response" << endl;
-  }
-  uint16_t len = to_send[i+1];
-  uint16_t responseNumber = to_send[i+2];
-  if (verbos) {
-      printf("Response header %d ", responseNumber);
-      if (responseNumber == RESPONSE_OK) {
-          printf("Ok");
-      } else if (responseNumber == RESPONSE_BAD_PACKET) {
-          printf("Bad packet");
-      } else if (responseNumber == RESPONSE_MIRROR_DATA) {
-          printf("Mirror data");
-      } else if (responseNumber == RESPONSE_ADCS_REQUEST) {
-          printf("ADCS request");
-      } else {
-          printf("Bad header");
-      }
-      cout << endl;
-      printf("---------------------------------\n");
-  }
-  delayMicroseconds(20);
-  digitalWrite(CHIPSELECT, HIGH);
+    for (i = 0; i < numToPrint; i++) {
+        if (verbos) {
+            printf("Sent: %x, received %x\n", getBuf(to_send_copy, i), getBuf(to_send, i));
+        }
+    }
+
+    if (verbos) {
+        printf("Response header %d ", responseNumber);
+        if (responseNumber == RESPONSE_OK) {
+            printf("Ok");
+        } else if (responseNumber == RESPONSE_BAD_PACKET) {
+            printf("Bad packet");
+        } else if (responseNumber == RESPONSE_MIRROR_DATA) {
+            printf("Mirror data");
+        } else if (responseNumber == RESPONSE_ADCS_REQUEST) {
+            printf("ADCS request");
+        } else {
+            printf("Bad header");
+        }
+        cout << endl;
+        printf("---------------------------------\n");
+    }
+    delayMicroseconds(1);
+    digitalWrite(CHIPSELECT, HIGH);
 }
 
 void transmitCrappy(uint16_t *buf) {
