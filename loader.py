@@ -32,4 +32,4 @@ def reboot(pin, platformio_base, serialNumber):
 reboot(3, "stateMachine/", 1)
 print("Serials available:")
 subprocess.call("ls /dev/ttyACM*", shell=True)
-subprocess.call("g++ spitest.cpp -std=c++11 -lwiringPi -o spitest && ./spitest", shell=True) # compile master mode
+subprocess.call("g++ master.cpp -std=c++11 -lwiringPi -o master && ./master", shell=True) # compile master mode

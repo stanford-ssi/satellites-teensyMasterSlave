@@ -1,4 +1,5 @@
 *.ftpconfig
+spitest
 stateMachine/log.txt
 0.log
 1.log
