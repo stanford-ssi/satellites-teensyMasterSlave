@@ -4,7 +4,6 @@
 
 #define IDLE_STATE 0
 #define SETUP_STATE 1
-#define IMU_STATE 2
 #define CALIBRATION_STATE 3
 #define TRACKING_STATE 4
 #define ANOMALY_STATE 5

@@ -51,8 +51,7 @@ extern volatile bool transmitting;
 #define MIN_HEADER 0
 #define RESPONSE_OK 0
 #define RESPONSE_BAD_PACKET 1
-#define RESPONSE_IMU_DATA 2
-#define RESPONSE_MIRROR_DATA 3
+#define RESPONSE_PID_DATA 3
 #define RESPONSE_ADCS_REQUEST 4
 #define MAX_HEADER 4
 

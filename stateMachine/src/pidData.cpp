@@ -1,4 +1,5 @@
 #include <main.h>
+#include <pidData.h>
 
 // Imu code includes a lot of buffers moving around
 // Currently not circular
@@ -29,7 +30,7 @@ volatile unsigned int imuSamplesQueued = 0;
 
 // Runs in main's setup()
 void imuSetup() {
-    pinMode(IMU_CS_PIN, OUTPUT);
+    pinMode(IMU_DATA_READY_PIN, OUTPUT);
     for (int i = 0; i < 10; i++) {
         imuSamples[IMU_BUFFER_SIZE + i] = 0xbeef;
         imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + i] = 0xbeef;
@@ -82,20 +83,22 @@ bool shouldSample() {
     return false;
 }
 
-void sample() {
-    digitalWrite(IMU_CS_PIN, LOW);
-    for (int i = 0; i < IMU_NUM_CHANNELS; i++) {
-        uint16_t channelRead = SPI2.transfer16(0xffff);
-        (void) channelRead; // TODO: right now we log increasing counter to check correct circular buffer
-        imuSamples[imuDataPointer] = (micros() % 65536);
-        imuDataPointer++;
-        imuSamplesRead++;
+void recordPid(const volatile adcSample& s, const mirrorOutput& out) {
+    assert(!sampling);
+    if (!sampling) {
+        return;
     }
+    assert(imuDataPointer % IMU_NUM_CHANNELS == 0);
+    ((adcSample *) imuSamples)[imuDataPointer/IMU_NUM_CHANNELS] = s;
+    imuDataPointer += IMU_NUM_CHANNELS;
+    imuSamplesRead += IMU_NUM_CHANNELS;
+    ((mirrorOutput *) imuSamples)[imuDataPointer/IMU_NUM_CHANNELS] = out;
+    imuDataPointer += IMU_NUM_CHANNELS;
+    imuSamplesRead += IMU_NUM_CHANNELS;
     assert(imuDataPointer <= IMU_BUFFER_SIZE);
     if (imuDataPointer >= IMU_BUFFER_SIZE) {
         sampling = false;
     }
-    digitalWrite(IMU_CS_PIN, HIGH);
 }
 
 // Runs in main loop
@@ -105,9 +108,6 @@ void taskIMU() {
     assert (imuDataPointer % IMU_SAMPLE_SIZE == 0);
     assert (imuDataPointer <= IMU_BUFFER_SIZE);
     assert (!(sampling && (imuDataPointer >= IMU_BUFFER_SIZE)));
-    if (shouldSample()) {
-        sample();
-    }
     checkDataDump();
 }
 
@@ -130,7 +130,6 @@ void enterIMU() {
     imuDataPointer = 0;
     timeSinceLastRead = 0;
     imuPacketBodyPointer = 0;
-    digitalWriteFast(IMU_CS_PIN, HIGH);
     sampling = true;
 }
 

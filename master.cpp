@@ -25,6 +25,7 @@ bool assertionError(const char* file, int line, const char* assertion) {
     errors++;
     bugs++;
     printf("%s, %d: assertion 'assertion' failed, total errors %u, bugs %u\n", file, line, errors, bugs);
+    sleep(1);
     return false;
 }
 #define DEBUG true
@@ -123,7 +124,7 @@ void transmitH(uint16_t *buf, bool verbos) {
     setBuf(to_send, j, checksum);
     setBuf(to_send, j, 0x4321);
 
-    int numIters = 30;
+    int numIters = 500;
 
     memset(to_send + j, 0xff, 2 * numIters);
     uint16_t to_send_copy[10000];
@@ -142,8 +143,8 @@ void transmitH(uint16_t *buf, bool verbos) {
         cout << "No response" << endl;
     }
     uint16_t len = getBuf(to_send, i+1);
-    assert(len < 300);
-    if (len > 300) {
+    assert(len < 500);
+    if (len > 500) {
         len = 30;
     }
     uint16_t responseNumber = getBuf(to_send, i+2);
@@ -166,6 +167,8 @@ void transmitH(uint16_t *buf, bool verbos) {
             printf("Mirror data");
         } else if (responseNumber == RESPONSE_ADCS_REQUEST) {
             printf("ADCS request");
+        } else if (responseNumber == RESPONSE_IMU_DATA) {
+            printf("IMU data");
         } else {
             printf("Bad header");
         }
@@ -221,27 +224,29 @@ void rando() {
 }
 
 void loop() {
-  // send data only when you receive data:
-  char incomingByte;
-  cin >> incomingByte;
-  if (incomingByte == '\n') {
-  } else if (incomingByte == '1') {
-    transmit(echo);
-  } else if (incomingByte == '2') {
-    transmit(stat);
-  } else if (incomingByte == '3') {
-    transmit(idle_);
-  } else if (incomingByte == '4') {
-    transmit(enterImu);
-  } else if (incomingByte == '5') {
-    transmit(getImuData);
-  } else if (incomingByte == '6') {
-    transmit(enterPointTrack);
-  } else if (incomingByte == '7') {
-    transmitCrappy(echo);
-  } else if (incomingByte == 'r') {
-    rando();
-  } else if (incomingByte == 'm') {
-    transmitMany = true;
-  }
+    // send data only when you receive data:
+    char incomingByte;
+    cin >> incomingByte;
+    if (incomingByte == '\n') {
+    } else if (incomingByte == '1') {
+      transmit(echo);
+    } else if (incomingByte == '2') {
+      transmit(stat);
+    } else if (incomingByte == '3') {
+        transmit(idle_);
+    } else if (incomingByte == '4') {
+      transmit(enterImu);
+    } else if (incomingByte == '5') {
+      transmit(getImuData);
+    } else if (incomingByte == '6') {
+      transmit(enterPointTrack);
+    } else if (incomingByte == '7') {
+      transmitCrappy(echo);
+    } else if (incomingByte == 'r') {
+      rando();
+    } else if (incomingByte == 'm') {
+      transmitMany = true;
+    } else if (incomingByte == 'l') {
+        printf("1 - echo\n2 - stat\n3 - idle\n4 - imu\n5 - imuData\n6 - point\n7 - crappy\nr - rando\n");
+    }
 }

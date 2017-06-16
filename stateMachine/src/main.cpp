@@ -28,7 +28,6 @@ void setup() {
   debugPrintf("Setting up packet:\n");
   packet_setup();
   debugPrintf("Setting up imu state:\n");
-  imuSetup();
   debugPrintf("Done.\n");
   pinMode(17, OUTPUT); // DMA loopback test
   digitalWriteFast(17, HIGH);
@@ -55,9 +54,7 @@ void heartbeat() {
     debugPrintf("%d errors, bugs %d, last loop %d micros", errors, bugs, lastLoopTime);
     debugPrintf(", last state %d, last read %d, dma offset %d", lastLoopState, lastAnalogRead, dmaGetOffset());
     debugPrintf(", %d loops, time alive %d\n", numIdles, timeAlive);
-    if (state == IMU_STATE) {
-        imuHeartbeat();
-    } else if (state == TRACKING_STATE) {
+    if (state == TRACKING_STATE) {
         trackingHeartbeat();
     } else if (state == CALIBRATION_STATE) {
         calibrationHeartbeat();
@@ -93,8 +90,6 @@ void checkTasks(void) {
     assert(state <= MAX_STATE);
     if (state == IDLE_STATE) {
         taskIdle();
-    } else if (state == IMU_STATE) {
-        taskIMU();
     } else if (state == TRACKING_STATE) {
         taskTracking();
     } else if (state == CALIBRATION_STATE) {

@@ -1,7 +1,7 @@
 #include <tracking.h>
 #include <main.h>
 
-void writePidOutput();
+void writePidOutput(mirrorOutput& out);
 
 mirrorOutput lastPidOut;
 adcSample lastAdcRead;
@@ -41,12 +41,11 @@ void leaveTracking() {
 void pidProcess(const volatile adcSample& s) {
     mirrorOutput out;
     lastPidOut.copy(out);
-    writePidOutput();
+    writePidOutput(out);
     samplesProcessed++;
 }
 
-void writePidOutput() {
-    mirrorOutput out;
+void writePidOutput(mirrorOutput& out) {
     send32(out.x_low);
     send32(out.x_high);
     send32(out.y_low);

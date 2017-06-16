@@ -6,7 +6,6 @@
 #include <string.h>
 #include <dma.h>
 #include <ChipSelect.h>
-#include <imu.h>
 #include <tests.h>
 #include <packet.h>
 #include <tracking.h>

@@ -1,6 +1,7 @@
 #include "packet.h"
 #include "main.h"
 #include "states.h"
+#include "pidData.h"
 
 T3SPI SPI_SLAVE;
 
@@ -65,7 +66,7 @@ void spi1_isr(void) {
   if (transmitting && outPointer < transmissionSize) {
     to_send = currentlyTransmittingPacket[outPointer];
     outPointer++;
-    if (outPointer == transmissionSize && state == IMU_STATE && getHeader() == RESPONSE_IMU_DATA) {
+    if (outPointer == transmissionSize && ((state == TRACKING_STATE) || (state == CALIBRATION_STATE)) && getHeader() == RESPONSE_PID_DATA) {
         assert(imuPacketReady);
         imuPacketSent();
     }
@@ -129,8 +130,6 @@ void leaveCurrentState() {
     assert(state != SHUTDOWN_STATE);
     if (state == IDLE_STATE) {
         //leaveIdle(); // Nothing to do here
-    } else if (state == IMU_STATE) {
-        leaveIMU();
     } else if (state == TRACKING_STATE) {
         leaveTracking();
     } else if (state == CALIBRATION_STATE) {
@@ -164,13 +163,8 @@ void create_response() {
         state = CALIBRATION_STATE;
         enterCalibration();
         response_status();
-    } else if (command == COMMAND_IMU) {
-        leaveCurrentState();
-        state = IMU_STATE;
-        enterIMU();
-        response_status();
-    } else if (command == COMMAND_IMU_DUMP) {
-        if (state != IMU_STATE) {
+    } else if (command == COMMAND_REPORT_TRACKING) {
+        if (!(state == TRACKING_STATE || state == CALIBRATION_STATE)) {
             responseBadPacket(INVALID_COMMAND);
         } else if (!imuPacketReady) {
             responseBadPacket(DATA_NOT_READY);
@@ -227,7 +221,7 @@ void response_status() {
 }
 
 void responseImuDump() {
-    setupTransmissionWithChecksum(RESPONSE_IMU_DATA, IMU_DATA_DUMP_SIZE, imuPacketChecksum, imuDumpPacket);
+    setupTransmissionWithChecksum(RESPONSE_PID_DATA, IMU_DATA_DUMP_SIZE, imuPacketChecksum, imuDumpPacket);
 }
 
 void responseBadPacket(uint16_t flag) {
