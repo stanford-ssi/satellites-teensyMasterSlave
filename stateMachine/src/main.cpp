@@ -39,11 +39,11 @@ void setup() {
   debugPrintf("Done!\n");
   state = IDLE_STATE;
   debugPrintf("About to do a dank memcpy\n");
-  int buf[2] = {1234, 4321};
-  memcpy((void *) 0x1ffffffe, buf, 2);
-  memcpy((void *) 0x20000000, buf, 2);
+  int buf[30] = {0};
+  memcpy((void *) 0x1fffffe0, buf, 64);
+  memcpy((void *) 0x20000000, buf, 64);
   debugPrintf("Done1\n");
-  memcpy((void *) 0x1fffffff, buf, 2);
+  memcpy((void *) 0x1fffffff, buf, 64);
   debugPrintf("Done\n");
   delay(1000);
   debugPrintf("Running tests:\n");
