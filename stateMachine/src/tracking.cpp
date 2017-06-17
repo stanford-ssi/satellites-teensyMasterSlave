@@ -1,4 +1,5 @@
 #include <tracking.h>
+#include <pidData.h>
 #include <main.h>
 
 void writePidOutput(mirrorOutput& out);
@@ -19,6 +20,7 @@ void send32(uint32_t toSend) {
 
 void trackingSetup() {
     // Begin dma transaction
+    imuSetup();
 }
 
 void enterTracking() {
@@ -32,15 +34,20 @@ void firstLoopTracking() {
     assert(!dmaSampleReady());
     debugPrintf("Cleared dma: offset is (this should be <= 4) %d\n", dmaGetOffset());
     assert(!enteringTracking);
+    enterIMU();
+    debugPrintf("Entered tracking\n");
 }
 
 void leaveTracking() {
     enteringTracking = false;
+    leaveIMU();
 }
 
 void pidProcess(const volatile adcSample& s) {
     mirrorOutput out;
     lastPidOut.copy(out);
+    recordPid(s, out);
+    debugPrintf("Done recording\n");
     writePidOutput(out);
     samplesProcessed++;
 }
@@ -62,9 +69,14 @@ void taskTracking() {
         debugPrintf("Offset is too high! It is %d\n", dmaGetOffset());
     }
     if (dmaSampleReady()) {
+        debugPrintf("Getting sample\n");
         volatile adcSample s = *dmaGetSample();
+        debugPrintf("Processing sample\n");
         pidProcess(s);
     }
+    debugPrintf("Performing imu\n");
+    taskIMU();
+    debugPrintf("samples %d\n", samplesProcessed);
 }
 
 void trackingHeartbeat() {

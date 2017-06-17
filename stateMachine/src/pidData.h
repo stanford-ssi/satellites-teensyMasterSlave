@@ -3,8 +3,8 @@
 #include <main.h>
 #include <packet.h>
 
-#define IMU_NUM_CHANNELS 3
-#define IMU_SAMPLE_SIZE ((16 / 16) * IMU_NUM_CHANNELS) // 16-bit
+#define IMU_NUM_CHANNELS 4
+#define IMU_SAMPLE_SIZE ((32 / 16) * IMU_NUM_CHANNELS) // 16-bit
 #define IMU_DATA_DUMP_SIZE (100 * IMU_SAMPLE_SIZE)
 #define IMU_BUFFER_SIZE (10000 * IMU_SAMPLE_SIZE)
 #define IMU_SAMPLE_FREQUENCY 5000 // Hz
@@ -16,7 +16,10 @@ extern volatile bool imuPacketReady;
 extern volatile uint16_t imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
 extern volatile uint16_t imuPacketChecksum;
 
+void imuSetup();
+void taskIMU();
+void enterIMU();
+void leaveIMU();
 void imuPacketSent();
-
-void imuHeartbeat();
+void recordPid(const volatile adcSample& s, const mirrorOutput& out);
 #endif // IMU

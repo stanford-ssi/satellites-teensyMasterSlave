@@ -2,6 +2,8 @@
 #define DMA_H
 #include "main.h"
 
+
+
 typedef struct adcSample {
     uint32_t axis1;
     uint32_t axis2;
@@ -25,7 +27,7 @@ typedef struct adcSample {
         return *this;
     }
     void toString(char* buf, int len) {
-        snprintf(buf, len - 1, "axis1 %u, axis2 %u, axis3 %u, axis4 %u\n", (unsigned int) axis1, (unsigned int) axis2, (unsigned int) axis3, (unsigned int) axis4);
+        snprintf(buf, len - 1, "axis1 %u, axis2 %u, axis3 %u, axis4 %u", (unsigned int) axis1, (unsigned int) axis2, (unsigned int) axis3, (unsigned int) axis4);
     }
 } adcSample;
 

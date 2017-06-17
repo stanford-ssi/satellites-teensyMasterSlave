@@ -34,6 +34,9 @@ void setup() {
   debugPrintf("Setting up dma:\n");
   dmaSetup();
   debugPrintf("Done!\n");
+  debugPrintf("Setting up tracking:\n");
+  trackingSetup();
+  debugPrintf("Done!\n");
   state = IDLE_STATE;
   delay(1000);
   debugPrintf("Running tests:\n");

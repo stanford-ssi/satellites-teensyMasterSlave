@@ -35,6 +35,7 @@ void imuSetup() {
         imuSamples[IMU_BUFFER_SIZE + i] = 0xbeef;
         imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + i] = 0xbeef;
     }
+    assert (imuSamples[IMU_BUFFER_SIZE] == 0xbeef);
 }
 
 void checkDataDump() {
@@ -84,17 +85,24 @@ bool shouldSample() {
 }
 
 void recordPid(const volatile adcSample& s, const mirrorOutput& out) {
-    assert(!sampling);
+    //debugPrintf("Sampling %d imuDataPointer %d IMU_BUFFER_SIZE %d\n", sampling, imuDataPointer, IMU_BUFFER_SIZE);
+    assert(sampling);
     if (!sampling) {
         return;
     }
     assert(imuDataPointer % IMU_NUM_CHANNELS == 0);
-    ((adcSample *) imuSamples)[imuDataPointer/IMU_NUM_CHANNELS] = s;
-    imuDataPointer += IMU_NUM_CHANNELS;
-    imuSamplesRead += IMU_NUM_CHANNELS;
-    ((mirrorOutput *) imuSamples)[imuDataPointer/IMU_NUM_CHANNELS] = out;
-    imuDataPointer += IMU_NUM_CHANNELS;
-    imuSamplesRead += IMU_NUM_CHANNELS;
+    ((adcSample *) imuSamples)[imuDataPointer/IMU_SAMPLE_SIZE] = s;
+    imuDataPointer += IMU_SAMPLE_SIZE;
+    imuSamplesRead += IMU_SAMPLE_SIZE;
+    debugPrintf("Base array %p, writing to %p, end of array %p\n", &((mirrorOutput *) imuSamples)[0], &((mirrorOutput *) imuSamples)[imuDataPointer/IMU_SAMPLE_SIZE],      &imuSamples[IMU_BUFFER_SIZE]);
+    unsigned char* ptr = (unsigned char *) (&((mirrorOutput *) imuSamples)[imuDataPointer/IMU_SAMPLE_SIZE]);
+    for (int i = 0; i < 30; i++) {
+        ptr[i] = 0;
+    }
+    debugPrintf("done clearing\n");
+    ((mirrorOutput *) imuSamples)[imuDataPointer/IMU_SAMPLE_SIZE] = out;
+    imuDataPointer += IMU_SAMPLE_SIZE;
+    imuSamplesRead += IMU_SAMPLE_SIZE;
     assert(imuDataPointer <= IMU_BUFFER_SIZE);
     if (imuDataPointer >= IMU_BUFFER_SIZE) {
         sampling = false;
@@ -104,6 +112,9 @@ void recordPid(const volatile adcSample& s, const mirrorOutput& out) {
 // Runs in main loop
 void taskIMU() {
     assert (imuSamples[IMU_BUFFER_SIZE] == 0xbeef);
+    if (imuSamples[IMU_BUFFER_SIZE] != 0xbeef) {
+        debugPrintf("End of buf is %x\n", imuSamples[IMU_BUFFER_SIZE]);
+    }
     assert (imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD] == 0xbeef);
     assert (imuDataPointer % IMU_SAMPLE_SIZE == 0);
     assert (imuDataPointer <= IMU_BUFFER_SIZE);
