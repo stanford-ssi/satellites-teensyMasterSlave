@@ -38,6 +38,13 @@ void setup() {
   trackingSetup();
   debugPrintf("Done!\n");
   state = IDLE_STATE;
+  debugPrintf("About to do a dank memcpy\n");
+  int buf[2] = {1234, 4321};
+  memcpy((void *) 0x1ffffffe, buf, 2);
+  memcpy((void *) 0x20000000, buf, 2);
+  debugPrintf("Done1\n");
+  memcpy((void *) 0x1fffffff, buf, 2);
+  debugPrintf("Done\n");
   delay(1000);
   debugPrintf("Running tests:\n");
   runTests();
