@@ -13,13 +13,17 @@
 // If dataPointer == sentDataPointer - IMU_SAMPLE_SIZE, buffer is full
 volatile unsigned int imuSentDataPointer = 0;
 volatile unsigned int imuDataPointer = 0; // Marks index of next place to read into
-volatile uint16_t imuSamples[IMU_BUFFER_SIZE + 10]; // Add some extra space on the end in case we overflow
+volatile pidSample imuSamples[IMU_BUFFER_SIZE + 10]; // Add some extra space on the end in case we overflow
 volatile bool sampling = false;
 elapsedMicros timeSinceLastRead;
 
 // This packet ships out directly to audacy
-volatile uint16_t imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
-volatile uint16_t *imuDumpPacketBody = imuDumpPacket + OUT_PACKET_BODY_BEGIN;
+// This is more than we need; OUT_PACKET_OVERHEAD is measured in units of uint16_t, not pidSample
+volatile pidSample imuDumpPacketMemory[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
+// We skip the first few uint16 because we want the packet body to begin at imuDumpPacketMemory[1], which has a good byte offset mod 32bit.
+// Assume header size is less than IMU_SAMPLE_SIZE
+volatile uint16_t *imuDumpPacket = ((uint16_t *) imuDumpPacket) + (IMU_SAMPLE_SIZE - OUT_PACKET_BODY_BEGIN);
+volatile pidSample *imuDumpPacketBody = (pidSample *) (imuDumpPacket + OUT_PACKET_BODY_BEGIN);
 volatile uint16_t imuPacketChecksum = 0;
 volatile unsigned int imuPacketBodyPointer = 0;
 volatile bool imuPacketReady = false;
@@ -30,26 +34,28 @@ volatile unsigned int imuSamplesQueued = 0;
 
 // Runs in main's setup()
 void imuSetup() {
+    assert(((unsigned int) imuDumpPacketBody) % 32 == 0);  // Check offset; Misaligned data may segfault at 0x20000000
+    assert(((unsigned int) imuSamples) % 32 == 0);
+    debugPrintf("imuSamples location (we want this to be far from 0x2000000): %p to %p\n", imuSamples, imuSamples + IMU_BUFFER_SIZE);
+    debugPrintf("imuDumpPacket location (we want this to be far from 0x2000000): %p to %p\n", imuDumpPacketMemory, imuDumpPacketMemory + IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD);
     pinMode(IMU_DATA_READY_PIN, OUTPUT);
-    for (int i = 0; i < 10; i++) {
+    /* TODO: put check back in // for (int i = 0; i < 10; i++) {
         imuSamples[IMU_BUFFER_SIZE + i] = 0xbeef;
         imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + i] = 0xbeef;
     }
-    assert (imuSamples[IMU_BUFFER_SIZE] == 0xbeef);
+    assert (imuSamples[IMU_BUFFER_SIZE] == 0xbeef);*/
 }
 
 void checkDataDump() {
-    assert(imuSentDataPointer % IMU_SAMPLE_SIZE == 0);
+    /*assert(imuSentDataPointer % IMU_SAMPLE_SIZE == 0);
     assert(imuDataPointer % IMU_SAMPLE_SIZE == 0);
-    assert((imuPacketBodyPointer == IMU_DATA_DUMP_SIZE) == imuPacketReady);
+    assert((imuPacketBodyPointer == IMU_DATA_DUMP_SIZE) == imuPacketReady);*/
     if ((imuPacketBodyPointer < IMU_DATA_DUMP_SIZE) && (imuSentDataPointer % IMU_BUFFER_SIZE) != (imuDataPointer % IMU_BUFFER_SIZE)) {
-        for (int i = 0; i < IMU_NUM_CHANNELS; i++) {
-            uint16_t sample = imuSamples[imuSentDataPointer];
-            imuPacketChecksum += sample;
-            imuDumpPacketBody[imuPacketBodyPointer] = sample;
-            imuPacketBodyPointer++;
-            imuSentDataPointer++;
-        }
+        pidSample sample = imuSamples[imuSentDataPointer];
+        imuPacketChecksum += sample.getChecksum();
+        ((pidSample *) imuDumpPacketBody)[imuPacketBodyPointer] = sample;
+        imuPacketBodyPointer++;
+        imuSentDataPointer++;
     }
     imuSentDataPointer = imuSentDataPointer % IMU_BUFFER_SIZE;
     assert(imuPacketBodyPointer <= IMU_DATA_DUMP_SIZE);
@@ -62,7 +68,7 @@ void checkDataDump() {
         interrupts();
     }
 }
-
+/*
 bool shouldSample() {
     if ((imuDataPointer + IMU_SAMPLE_SIZE) % IMU_BUFFER_SIZE == imuSentDataPointer) {
         // Buffer is full
@@ -82,27 +88,19 @@ bool shouldSample() {
     }
 
     return false;
-}
+}*/
 
-void recordPid(const volatile adcSample& s, const mirrorOutput& out) {
+void recordPid(const volatile pidSample& s) {
     //debugPrintf("Sampling %d imuDataPointer %d IMU_BUFFER_SIZE %d\n", sampling, imuDataPointer, IMU_BUFFER_SIZE);
     assert(sampling);
     if (!sampling) {
         return;
     }
-    assert(imuDataPointer % IMU_NUM_CHANNELS == 0);
-    ((adcSample *) imuSamples)[imuDataPointer/IMU_SAMPLE_SIZE] = s;
-    imuDataPointer += IMU_SAMPLE_SIZE;
-    imuSamplesRead += IMU_SAMPLE_SIZE;
-    debugPrintf("Base array %p, writing to %p, end of array %p\n", &((mirrorOutput *) imuSamples)[0], &((mirrorOutput *) imuSamples)[imuDataPointer/IMU_SAMPLE_SIZE],      &imuSamples[IMU_BUFFER_SIZE]);
-    unsigned char* ptr = (unsigned char *) (&((mirrorOutput *) imuSamples)[imuDataPointer/IMU_SAMPLE_SIZE]);
-    for (int i = 0; i < 30; i++) {
-        ptr[i] = 0;
-    }
-    debugPrintf("done clearing\n");
-    ((mirrorOutput *) imuSamples)[imuDataPointer/IMU_SAMPLE_SIZE] = out;
-    imuDataPointer += IMU_SAMPLE_SIZE;
-    imuSamplesRead += IMU_SAMPLE_SIZE;
+    //assert(imuDataPointer % IMU_NUM_CHANNELS == 0);
+    ((pidSample *) imuSamples)[imuDataPointer] = s;
+    imuDataPointer++;
+    imuSamplesRead++;
+    debugPrintf("Base array %p, writing to %p, end of array %p\n", &((mirrorOutput *) imuSamples)[0], &((mirrorOutput *) imuSamples)[imuDataPointer/IMU_SAMPLE_SIZE], &imuSamples[IMU_BUFFER_SIZE]);
     assert(imuDataPointer <= IMU_BUFFER_SIZE);
     if (imuDataPointer >= IMU_BUFFER_SIZE) {
         sampling = false;
@@ -111,10 +109,10 @@ void recordPid(const volatile adcSample& s, const mirrorOutput& out) {
 
 // Runs in main loop
 void taskIMU() {
-    assert (imuSamples[IMU_BUFFER_SIZE] == 0xbeef);
-    if (imuSamples[IMU_BUFFER_SIZE] != 0xbeef) {
+    // TODO: replace // assert (imuSamples[IMU_BUFFER_SIZE] == 0xbeef);
+    /* // TODO: replace // if (imuSamples[IMU_BUFFER_SIZE] != 0xbeef) {
         debugPrintf("End of buf is %x\n", imuSamples[IMU_BUFFER_SIZE]);
-    }
+    } */
     assert (imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD] == 0xbeef);
     assert (imuDataPointer % IMU_SAMPLE_SIZE == 0);
     assert (imuDataPointer <= IMU_BUFFER_SIZE);

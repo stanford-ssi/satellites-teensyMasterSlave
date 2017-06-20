@@ -2,8 +2,6 @@
 #define DMA_H
 #include "main.h"
 
-
-
 typedef struct adcSample {
     uint32_t axis1;
     uint32_t axis2;
@@ -28,6 +26,16 @@ typedef struct adcSample {
     }
     void toString(char* buf, int len) {
         snprintf(buf, len - 1, "axis1 %u, axis2 %u, axis3 %u, axis4 %u", (unsigned int) axis1, (unsigned int) axis2, (unsigned int) axis3, (unsigned int) axis4);
+    }
+
+    // Sum of memory, by uint16s
+    uint16_t getChecksum() volatile {
+        int size = sizeof(adcSample) * 8 / 16; // uint16_t units
+        uint16_t checksum = 0;
+        for (int i = 0; i < size; i++) {
+            checksum += ((uint16_t *) this)[i];
+        }
+        return checksum;
     }
 } adcSample;
 

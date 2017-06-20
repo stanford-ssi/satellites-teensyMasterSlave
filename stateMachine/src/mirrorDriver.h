@@ -16,7 +16,8 @@ typedef struct mirrorOutput {
     }
 
     void copy(const volatile mirrorOutput& s) {
-        if (Serial) {
+        memcpy(this, (const void *) &s, sizeof(mirrorOutput));
+        /*if (Serial) {
             Serial.printf("Copying\n");
         }
         this->x_high = s.x_high;
@@ -34,7 +35,7 @@ typedef struct mirrorOutput {
         this->y_low = s.y_low;
         if (Serial) {
             Serial.printf("address %p\n", &this->y_low);
-        }
+        }*/
     }
     mirrorOutput(const volatile mirrorOutput& s) {
         if (Serial) {
@@ -51,6 +52,16 @@ typedef struct mirrorOutput {
     }
     void toString(char* buf, int len) {
         snprintf(buf, len - 1, "x_high %u, x_low %u, y_high %u, y_low %u", (unsigned int) x_high, (unsigned int) x_low, (unsigned int) y_high, (unsigned int) y_low);
+    }
+
+    // Sum of memory, by uint16s
+    uint16_t getChecksum() {
+        int size = sizeof(mirrorOutput) * 8 / 16; // uint16_t units
+        uint16_t checksum = 0;
+        for (int i = 0; i < size; i++) {
+            checksum += ((uint16_t *) this)[i];
+        }
+        return checksum;
     }
 } mirrorOutput;
 

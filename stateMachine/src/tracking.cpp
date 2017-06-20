@@ -46,7 +46,8 @@ void leaveTracking() {
 void pidProcess(const volatile adcSample& s) {
     mirrorOutput out;
     lastPidOut.copy(out);
-    recordPid(s, out);
+    pidSample samplePid(s, out);
+    recordPid(samplePid);
     debugPrintf("Done recording\n");
     writePidOutput(out);
     samplesProcessed++;
