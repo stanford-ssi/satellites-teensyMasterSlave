@@ -1,0 +1,24 @@
+#!/usr/local/bin/python
+import sys
+from os.path import expanduser
+
+# thanks https://stackoverflow.com/questions/4028904/how-to-get-the-home-directory-in-python
+home = expanduser("~")
+
+def getOldPort():
+    s = open(".ftpconfig").read()
+    return [x for x in s.split('\n') if "port" in x][0].split(": ")[1].replace(',', '')
+
+
+def replacePort(old, new, filename):
+    s = open(filename).read()
+    open(filename, 'w').write(s.replace(' ' + old + '\n', ' ' + new + '\n').replace(' ' + old + ',\n', ' ' + new + ',\n'))
+
+if len(sys.argv) == 1:
+    print("Please supply the port number")
+else:
+    oldPort = getOldPort()
+    newPort = sys.argv[1]
+    for filename in ['.ftpconfig', 'stateMachine/.ftpconfig', home + '/.ssh/config']:
+        replacePort(oldPort, newPort, filename)
+
