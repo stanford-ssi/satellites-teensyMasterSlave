@@ -57,6 +57,7 @@ uint16_t shutdown_[PACKET_BODY_LENGTH] = {0x3, 0xdddd};
 uint16_t enterImu[PACKET_BODY_LENGTH] = {0x4, 0xcccc};
 uint16_t getImuData[PACKET_BODY_LENGTH] = {0x5, 0xeeee};
 uint16_t enterPointTrack[PACKET_BODY_LENGTH] = {0x7, 0xffff};
+uint16_t reportTrack[PACKET_BODY_LENGTH] = {0x8, 0xffff};
 
 void rando();
 void loop();
@@ -143,11 +144,13 @@ void transmitH(uint16_t *buf, bool verbos) {
         cout << "No response" << endl;
     }
     uint16_t len = getBuf(to_send, i+1);
+    uint16_t lenCheck = ~getBuf(to_send, i+2);
+    assert(len == lenCheck);
     assert(len < 500);
-    if (len > 500) {
+    if (len > 500 || len != lenCheck) {
         len = 30;
     }
-    uint16_t responseNumber = getBuf(to_send, i+2);
+    uint16_t responseNumber = getBuf(to_send, i+3);
     uint16_t numToPrint = len + i + 2;
     assert(getBuf(to_send, len + i - 1) == 0x4321);
 
@@ -241,12 +244,14 @@ void loop() {
     } else if (incomingByte == '6') {
       transmit(enterPointTrack);
     } else if (incomingByte == '7') {
+      transmit(reportTrack);
+    } else if (incomingByte == '8') {
       transmitCrappy(echo);
     } else if (incomingByte == 'r') {
       rando();
     } else if (incomingByte == 'm') {
       transmitMany = true;
     } else if (incomingByte == 'l') {
-        printf("1 - echo\n2 - stat\n3 - idle\n4 - imu\n5 - imuData\n6 - point\n7 - crappy\nr - rando\n");
+        printf("1 - echo\n2 - stat\n3 - idle\n4 - imu\n5 - imuData\n6 - point\n7 - report tracking\n8 - crappy\nr - rando\n");
     }
 }

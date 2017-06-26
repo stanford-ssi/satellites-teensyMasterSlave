@@ -25,9 +25,9 @@ typedef struct pidSample {
     }
 
     pidSample& operator =(const volatile pidSample& s) {
-        if (Serial) {
+        /*if (Serial) {
             Serial.printf("Equals operator\n");
-        }
+        }*/
         copy(s);
         return *this;
     }
@@ -38,8 +38,8 @@ typedef struct pidSample {
 } pidSample;
 
 #define IMU_NUM_CHANNELS 4
-#define IMU_SAMPLE_SIZE ((sizeof(pidSample) / 2) * IMU_NUM_CHANNELS) // 16-bit
-#define IMU_DATA_DUMP_SIZE 100
+#define IMU_SAMPLE_SIZE (sizeof(pidSample) / 2) // 16-bit
+#define IMU_DATA_DUMP_SIZE 30
 #define IMU_BUFFER_SIZE 5000 // units are IMU_SAMPLE_SIZE
 #define IMU_SAMPLE_FREQUENCY 5000 // Hz
 #define IMU_SAMPLE_PERIOD (1000000/IMU_SAMPLE_FREQUENCY) // micros
@@ -56,4 +56,5 @@ void enterIMU();
 void leaveIMU();
 void imuPacketSent();
 void recordPid(const volatile pidSample& s);
+void imuHeartbeat();
 #endif // IMU

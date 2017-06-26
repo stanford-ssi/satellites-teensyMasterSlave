@@ -39,7 +39,7 @@ void packet_setup(void) {
     SPI_SLAVE.begin_SLAVE(SCK1, MOSI1, MISO1, T3_SPI1_CS0);
     SPI_SLAVE.setCTAR_SLAVE(16, T3_SPI_MODE0);
     NVIC_ENABLE_IRQ(IRQ_SPI1);
-    NVIC_SET_PRIORITY(IRQ_SPI1, 16);
+    NVIC_SET_PRIORITY(IRQ_SPI1, 0);
 
     pinMode(PACKET_RECEIVED_TRIGGER, OUTPUT);
     digitalWrite(PACKET_RECEIVED_TRIGGER, LOW);
@@ -221,7 +221,7 @@ void response_status() {
 }
 
 void responseImuDump() {
-    setupTransmissionWithChecksum(RESPONSE_PID_DATA, IMU_DATA_DUMP_SIZE, imuPacketChecksum, imuDumpPacket);
+    setupTransmissionWithChecksum(RESPONSE_PID_DATA, IMU_DATA_DUMP_SIZE * sizeof(pidSample) * 8 / 16, imuPacketChecksum, imuDumpPacket);
 }
 
 void responseBadPacket(uint16_t flag) {
@@ -249,7 +249,8 @@ void setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uin
     transmissionSize = bodyLength + OUT_PACKET_OVERHEAD;
     packetBuffer[0] = FIRST_WORD;
     packetBuffer[1] = transmissionSize;
-    packetBuffer[2] = header;
+    packetBuffer[2] = ~transmissionSize;
+    packetBuffer[3] = header;
     assert(packetBuffer[OUT_PACKET_BODY_BEGIN] != 0xbeef);
     assert(packetBuffer[OUT_PACKET_BODY_BEGIN + bodyLength - 1] != 0xbeef);
     uint16_t checksum = bodyChecksum + transmissionSize + header;

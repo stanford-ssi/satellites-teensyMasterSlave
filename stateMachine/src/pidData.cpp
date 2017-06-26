@@ -22,7 +22,7 @@ elapsedMicros timeSinceLastRead;
 volatile pidSample imuDumpPacketMemory[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
 // We skip the first few uint16 because we want the packet body to begin at imuDumpPacketMemory[1], which has a good byte offset mod 32bit.
 // Assume header size is less than IMU_SAMPLE_SIZE
-volatile uint16_t *imuDumpPacket = ((uint16_t *) imuDumpPacket) + (IMU_SAMPLE_SIZE - OUT_PACKET_BODY_BEGIN);
+volatile uint16_t *imuDumpPacket = ((uint16_t *) imuDumpPacketMemory) + (IMU_SAMPLE_SIZE - OUT_PACKET_BODY_BEGIN);
 volatile pidSample *imuDumpPacketBody = (pidSample *) (imuDumpPacket + OUT_PACKET_BODY_BEGIN);
 volatile uint16_t imuPacketChecksum = 0;
 volatile unsigned int imuPacketBodyPointer = 0;
@@ -34,10 +34,11 @@ volatile unsigned int imuSamplesQueued = 0;
 
 // Runs in main's setup()
 void imuSetup() {
-    assert(((unsigned int) imuDumpPacketBody) % 32 == 0);  // Check offset; Misaligned data may segfault at 0x20000000
-    assert(((unsigned int) imuSamples) % 32 == 0);
+
+    assert(((unsigned int) imuDumpPacketBody) % 4 == 0);  // Check offset; Misaligned data may segfault at 0x20000000
+    // assert(((unsigned int) imuSamples) % 4 == 0); // GCC says this is statically checkable
     debugPrintf("imuSamples location (we want this to be far from 0x2000000): %p to %p\n", imuSamples, imuSamples + IMU_BUFFER_SIZE);
-    debugPrintf("imuDumpPacket location (we want this to be far from 0x2000000): %p to %p\n", imuDumpPacketMemory, imuDumpPacketMemory + IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD);
+    debugPrintf("imuDumpPacket location (we want this to be far from 0x2000000): memory begins %p, samples %p to %p\n", imuDumpPacketMemory, imuDumpPacket, imuDumpPacketMemory + IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD);
     pinMode(IMU_DATA_READY_PIN, OUTPUT);
     /* TODO: put check back in // for (int i = 0; i < 10; i++) {
         imuSamples[IMU_BUFFER_SIZE + i] = 0xbeef;
@@ -62,7 +63,7 @@ void checkDataDump() {
     if (imuPacketBodyPointer >= IMU_DATA_DUMP_SIZE) {
         // Prepare packet!
         noInterrupts();
-        //setupTransmissionWithChecksum(RESPONSE_IMU_DATA, IMU_DATA_DUMP_SIZE, imuPacketChecksum, imuDumpPacket);
+        assert((sizeof(pidSample) * 8) % 16 == 0);
         imuPacketReady = true;
         digitalWriteFast(IMU_DATA_READY_PIN, HIGH);
         interrupts();
@@ -92,15 +93,16 @@ bool shouldSample() {
 
 void recordPid(const volatile pidSample& s) {
     //debugPrintf("Sampling %d imuDataPointer %d IMU_BUFFER_SIZE %d\n", sampling, imuDataPointer, IMU_BUFFER_SIZE);
-    assert(sampling);
+    //assert(sampling);
     if (!sampling) {
+        //debugPrintf("Warning: buffer is full!\n");
         return;
     }
     //assert(imuDataPointer % IMU_NUM_CHANNELS == 0);
     ((pidSample *) imuSamples)[imuDataPointer] = s;
     imuDataPointer++;
     imuSamplesRead++;
-    debugPrintf("Base array %p, writing to %p, end of array %p\n", &((mirrorOutput *) imuSamples)[0], &((mirrorOutput *) imuSamples)[imuDataPointer/IMU_SAMPLE_SIZE], &imuSamples[IMU_BUFFER_SIZE]);
+    //debugPrintf("Base array %p, writing to %p, end of array %p\n", &((pidSample *) imuSamples)[0], &((pidSample *) imuSamples)[imuDataPointer], &imuSamples[IMU_BUFFER_SIZE]);
     assert(imuDataPointer <= IMU_BUFFER_SIZE);
     if (imuDataPointer >= IMU_BUFFER_SIZE) {
         sampling = false;
@@ -113,8 +115,8 @@ void taskIMU() {
     /* // TODO: replace // if (imuSamples[IMU_BUFFER_SIZE] != 0xbeef) {
         debugPrintf("End of buf is %x\n", imuSamples[IMU_BUFFER_SIZE]);
     } */
-    assert (imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD] == 0xbeef);
-    assert (imuDataPointer % IMU_SAMPLE_SIZE == 0);
+    //assert (imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD] == 0xbeef);
+    // assert (imuDataPointer % IMU_SAMPLE_SIZE == 0);
     assert (imuDataPointer <= IMU_BUFFER_SIZE);
     assert (!(sampling && (imuDataPointer >= IMU_BUFFER_SIZE)));
     checkDataDump();

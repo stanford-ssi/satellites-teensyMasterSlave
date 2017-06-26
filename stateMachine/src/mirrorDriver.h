@@ -9,9 +9,9 @@ typedef struct mirrorOutput {
     uint32_t y_high;
     uint32_t y_low;
     mirrorOutput() {
-        if (Serial) {
+        /*if (Serial) {
             Serial.printf("Initializing\n");
-        }
+        }*/
         x_high = x_low = y_high = y_low = 0;
     }
 
@@ -38,15 +38,15 @@ typedef struct mirrorOutput {
         }*/
     }
     mirrorOutput(const volatile mirrorOutput& s) {
-        if (Serial) {
+        /*if (Serial) {
             Serial.printf("Copy initializing\n");
-        }
+        }*/
         copy(s);
     }
     mirrorOutput& operator =(const volatile mirrorOutput& s) {
-        if (Serial) {
+        /*if (Serial) {
             Serial.printf("Equals operator\n");
-        }
+        }*/
         copy(s);
         return *this;
     }

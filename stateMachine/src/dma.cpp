@@ -47,6 +47,12 @@ volatile adcSample* dmaGetSample() {
     assert(dmaSampleReady());
     volatile uint32_t* toReturn = &spi_rx_dest[backOfBuffer];
     backOfBuffer = (backOfBuffer + DMA_SAMPLE_NUMAXES * DMA_SAMPLE_DEPTH) % (DMA_SAMPLE_DEPTH * DMASIZE);
+    /*adcSample* sample = (adcSample *) toReturn;
+    if (!(sample->axis2 == 0 &&  sample->axis3 == 0 && sample->axis4 == 0)) {
+        char debugBuf[40];
+        sample->toString(debugBuf, 39);
+        debugPrintf("Ruh roh, sample is %s\n", debugBuf);
+    }*/
     return (adcSample *) toReturn;
 }
 

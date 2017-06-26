@@ -62,6 +62,7 @@ void heartbeat() {
     } else if (state == CALIBRATION_STATE) {
         calibrationHeartbeat();
     }
+    debugPrintf("-----------------------\n");
 }
 
 void taskIdle(void) {

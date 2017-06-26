@@ -48,7 +48,7 @@ void pidProcess(const volatile adcSample& s) {
     lastPidOut.copy(out);
     pidSample samplePid(s, out);
     recordPid(samplePid);
-    debugPrintf("Done recording\n");
+    //debugPrintf("Done recording\n");
     writePidOutput(out);
     samplesProcessed++;
 }
@@ -70,17 +70,19 @@ void taskTracking() {
         debugPrintf("Offset is too high! It is %d\n", dmaGetOffset());
     }
     if (dmaSampleReady()) {
-        debugPrintf("Getting sample\n");
+        //debugPrintf("Getting sample\n");
         volatile adcSample s = *dmaGetSample();
-        debugPrintf("Processing sample\n");
+        s.axis1 = samplesProcessed; // TODO: remove
+        //debugPrintf("Processing sample\n");
         pidProcess(s);
     }
-    debugPrintf("Performing imu\n");
+    //debugPrintf("Performing imu\n");
     taskIMU();
-    debugPrintf("samples %d\n", samplesProcessed);
+    //debugPrintf("samples %d\n", samplesProcessed);
 }
 
 void trackingHeartbeat() {
+    imuHeartbeat();
     char lastAdcReadBuf[40];
     char lastPidOutBuf[40];
     lastAdcRead.toString(lastAdcReadBuf, 40);
