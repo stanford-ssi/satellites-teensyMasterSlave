@@ -5,22 +5,25 @@
 
 typedef struct pidSample {
     adcSample sample;
+    adcSample incoherentOutput;
     mirrorOutput out;
 
-    pidSample(): sample(), out() {
+    pidSample(): sample(), incoherentOutput(), out() {
     }
 
     pidSample(const volatile pidSample& s) {
         copy(s);
     }
 
-    pidSample(const volatile adcSample& sampleAdc, const volatile mirrorOutput& o) {
+    pidSample(const volatile adcSample& sampleAdc, const volatile adcSample& incoherent, const volatile mirrorOutput& o) {
         sample.copy(sampleAdc);
+        incoherentOutput.copy(incoherent);
         out.copy(o);
     }
 
     void copy(const volatile pidSample& s) {
         sample = s.sample;
+        incoherentOutput = s.incoherentOutput;
         out = s.out;
     }
 
@@ -39,8 +42,8 @@ typedef struct pidSample {
 
 #define IMU_NUM_CHANNELS 4
 #define IMU_SAMPLE_SIZE (sizeof(pidSample) / 2) // 16-bit
-#define IMU_DATA_DUMP_SIZE 30
-#define IMU_BUFFER_SIZE 5000 // units are IMU_SAMPLE_SIZE
+#define IMU_DATA_DUMP_SIZE 20
+#define IMU_BUFFER_SIZE 3000 // units are IMU_SAMPLE_SIZE
 #define IMU_SAMPLE_FREQUENCY 5000 // Hz
 #define IMU_SAMPLE_PERIOD (1000000/IMU_SAMPLE_FREQUENCY) // micros
 #define IMU_DATA_READY_PIN 19

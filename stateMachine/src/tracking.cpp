@@ -43,10 +43,16 @@ void leaveTracking() {
     leaveIMU();
 }
 
+void incoherentProcess(const volatile adcSample& s, adcSample& output) {
+    output.copy(s);
+}
+
 void pidProcess(const volatile adcSample& s) {
+    adcSample incoherentOutput;
+    incoherentProcess(s, incoherentOutput);
     mirrorOutput out;
     lastPidOut.copy(out);
-    pidSample samplePid(s, out);
+    pidSample samplePid(s, incoherentOutput, out);
     recordPid(samplePid);
     //debugPrintf("Done recording\n");
     writePidOutput(out);

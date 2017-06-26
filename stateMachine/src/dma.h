@@ -17,7 +17,7 @@ typedef struct adcSample {
         this->axis3 = s.axis3;
         this->axis4 = s.axis4;
     }
-    adcSample(volatile adcSample& s) {
+    adcSample(const volatile adcSample& s) {
         copy(s);
     }
     adcSample& operator =(const volatile adcSample& s) {
