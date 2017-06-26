@@ -1,3 +1,6 @@
+all: master
+	./master
+
 install: master
 	./master
 
