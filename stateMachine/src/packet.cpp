@@ -53,7 +53,7 @@ void packet_setup(void) {
 }
 
 uint16_t getHeader() {
-    return currentlyTransmittingPacket[2];
+    return currentlyTransmittingPacket[3];
 }
 
 //Interrupt Service Routine to handle incoming data
@@ -121,7 +121,7 @@ void handlePacket() {
   }
 
   unsigned int endTimePacketPrepare = micros();
-  assert (endTimePacketPrepare - startTimePacketPrepare <= 1);
+  assert (endTimePacketPrepare - startTimePacketPrepare <= 2);
 
   create_response();
 }
@@ -167,6 +167,7 @@ void create_response() {
         if (!(state == TRACKING_STATE || state == CALIBRATION_STATE)) {
             responseBadPacket(INVALID_COMMAND);
         } else if (!imuPacketReady) {
+            debugPrintf("Front of buf %d back %d samples sent %d\n", imuDataPointer, imuSentDataPointer, imuSamplesSent);
             responseBadPacket(DATA_NOT_READY);
         } else {
             responseImuDump();

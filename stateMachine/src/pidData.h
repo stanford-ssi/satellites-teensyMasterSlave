@@ -53,6 +53,8 @@ extern volatile bool imuPacketReady;
 extern volatile uint16_t* imuDumpPacket;
 extern volatile uint16_t imuPacketChecksum;
 
+extern volatile unsigned int imuDataPointer, imuSentDataPointer, imuSamplesSent;
+
 void imuSetup();
 void taskIMU();
 void enterIMU();

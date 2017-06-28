@@ -65,7 +65,9 @@ void dmaStartSampling() { // Clears out old samples so the first sample you read
 }
 
 void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phase-correct-PWM?styleid=2
-
+    analogWriteFrequency(3, 20000);
+    analogWrite(3, 128);
+/*
  FTM0_SC = 0;
  FTM1_SC = 0;
 
@@ -108,7 +110,7 @@ void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phas
 
  debugPrintf("Starting global clock\n");
  FTM0_CONF |= FTM_CONF_GTBEOUT;             // GTBEOUT 1
-
+*/
 }
 
 void dmaReceiveSetup() {

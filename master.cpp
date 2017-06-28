@@ -19,7 +19,7 @@ using namespace std;
 
 unsigned int errors = 0;
 unsigned int bugs = 0;
-const int spiSpeed = 1000000;
+const int spiSpeed = 500000;
 
 bool assertionError(const char* file, int line, const char* assertion) {
     errors++;
@@ -205,10 +205,7 @@ void transmitCrappy(uint16_t *buf) {
 
 void rando() {
   printf("begin random\n");
-  std::atomic<bool> interrupted;
-  interrupted.store(false);
 
-  // create a new thread that does stuff in the background
   int i = 0;
   while(true) {
     int nextCommand = rand() % 3;
@@ -218,8 +215,8 @@ void rando() {
       transmitH(stat, false);
     } else if (nextCommand == 2) {
       transmitH(idle_, false);
-    } else {
-      return;
+    } else if (nextCommand == 3) {
+      transmitH(enterPointTrack, false);
     }
     i++;
   }
@@ -245,13 +242,21 @@ void loop() {
       transmit(enterPointTrack);
     } else if (incomingByte == '7') {
       transmit(reportTrack);
+    } else if (incomingByte == 'p') {
+      for (int i = 0; i < 100; i++) {
+          for (volatile int i = 0; i < 1000000 && digitalRead(24) == 0; i++) {
+          }
+          transmitH(reportTrack, false);
+      }
     } else if (incomingByte == '8') {
       transmitCrappy(echo);
+    } else if (incomingByte == 'd') {
+      cout << digitalRead(24) << endl;
     } else if (incomingByte == 'r') {
       rando();
     } else if (incomingByte == 'm') {
       transmitMany = true;
     } else if (incomingByte == 'l') {
-        printf("1 - echo\n2 - stat\n3 - idle\n4 - imu\n5 - imuData\n6 - point\n7 - report tracking\n8 - crappy\nr - rando\n");
+        printf("1 - echo\n2 - stat\n3 - idle\n4 - imu\n5 - imuData\n6 - point\n7 - report tracking\n8 - crappy\np - report\nr - rando\n");
     }
 }

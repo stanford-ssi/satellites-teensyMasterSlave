@@ -13,6 +13,7 @@
 // If dataPointer == sentDataPointer - IMU_SAMPLE_SIZE, buffer is full
 volatile unsigned int imuSentDataPointer = 0;
 volatile unsigned int imuDataPointer = 0; // Marks index of next place to read into
+volatile unsigned int imuSamplesSent = 0;
 volatile pidSample imuSamples[IMU_BUFFER_SIZE + 10]; // Add some extra space on the end in case we overflow
 volatile bool sampling = false;
 elapsedMicros timeSinceLastRead;
@@ -128,7 +129,9 @@ void imuPacketSent() {
         imuPacketChecksum = 0;
         imuPacketBodyPointer = 0;
         imuPacketReady = false;
+        digitalWrite(IMU_DATA_READY_PIN, LOW);
         imuPacketChecksum = 0;
+        imuSamplesSent += IMU_DATA_DUMP_SIZE;
         interrupts();
     }
 }
@@ -152,5 +155,5 @@ void leaveIMU() {
 }
 
 void imuHeartbeat() {
-    Serial.printf("IMU front of buffer %d, back of buffer %d, packet ready? %d, chksum %d, packet pointer %d, sampling %d, packet %d\n", imuDataPointer, imuSentDataPointer, imuPacketReady, imuPacketChecksum, imuPacketBodyPointer, sampling, imuPacketBodyPointer);
+    Serial.printf("IMU front of buffer %d, back of buffer %d, packet ready? %d, chksum %d, packet pointer %d, sampling %d, packet %d\n", imuDataPointer, imuSentDataPointer, imuPacketReady, imuPacketChecksum, imuPacketBodyPointer, sampling, imuPacketBodyPointer, imuSamplesSent);
 }
