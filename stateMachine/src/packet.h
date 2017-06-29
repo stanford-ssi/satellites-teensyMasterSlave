@@ -61,6 +61,7 @@ extern volatile bool transmitting;
 #define INTERNAL_ERROR 2
 #define INVALID_COMMAND 3
 #define DATA_NOT_READY 4
+#define STATE_NOT_READY 5
 
 void packet_setup(void);
 

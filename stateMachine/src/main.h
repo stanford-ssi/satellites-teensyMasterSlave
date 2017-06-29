@@ -30,6 +30,9 @@ extern elapsedMicros micro;
 
 bool assertionError(const char* file, int line, const char* assertion);
 void heartbeat(void);
+void heartbeat2(void);
+void heartbeat3(void);
+void heartbeat4(void);
 void clearBuffer(void);
 void handlePacket(void);
 void packetReceived(void);

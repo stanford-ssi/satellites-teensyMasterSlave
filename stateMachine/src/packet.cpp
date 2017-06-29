@@ -126,42 +126,37 @@ void handlePacket() {
   create_response();
 }
 
-void leaveCurrentState() {
-    assert(state != SHUTDOWN_STATE);
-    if (state == IDLE_STATE) {
-        //leaveIdle(); // Nothing to do here
-    } else if (state == TRACKING_STATE) {
-        leaveTracking();
-    } else if (state == CALIBRATION_STATE) {
-        leaveCalibration();
-    }
-}
-
 void create_response() {
     assert(packetPointer == PACKET_SIZE);
     assert(transmitting == false);
     uint16_t command = packet[1];
+    if (changingState) {
+        responseBadPacket(STATE_NOT_READY);
+        return;
+    }
     if (command == COMMAND_ECHO) {
         response_echo();
     } else if (command == COMMAND_STATUS) {
         response_status();
     } else if (command == COMMAND_SHUTDOWN) {
-        leaveCurrentState();
+        previousState = state;
+        changingState = true;
         state = SHUTDOWN_STATE;
         response_status();
     } else if (command == COMMAND_IDLE) {
-        leaveCurrentState();
+        previousState = state;
+        changingState = true;
         state = IDLE_STATE;
         response_status();
     } else if (command == COMMAND_POINT_TRACK) {
-        leaveCurrentState();
+        previousState = state;
+        changingState = true;
         state = TRACKING_STATE;
-        enterTracking();
         response_status();
     } else if (command == COMMAND_CALIBRATE) {
-        leaveCurrentState();
+        previousState = state;
+        changingState = true;
         state = CALIBRATION_STATE;
-        enterCalibration();
         response_status();
     } else if (command == COMMAND_REPORT_TRACKING) {
         if (!(state == TRACKING_STATE || state == CALIBRATION_STATE)) {

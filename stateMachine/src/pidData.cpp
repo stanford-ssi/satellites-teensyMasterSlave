@@ -101,11 +101,12 @@ void recordPid(const volatile pidSample& s) {
     }
     //assert(imuDataPointer % IMU_NUM_CHANNELS == 0);
     ((pidSample *) imuSamples)[imuDataPointer] = s;
-    imuDataPointer++;
+    imuDataPointer = (imuDataPointer + 1) % IMU_BUFFER_SIZE;
     imuSamplesRead++;
     //debugPrintf("Base array %p, writing to %p, end of array %p\n", &((pidSample *) imuSamples)[0], &((pidSample *) imuSamples)[imuDataPointer], &imuSamples[IMU_BUFFER_SIZE]);
     assert(imuDataPointer <= IMU_BUFFER_SIZE);
-    if (imuDataPointer >= IMU_BUFFER_SIZE) {
+
+    if (((imuDataPointer + 1) % IMU_BUFFER_SIZE) == (imuSentDataPointer % IMU_BUFFER_SIZE)) {
         sampling = false;
     }
 }
@@ -155,5 +156,5 @@ void leaveIMU() {
 }
 
 void imuHeartbeat() {
-    Serial.printf("IMU front of buffer %d, back of buffer %d, packet ready? %d, chksum %d, packet pointer %d, sampling %d, packet %d\n", imuDataPointer, imuSentDataPointer, imuPacketReady, imuPacketChecksum, imuPacketBodyPointer, sampling, imuPacketBodyPointer, imuSamplesSent);
+    Serial.printf("IMU front of buffer %d, back of buffer %d, packet ready? %d, chksum %d, packet pointer %d, sampling %d, packet %d, sent %d\n", imuDataPointer, imuSentDataPointer, imuPacketReady, imuPacketChecksum, imuPacketBodyPointer, sampling, imuPacketBodyPointer, imuSamplesSent);
 }

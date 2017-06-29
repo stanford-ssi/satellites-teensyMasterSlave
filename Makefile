@@ -1,5 +1,5 @@
 all: master
-	./master
+	./master | tee masterLog.txt
 
 install: master
 	./master

@@ -93,7 +93,7 @@ void trackingHeartbeat() {
     char lastPidOutBuf[40];
     lastAdcRead.toString(lastAdcReadBuf, 40);
     lastPidOut.toString(lastPidOutBuf, 40);
-    debugPrintf("Last pid output %s, last adc read %s, samples processed %d\n", lastPidOutBuf, lastAdcReadBuf, samplesProcessed);
+    //debugPrintf("Last pid output %s, last adc read %s, samples processed %d\n", lastPidOutBuf, lastAdcReadBuf, samplesProcessed);
 }
 
 void enterCalibration() {

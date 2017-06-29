@@ -243,11 +243,14 @@ void loop() {
     } else if (incomingByte == '7') {
       transmit(reportTrack);
     } else if (incomingByte == 'p') {
-      for (int i = 0; i < 100; i++) {
-          for (volatile int i = 0; i < 1000000 && digitalRead(24) == 0; i++) {
+      while (true) {
+      //for (int i = 0; i < 100000000000; i++) {
+          for (volatile int i = 0; digitalRead(24) == 0; i++) {
           }
           transmitH(reportTrack, false);
       }
+    } else if (incomingByte == 's') {
+      transmit(shutdown_);
     } else if (incomingByte == '8') {
       transmitCrappy(echo);
     } else if (incomingByte == 'd') {

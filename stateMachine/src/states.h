@@ -13,5 +13,7 @@
 #define MAX_STATE 6
 
 extern volatile uint16_t state;
+extern volatile uint16_t previousState;
+extern volatile bool changingState;
 
 #endif
