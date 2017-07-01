@@ -196,22 +196,20 @@ void response_echo() {
     setupTransmission(RESPONSE_OK, bodySize);
 }
 
+void write32(volatile uint16_t* buffer, unsigned int index, uint32_t item) {
+    *((volatile uint32_t *) &buffer[index]) = item;
+}
+
 void response_status() {
     assert(packetPointer == PACKET_SIZE);
     assert(!transmitting);
     clearSendBuffer();
     int bodySize = 9;
     outBody[0] = state;
-    outBody[1] = packetsReceived / (1 << 16);
-    outBody[2] = packetsReceived % (1 << 16);
-    outBody[3] = wordsReceived / (1 << 16);
-    outBody[4] = wordsReceived % (1 << 16);
-    volatile unsigned int timeAliveSave = timeAlive;
-    outBody[5] = timeAliveSave / (1 << 16);
-    outBody[6] = timeAliveSave % (1 << 16);
-    volatile unsigned int lastLoopSave = lastLoopTime;
-    outBody[7] = lastLoopSave / (1 << 16);
-    outBody[8] = lastLoopSave % (1 << 16);
+    write32(outBody, 1, packetsReceived);
+    write32(outBody, 3, wordsReceived);
+    write32(outBody, 5, timeAlive);
+    write32(outBody, 7, lastLoopTime);
     assert(outBody[bodySize] == 0xbeef);
     setupTransmission(RESPONSE_OK, bodySize);
 }

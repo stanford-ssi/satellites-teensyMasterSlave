@@ -9,14 +9,14 @@ void testDma() {
 
 void testBreakingLoop() {
     debugPrintf("Testing loop breaks\n");
-    unsigned int startTimeCheck = micro;
+    unsigned int startTimeCheck = micros();
     for (int i = 0; !(SPI2_SR & SPI_SR_TCF); i++) {
         if (i > 10000) {
             debugPrintf("Note: loop broken\n"); // Test guaranteed termination on loop
             break;
         }
     } // About 800 micros
-    unsigned int timeSpent = micro - startTimeCheck;
+    unsigned int timeSpent = micros() - startTimeCheck;
     debugPrintf("Time spent: %d\n", (unsigned int) timeSpent);
     assert(timeSpent > 100);
 }

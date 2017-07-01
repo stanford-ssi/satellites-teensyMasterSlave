@@ -9,7 +9,6 @@ IntervalTimer timer, timer2, timer3, timer4;
 volatile uint16_t state = SETUP_STATE;
 volatile uint16_t previousState = SETUP_STATE;
 volatile bool changingState = false;
-elapsedMicros micro = 0;
 volatile unsigned int timeAlive = 0;
 volatile int errors = 0;
 volatile int bugs = 0;
@@ -138,7 +137,7 @@ void enterNextState() {
 }
 
 void checkTasks(void) {
-    long startOfLoop = micro;
+    long startOfLoop = micros();
     assert(state <= MAX_STATE);
     if (changingState) {
         noInterrupts();
@@ -156,11 +155,11 @@ void checkTasks(void) {
     }
 
     // Save this into a long because elapsedMillis is not guaranteed in interrupts
-    timeAlive = micro / 1000000;
+    timeAlive = millis();
     if (ignoreLoopTime) {
         ignoreLoopTime = false;
     } else {
-        lastLoopTime = micro - startOfLoop;
+        lastLoopTime = micros() - startOfLoop;
         lastLoopState = state;
         if (lastLoopTime > maxLoopTime) {
             maxLoopTime = lastLoopTime;
