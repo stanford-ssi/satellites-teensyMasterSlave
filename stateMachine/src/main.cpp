@@ -96,7 +96,7 @@ void heartbeat3() {
 void heartbeat4() {}
 
 void taskIdle(void) {
-    uint16_t rando = random(60000);
+    /*uint16_t rando = random(60000);
     uint16_t receivedTransfer = SPI2.transfer16(rando);
     assert(!SPI2_LOOPBACK || receivedTransfer == rando);
     lastAnalogRead = analogRead(14);
@@ -111,7 +111,7 @@ void taskIdle(void) {
         assert(dmaSampleReady());
         dmaGetSample();
         assert(!dmaSampleReady());
-    }
+    }*/
     /*volatile int garbage = 0;
     for (int i = 0; i < 50000; i++) { // Do some work
         garbage += i;

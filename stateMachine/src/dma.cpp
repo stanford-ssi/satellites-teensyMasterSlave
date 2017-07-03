@@ -95,6 +95,7 @@ void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phas
 }
 
 void spi0_isr(void) {
+    noInterrupts();
     assert(adcIsrIndex < (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES);
     if (!(adcIsrIndex < (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES)) {
         debugPrintf("Adc isr is %d frontOfBuffer %d last %x %x %x %x\n", adcIsrIndex, frontOfBuffer, adcSamplesRead[DMASIZE].axis1, adcSamplesRead[DMASIZE].axis2, adcSamplesRead[DMASIZE].axis3, adcSamplesRead[DMASIZE].axis4);
@@ -125,15 +126,18 @@ void spi0_isr(void) {
         frontOfBuffer = (frontOfBuffer + 1) % DMASIZE;
     }
     //debugPrintf("spiend");
+    interrupts();
 }
 
 void beginAdcRead(void) {
+    noInterrupts();
     if (adcIsrIndex != (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES && adcIsrIndex != 0) {
         return;
     }
     adcIsrIndex = 0;
     SPI0_PUSHR = ((uint16_t) adcIsrIndex) | SPI_PUSHR_CTAS(1);
     //debugPrintf("Hey\n");
+    interrupts();
 }
 
 void dmaReceiveSetup() {
