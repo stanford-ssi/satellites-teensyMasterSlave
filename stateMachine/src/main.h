@@ -25,7 +25,7 @@
 
 extern volatile unsigned int timeAlive;
 extern volatile unsigned int lastLoopTime;
-extern volatile int errors;
+extern volatile unsigned int errors;
 
 bool assertionError(const char* file, int line, const char* assertion);
 void heartbeat(void);

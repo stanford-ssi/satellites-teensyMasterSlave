@@ -10,8 +10,8 @@ volatile uint16_t state = SETUP_STATE;
 volatile uint16_t previousState = SETUP_STATE;
 volatile bool changingState = false;
 volatile unsigned int timeAlive = 0;
-volatile int errors = 0;
-volatile int bugs = 0;
+volatile unsigned int errors = 0;
+volatile unsigned int bugs = 0;
 long startOfLoop = 0;
 volatile bool ignoreLoopTime = false;
 volatile unsigned int lastLoopTime = 0;
@@ -27,10 +27,12 @@ volatile unsigned int numMediumLoops = 0;
 
 void setup() {
   Serial.begin(115200);
-  delay(500);
   debugPrintf("Serial is on\n");
-  const int heartRate = 3000000;
-  timer.begin(heartbeat, heartRate); // Every 3 seconds
+  delay(500);
+  // Every 2.75 seconds - integer quantity of seconds prevents us from seeing
+  // dma offset change, as sampling rate is a clean multiple of buffer size
+  const int heartRate = 2750000;
+  timer.begin(heartbeat, heartRate);
   delay(1);
   timer2.begin(heartbeat2, heartRate);
   delay(1);

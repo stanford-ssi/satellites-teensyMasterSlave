@@ -5,69 +5,50 @@
 const uint8_t spi_cs_pin = 15;   // pin 15 SPI0 chip select
 const uint8_t trigger_pin = 18;  // PTB11.  This pin will receive conversion ready signal
 
-DMAChannel dma_start_spi;
-DMAChannel dma_rx;
-DMAChannel dma_tx;
-std::array<uint32_t, 2> spi_tx_src;
-std::array<volatile uint32_t, DMASIZE> spi_rx_dest;
-uint32_t rx_begin = uint32_t(spi_rx_dest.data());
 
-SPISettings spi_settings(10, MSBFIRST, SPI_MODE0);
-uint32_t start_spi_sr = 0xFF0F0000;
+SPISettings spi_settings(6250000, MSBFIRST, SPI_MODE0);
 
-uint32_t backOfBuffer = 0; // unsigned char* pointer
+uint32_t frontOfBuffer = 0;
+uint32_t backOfBuffer = 0;
+adcSample adcSamplesRead[DMASIZE + 1];
+
+volatile adcSample nextSample;
+volatile unsigned int adcIsrIndex = 0; // indexes into nextSample
 
 uint32_t dmaGetOffset() {
-    uint32_t dma_rx_pos = (uint32_t) dma_rx.destinationAddress(); // Pointer, in bytes
     uint32_t offset;
-    assert(dma_rx_pos >= rx_begin);
-    if (!(dma_rx_pos >= rx_begin)) {
-        debugPrintf("Start %d, currently %d\n", rx_begin, dma_rx_pos);
-    }
-
-    uint32_t index = dma_rx_pos - rx_begin;
-    if (index >= backOfBuffer) {
-        offset = index - backOfBuffer;
+    if (frontOfBuffer >= backOfBuffer) {
+        offset = frontOfBuffer - backOfBuffer;
     } else {
-        assert(index + (DMA_SAMPLE_DEPTH * DMASIZE) >= backOfBuffer);
-        offset = index + (DMA_SAMPLE_DEPTH * DMASIZE) - backOfBuffer;
+        assert(frontOfBuffer + DMASIZE >= backOfBuffer);
+        offset = frontOfBuffer + DMASIZE - backOfBuffer;
     }
-    offset -= offset % 4;
-    assert(offset % 4 == 0);
-    offset /= 4; // Convert byte to uint32
-    //debugPrintf("Dma at %d, rx at %d, begin %d, index %d, offset %d\n", dma_rx_pos, rx_begin, backOfBuffer, index, offset);
     return offset;
 }
 
 bool dmaSampleReady() {
-    return dmaGetOffset() >= 4;
+    return dmaGetOffset() >= 1;
 }
 
 volatile adcSample* dmaGetSample() {
     assert(dmaSampleReady());
-    volatile uint32_t* toReturn = &spi_rx_dest[backOfBuffer];
-    backOfBuffer = (backOfBuffer + DMA_SAMPLE_NUMAXES * DMA_SAMPLE_DEPTH) % (DMA_SAMPLE_DEPTH * DMASIZE);
+    volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
+    backOfBuffer = (backOfBuffer + 1) % DMASIZE;
     /*adcSample* sample = (adcSample *) toReturn;
     if (!(sample->axis2 == 0 &&  sample->axis3 == 0 && sample->axis4 == 0)) {
         char debugBuf[40];
         sample->toString(debugBuf, 39);
         debugPrintf("Ruh roh, sample is %s\n", debugBuf);
     }*/
-    return (adcSample *) toReturn;
+    return toReturn;
 }
 
 void dmaStartSampling() { // Clears out old samples so the first sample you read is fresh
-    uint32_t offset = dmaGetOffset();
-    offset -= offset % DMA_SAMPLE_NUMAXES; // Only clear out in increments of DMA_SAMPLE_NUMAXES
-    assert(offset % DMA_SAMPLE_NUMAXES == 0);
-    assert(backOfBuffer < DMASIZE * DMA_SAMPLE_DEPTH); // Should index somewhere in the buffer
-    backOfBuffer = (backOfBuffer + 4 * offset) % (DMASIZE * DMA_SAMPLE_DEPTH);
+    backOfBuffer = frontOfBuffer;
 }
 
 void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phase-correct-PWM?styleid=2
-    analogWriteFrequency(3, 20000);
-    analogWrite(3, 128);
-/*
+
  FTM0_SC = 0;
  FTM1_SC = 0;
 
@@ -110,68 +91,60 @@ void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phas
 
  debugPrintf("Starting global clock\n");
  FTM0_CONF |= FTM_CONF_GTBEOUT;             // GTBEOUT 1
-*/
+
+}
+
+void spi0_isr(void) {
+    //debugPrintf("spibegin");
+    uint16_t spiRead = SPI0_POPR;
+    ((volatile uint16_t *) &nextSample)[adcIsrIndex] = spiRead;
+    //debugPrintf("%p %p %p\n", &(((volatile uint16_t *) &nextSample)[adcIsrIndex]), &nextSample, &adcIsrIndex);
+    for (int i = 0; i < 6; i++) {
+        //delay(1);
+        //debugPrintf("i %d %x\n", i, ((uint32_t *) &adcIsrIndex)[i]);
+    }
+    SPI0_SR |= SPI_SR_RFDF;
+    adcIsrIndex++;
+    //debugPrintf("adcIsrIndex %d\n", adcIsrIndex);
+    if (adcIsrIndex < (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES) {
+        SPI0_PUSHR = ((uint16_t) adcIsrIndex) | SPI_PUSHR_CTAS(1);
+    } else {
+        assert(adcIsrIndex == (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES);
+        if (adcIsrIndex != (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES) {
+            //debugPrintf("Adc isr is %d\n", adcIsrIndex);
+        }
+        adcSamplesRead[frontOfBuffer] = nextSample;
+        frontOfBuffer = (frontOfBuffer + 1) % DMASIZE;
+    }
+    //debugPrintf("spiend");
+}
+
+void beginAdcRead(void) {
+    if (adcIsrIndex != (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES && adcIsrIndex != 0) {
+        return;
+    }
+    adcIsrIndex = 0;
+    SPI0_PUSHR = ((uint16_t) 0xabcd) | SPI_PUSHR_CTAS(1);
+    //debugPrintf("Hey\n");
 }
 
 void dmaReceiveSetup() {
     debugPrintln("Starting.");
 
+    Serial.begin(115200);
+
+    pinMode(18, INPUT_PULLUP);
+    attachInterrupt(18, beginAdcRead, FALLING);
     SPI.begin();
-
-    pinMode(spi_cs_pin, OUTPUT);
-    digitalWriteFast(spi_cs_pin, HIGH);
-    auto kinetis_spi_cs = SPI.setCS(spi_cs_pin);
-    spi_tx_src = {
-        SPI_PUSHR_PCS(kinetis_spi_cs) | SPI_PUSHR_CONT | SPI_PUSHR_CTAS(1) | 0x4242,
-        SPI_PUSHR_PCS(kinetis_spi_cs) | SPI_PUSHR_EOQ | SPI_PUSHR_CTAS(1) | 0x4343u,
-    };
-
-    SPI.beginTransaction(spi_settings);
-
-    debugPrintln("Setting up trigger pin.");
-    pinMode(trigger_pin, INPUT_PULLUP);
-    volatile uint32_t *pin_config = portConfigRegister(trigger_pin);
-    *pin_config |= PORT_PCR_IRQC(0b0010); // DMA on falling edge
-
-    dma_start_spi.sourceBuffer(&start_spi_sr, sizeof(start_spi_sr));
-    dma_start_spi.destination(KINETISK_SPI0.SR);
-    // triggered by pin 32, port B
-    dma_start_spi.triggerAtHardwareEvent(DMAMUX_SOURCE_PORTB);
-
-    dma_tx.TCD->SADDR = spi_tx_src.data();
-    dma_tx.TCD->ATTR_SRC = 2; // 32-bit read from source
-    dma_tx.TCD->SOFF = 4;
-    // transfer both 32-bit entries in one minor loop
-    dma_tx.TCD->NBYTES = 8;
-    dma_tx.TCD->SLAST = -sizeof(spi_tx_src); // go back to beginning of buffer
-    dma_tx.TCD->DADDR = &KINETISK_SPI0.PUSHR;
-    dma_tx.TCD->DOFF = 0;
-    dma_tx.TCD->ATTR_DST = 2; // 32-bit write to dest
-    // one major loop iteration
-    dma_tx.TCD->BITER = 1;
-    dma_tx.TCD->CITER = 1;
-    debugPrintln("Setting up trigger...");
-    dma_tx.triggerAtCompletionOf(dma_start_spi);
-
-    dma_rx.source((uint16_t&) KINETISK_SPI0.POPR);
-    dma_rx.destinationBuffer((uint16_t*) spi_rx_dest.data(), sizeof(spi_rx_dest));
-    dma_rx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI0_RX);
-
-    debugPrintln("Set up dma on receive fifo...");
-    SPI0_RSER = SPI_RSER_RFDF_RE | SPI_RSER_RFDF_DIRS; // DMA on receive FIFO drain flag
-    SPI0_SR = 0xFF0F0000;
-
-    debugPrintln("Enabling...");
-    dma_rx.enable();
-    dma_tx.enable();
-    dma_start_spi.enable();
+    SPI0_RSER = 0x00020000;
+    NVIC_ENABLE_IRQ(IRQ_SPI0);
     debugPrintln("Done!");
 }
 
 void dmaSetup() {
-    debugPrintf("Setup up dma.\n");
+    debugPrintf("Setting up dma, offset is %d\n", dmaGetOffset());
     dmaReceiveSetup();
-    debugPrintf("Dma setup complete. Setting up ftm timers.\n");
+    debugPrintf("Dma setup complete, offset is %d. Setting up ftm timers.\n", dmaGetOffset());
     init_FTM0();
     debugPrintf("FTM timer setup complete.\n");
 }
