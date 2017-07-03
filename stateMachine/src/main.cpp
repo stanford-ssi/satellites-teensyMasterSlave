@@ -31,7 +31,7 @@ void setup() {
   delay(500);
   // Every 2.75 seconds - integer quantity of seconds prevents us from seeing
   // dma offset change, as sampling rate is a clean multiple of buffer size
-  const int heartRate = 2750000;
+  const int heartRate = 2751234;
   timer.begin(heartbeat, heartRate);
   delay(1);
   timer2.begin(heartbeat2, heartRate);
@@ -77,8 +77,9 @@ void heartbeat() {
     maxLoopTime = 0;
 }
 
+extern volatile unsigned int frontOfBuffer, backOfBuffer;
 void heartbeat2() {
-    debugPrintf(", last state %d, last read %d, dma offset %d", lastLoopState, lastAnalogRead, dmaGetOffset());
+    debugPrintf(", last state %d, last read %d, dma offset %d %d %d", lastLoopState, lastAnalogRead, dmaGetOffset(), backOfBuffer, frontOfBuffer);
     debugPrintf(", %d loops, time alive %d\n", numLoops, timeAlive);
     debugPrintf("%d last, %d max, %d fast, %d med, %d slow loops\n", lastLoopTime, maxLoopTime, numFastLoops, numMediumLoops, numSlowLoops);
 }

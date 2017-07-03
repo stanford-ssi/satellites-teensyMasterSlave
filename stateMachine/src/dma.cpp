@@ -95,6 +95,14 @@ void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phas
 }
 
 void spi0_isr(void) {
+    assert(adcIsrIndex < (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES);
+    if (!(adcIsrIndex < (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES)) {
+        debugPrintf("Adc isr is %d frontOfBuffer %d last %x %x %x %x\n", adcIsrIndex, frontOfBuffer, adcSamplesRead[DMASIZE].axis1, adcSamplesRead[DMASIZE].axis2, adcSamplesRead[DMASIZE].axis3, adcSamplesRead[DMASIZE].axis4);
+        for (int i = -2; i < 3; i++) {
+            debugPrintf("i %d, address %p, val %x\n", i, &((uint32_t *) &adcIsrIndex)[i], ((uint32_t *) &adcIsrIndex)[i]);
+        }
+        return;
+    }
     //debugPrintf("spibegin");
     uint16_t spiRead = SPI0_POPR;
     ((volatile uint16_t *) &nextSample)[adcIsrIndex] = spiRead;
@@ -111,7 +119,7 @@ void spi0_isr(void) {
     } else {
         assert(adcIsrIndex == (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES);
         if (adcIsrIndex != (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES) {
-            //debugPrintf("Adc isr is %d\n", adcIsrIndex);
+            debugPrintf("Adc isr is %d\n", adcIsrIndex);
         }
         adcSamplesRead[frontOfBuffer] = nextSample;
         frontOfBuffer = (frontOfBuffer + 1) % DMASIZE;
@@ -124,20 +132,22 @@ void beginAdcRead(void) {
         return;
     }
     adcIsrIndex = 0;
-    SPI0_PUSHR = ((uint16_t) 0xabcd) | SPI_PUSHR_CTAS(1);
+    SPI0_PUSHR = ((uint16_t) adcIsrIndex) | SPI_PUSHR_CTAS(1);
     //debugPrintf("Hey\n");
 }
 
 void dmaReceiveSetup() {
     debugPrintln("Starting.");
-
-    Serial.begin(115200);
-
+    adcSamplesRead[DMASIZE].axis1 = 0xdeadbeef;
+    adcSamplesRead[DMASIZE].axis2 = 0xdeadbeef;
+    adcSamplesRead[DMASIZE].axis3 = 0xdeadbeef;
+    adcSamplesRead[DMASIZE].axis4 = 0xdeadbeef;
     pinMode(18, INPUT_PULLUP);
     attachInterrupt(18, beginAdcRead, FALLING);
     SPI.begin();
     SPI0_RSER = 0x00020000;
     NVIC_ENABLE_IRQ(IRQ_SPI0);
+    NVIC_SET_PRIORITY(IRQ_SPI0, 0);
     debugPrintln("Done!");
 }
 
