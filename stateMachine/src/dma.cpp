@@ -11,9 +11,11 @@ SPISettings spi_settings(6250000, MSBFIRST, SPI_MODE0);
 uint32_t frontOfBuffer = 0;
 uint32_t backOfBuffer = 0;
 adcSample adcSamplesRead[DMASIZE + 1];
-
 volatile adcSample nextSample;
 volatile unsigned int adcIsrIndex = 0; // indexes into nextSample
+
+mirrorOutput currentOutput;
+volatile unsigned int mirrorOutputIndex;
 
 uint32_t dmaGetOffset() {
     uint32_t offset;
@@ -94,10 +96,12 @@ void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phas
 
 }
 
+/* ********* Adc read code ********* */
+
 void spi0_isr(void) {
     noInterrupts();
-    assert(adcIsrIndex < (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES);
-    if (!(adcIsrIndex < (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES)) {
+    assert(adcIsrIndex < (sizeof(adcSample) / (16 / 8)));
+    if (!(adcIsrIndex < (sizeof(adcSample) / (16 / 8)))) {
         debugPrintf("Adc isr is %d frontOfBuffer %d last %x %x %x %x\n", adcIsrIndex, frontOfBuffer, adcSamplesRead[DMASIZE].axis1, adcSamplesRead[DMASIZE].axis2, adcSamplesRead[DMASIZE].axis3, adcSamplesRead[DMASIZE].axis4);
         for (int i = -2; i < 3; i++) {
             debugPrintf("i %d, address %p, val %x\n", i, &((uint32_t *) &adcIsrIndex)[i], ((uint32_t *) &adcIsrIndex)[i]);
@@ -118,8 +122,8 @@ void spi0_isr(void) {
     if (adcIsrIndex < (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES) {
         SPI0_PUSHR = ((uint16_t) adcIsrIndex) | SPI_PUSHR_CTAS(1);
     } else {
-        assert(adcIsrIndex == (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES);
-        if (adcIsrIndex != (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES) {
+        assert(adcIsrIndex == (sizeof(adcSample) / (16 / 8)));
+        if (adcIsrIndex != (sizeof(adcSample) / (16 / 8))) {
             debugPrintf("Adc isr is %d\n", adcIsrIndex);
         }
         adcSamplesRead[frontOfBuffer] = nextSample;
@@ -131,12 +135,11 @@ void spi0_isr(void) {
 
 void beginAdcRead(void) {
     noInterrupts();
-    if (adcIsrIndex != (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES && adcIsrIndex != 0) {
+    if (adcIsrIndex != (sizeof(adcSample) / (16 / 8)) && adcIsrIndex != 0) {
         return;
     }
     adcIsrIndex = 0;
     SPI0_PUSHR = ((uint16_t) adcIsrIndex) | SPI_PUSHR_CTAS(1);
-    //debugPrintf("Hey\n");
     interrupts();
 }
 
@@ -155,7 +158,44 @@ void dmaReceiveSetup() {
     debugPrintln("Done!");
 }
 
+/* ******** Mirror output code ********* */
+
+void mirrorOutputSetup() {
+    debugPrintln("Mirror setup starting.");
+    SPI2.begin();
+    SPI2_RSER = 0x00020000;
+    NVIC_ENABLE_IRQ(IRQ_SPI2);
+    NVIC_SET_PRIORITY(IRQ_SPI2, 0);
+    debugPrintln("Done!");
+}
+
+void sendOutput(mirrorOutput& output) {
+    noInterrupts();
+    currentOutput = output;
+    assert(mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8));
+    mirrorOutputIndex = 0;
+    SPI2_PUSHR = ((uint16_t) mirrorOutputIndex) | SPI_PUSHR_CTAS(1);
+    interrupts();
+}
+
+void spi2_isr(void) {
+    noInterrupts();
+    assert(mirrorOutputIndex < sizeof(mirrorOutput) / (16 / 8));
+    (void) SPI2_POPR;
+    uint16_t toWrite = ((volatile uint16_t *) &currentOutput)[mirrorOutputIndex];
+    SPI2_SR |= SPI_SR_RFDF;
+    mirrorOutputIndex++;
+    if (adcIsrIndex < sizeof(mirrorOutput) / (16 / 8)) {
+        SPI0_PUSHR = ((uint16_t) toWrite) | SPI_PUSHR_CTAS(1);
+    } else {
+        assert(mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8));
+    }
+    interrupts();
+}
+
+
 void dmaSetup() {
+    mirrorOutputSetup();
     debugPrintf("Setting up dma, offset is %d\n", dmaGetOffset());
     dmaReceiveSetup();
     debugPrintf("Dma setup complete, offset is %d. Setting up ftm timers.\n", dmaGetOffset());

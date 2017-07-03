@@ -3,7 +3,6 @@
 #include "states.h"
 
 const volatile bool SPI2_LOOPBACK = false;
-const volatile bool DMA_TRIGGER_LOOPBACK = false; // pin 17 to 18
 
 IntervalTimer timer, timer2, timer3, timer4;
 volatile uint16_t state = SETUP_STATE;
@@ -42,13 +41,10 @@ void setup() {
   debugPrintf("Set up heartbeat interrupt\n");
   analogReadResolution(16);
   debugPrintf("Begin Spi2\n");
-  SPI2.begin();
   debugPrintf("Setting up packet:\n");
   packet_setup();
   debugPrintf("Setting up imu state:\n");
   debugPrintf("Done.\n");
-  pinMode(17, OUTPUT); // DMA loopback test
-  digitalWriteFast(17, HIGH);
   debugPrintf("Setting up dma:\n");
   dmaSetup();
   debugPrintf("Done!\n");
@@ -96,26 +92,6 @@ void heartbeat3() {
 void heartbeat4() {}
 
 void taskIdle(void) {
-    /*uint16_t rando = random(60000);
-    uint16_t receivedTransfer = SPI2.transfer16(rando);
-    assert(!SPI2_LOOPBACK || receivedTransfer == rando);
-    lastAnalogRead = analogRead(14);
-    if (DMA_TRIGGER_LOOPBACK) {
-        assert(!dmaSampleReady());
-        for (int i = 0; i < DMA_SAMPLE_NUMAXES; i++) {
-            digitalWriteFast(17, LOW);
-            delayMicroseconds(100);
-            digitalWriteFast(17, HIGH);
-            delayMicroseconds(1000);
-        }
-        assert(dmaSampleReady());
-        dmaGetSample();
-        assert(!dmaSampleReady());
-    }*/
-    /*volatile int garbage = 0;
-    for (int i = 0; i < 50000; i++) { // Do some work
-        garbage += i;
-    }*/
 }
 
 void leaveCurrentState() {
