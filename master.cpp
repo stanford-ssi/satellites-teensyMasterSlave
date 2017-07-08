@@ -25,7 +25,7 @@ bool assertionError(const char* file, int line, const char* assertion) {
     errors++;
     bugs++;
     printf("%s, %d: assertion 'assertion' failed, total errors %u, bugs %u\n", file, line, errors, bugs);
-    sleep(1);
+    //sleep(1);
     return false;
 }
 #define DEBUG true

@@ -23,6 +23,8 @@ volatile unsigned int outPointer = 0;
 volatile uint16_t transmissionSize = 0;
 volatile bool transmitting = false;
 
+bool shouldClearSendBuffer = false;
+
 // Local functions
 void response_echo();
 void response_status();
@@ -39,7 +41,7 @@ void packet_setup(void) {
     SPI_SLAVE.begin_SLAVE(SCK1, MOSI1, MISO1, T3_SPI1_CS0);
     SPI_SLAVE.setCTAR_SLAVE(16, T3_SPI_MODE0);
     NVIC_ENABLE_IRQ(IRQ_SPI1);
-    NVIC_SET_PRIORITY(IRQ_SPI1, 0);
+    NVIC_SET_PRIORITY(IRQ_SPI1, 16);
 
     pinMode(PACKET_RECEIVED_TRIGGER, OUTPUT);
     digitalWrite(PACKET_RECEIVED_TRIGGER, LOW);
@@ -120,10 +122,16 @@ void handlePacket() {
       return;
   }
 
-  unsigned int endTimePacketPrepare = micros();
-  assert (endTimePacketPrepare - startTimePacketPrepare <= 2);
+  unsigned int midTimePacketPrepare = micros();
+  (void) midTimePacketPrepare;
 
   create_response();
+
+  unsigned int endTimePacketPrepare = micros();
+  //assert (endTimePacketPrepare - startTimePacketPrepare <= 1);
+  if (endTimePacketPrepare - startTimePacketPrepare > 1) {
+      debugPrintf("Packet took %d, %d micros\n", endTimePacketPrepare - startTimePacketPrepare, midTimePacketPrepare - startTimePacketPrepare);
+  }
 }
 
 void create_response() {
@@ -173,7 +181,7 @@ void create_response() {
 }
 
 void clearSendBuffer() { // Just for debugging purposes
-    if (DEBUG) {
+    if (DEBUG && shouldClearSendBuffer) {
         for (int i = 0; i < outBufferLength; i++) {
             outData[i] = 0xbeef;
         }
@@ -204,13 +212,18 @@ void response_status() {
     assert(packetPointer == PACKET_SIZE);
     assert(!transmitting);
     clearSendBuffer();
-    int bodySize = 9;
+    int bodySize = 13;
     outBody[0] = state;
     write32(outBody, 1, packetsReceived);
     write32(outBody, 3, wordsReceived);
     write32(outBody, 5, timeAlive);
     write32(outBody, 7, lastLoopTime);
-    assert(outBody[bodySize] == 0xbeef);
+    write32(outBody, 9, maxLoopTime);
+    write32(outBody, 11, errors);
+    if (DEBUG && shouldClearSendBuffer) {
+        assert(outBody[bodySize-1] != 0xbeef);
+        assert(outBody[bodySize] == 0xbeef);
+    }
     setupTransmission(RESPONSE_OK, bodySize);
 }
 

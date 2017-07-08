@@ -5,6 +5,7 @@
 const uint8_t spi_cs_pin = 15;   // pin 15 SPI0 chip select
 const uint8_t trigger_pin = 18;  // PTB11.  This pin will receive conversion ready signal
 
+unsigned long lastSampleTime = 0;
 
 SPISettings spi_settings(6250000, MSBFIRST, SPI_MODE0);
 
@@ -16,6 +17,12 @@ volatile unsigned int adcIsrIndex = 0; // indexes into nextSample
 
 mirrorOutput currentOutput;
 volatile unsigned int mirrorOutputIndex;
+
+//TODO:remove
+volatile int numFail = 0;
+volatile int numSuccess = 0;
+volatile int numStartCalls = 0;
+volatile int numSpi0Calls = 0;
 
 uint32_t dmaGetOffset() {
     uint32_t offset;
@@ -100,16 +107,26 @@ void init_FTM0(){ // code based off of https://forum.pjrc.com/threads/24992-phas
 
 void spi0_isr(void) {
     noInterrupts();
-    assert(adcIsrIndex < (sizeof(adcSample) / (16 / 8)));
+    numSpi0Calls++;
+    //assert(adcIsrIndex < (sizeof(adcSample) / (16 / 8)));
     if (!(adcIsrIndex < (sizeof(adcSample) / (16 / 8)))) {
-        debugPrintf("Adc isr is %d frontOfBuffer %d last %x %x %x %x\n", adcIsrIndex, frontOfBuffer, adcSamplesRead[DMASIZE].axis1, adcSamplesRead[DMASIZE].axis2, adcSamplesRead[DMASIZE].axis3, adcSamplesRead[DMASIZE].axis4);
+        // Nothing more to read
+        /*debugPrintf("Hey\n");
+        delay(100);
+        debugPrintf("Hey\n");
+        debugPrintf("Adc isr is %d frontOfBuffer %d last %x %x %x %x %d %d\n", adcIsrIndex, frontOfBuffer, adcSamplesRead[DMASIZE].axis1, adcSamplesRead[DMASIZE].axis2, adcSamplesRead[DMASIZE].axis3, adcSamplesRead[DMASIZE].axis4, numSpi0Calls, numStartCalls);
         for (int i = -2; i < 3; i++) {
             debugPrintf("i %d, address %p, val %x\n", i, &((uint32_t *) &adcIsrIndex)[i], ((uint32_t *) &adcIsrIndex)[i]);
-        }
+        }*/
+        adcSamplesRead[frontOfBuffer] = nextSample;
+        frontOfBuffer = (frontOfBuffer + 1) % DMASIZE;
+        interrupts();
         return;
     }
     //debugPrintf("spibegin");
     uint16_t spiRead = SPI0_POPR;
+    (void) spiRead;
+    assert(adcIsrIndex < (sizeof(adcSample) / (16 / 8)));
     ((volatile uint16_t *) &nextSample)[adcIsrIndex] = spiRead;
     //debugPrintf("%p %p %p\n", &(((volatile uint16_t *) &nextSample)[adcIsrIndex]), &nextSample, &adcIsrIndex);
     for (int i = 0; i < 6; i++) {
@@ -122,12 +139,12 @@ void spi0_isr(void) {
     if (adcIsrIndex < (DMA_SAMPLE_DEPTH / (16 / 8)) * DMA_SAMPLE_NUMAXES) {
         SPI0_PUSHR = ((uint16_t) adcIsrIndex) | SPI_PUSHR_CTAS(1);
     } else {
-        assert(adcIsrIndex == (sizeof(adcSample) / (16 / 8)));
+        /*assert(adcIsrIndex == (sizeof(adcSample) / (16 / 8)));
         if (adcIsrIndex != (sizeof(adcSample) / (16 / 8))) {
             debugPrintf("Adc isr is %d\n", adcIsrIndex);
         }
         adcSamplesRead[frontOfBuffer] = nextSample;
-        frontOfBuffer = (frontOfBuffer + 1) % DMASIZE;
+        frontOfBuffer = (frontOfBuffer + 1) % DMASIZE;*/
     }
     //debugPrintf("spiend");
     interrupts();
@@ -135,7 +152,20 @@ void spi0_isr(void) {
 
 void beginAdcRead(void) {
     noInterrupts();
+    numStartCalls++;
+    long timeNow = micros();
+    if (lastSampleTime != 0) {
+        long diff = timeNow - lastSampleTime;
+        if(!(diff >= 45 && diff <= 55)) {
+            debugPrintf("Diff is %d, %d success %d fail %d %d\n", diff, numSuccess, numFail, numStartCalls, numSpi0Calls);
+            numFail++;
+        } else {
+            numSuccess++;
+        }
+    }
+    lastSampleTime = timeNow;
     if (adcIsrIndex != (sizeof(adcSample) / (16 / 8)) && adcIsrIndex != 0) {
+        interrupts();
         return;
     }
     adcIsrIndex = 0;
@@ -155,6 +185,7 @@ void dmaReceiveSetup() {
     SPI0_RSER = 0x00020000;
     NVIC_ENABLE_IRQ(IRQ_SPI0);
     NVIC_SET_PRIORITY(IRQ_SPI0, 0);
+    NVIC_SET_PRIORITY(IRQ_PORTB, 0);
     debugPrintln("Done!");
 }
 
@@ -195,9 +226,10 @@ void spi2_isr(void) {
 
 
 void dmaSetup() {
-    mirrorOutputSetup();
+    //mirrorOutputSetup();
     debugPrintf("Setting up dma, offset is %d\n", dmaGetOffset());
     dmaReceiveSetup();
+    SPI2.begin();
     debugPrintf("Dma setup complete, offset is %d. Setting up ftm timers.\n", dmaGetOffset());
     init_FTM0();
     debugPrintf("FTM timer setup complete.\n");
