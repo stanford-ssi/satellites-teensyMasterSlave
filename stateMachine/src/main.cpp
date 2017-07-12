@@ -70,6 +70,7 @@ extern uint16_t spi_tx_out[];
 extern uint16_t spi_tx_out_16;
 extern DMAChannel dma_rx;
 extern DMAChannel dma_tx;
+extern DMAChannel dma_tx2;
 void heartbeat() {
     debugPrintf("State %d,", state);
     debugPrintf("transmitting %d, packetsReceived %d, ", transmitting, packetsReceived);
@@ -80,9 +81,10 @@ void heartbeat() {
     (void) SPI1_POPR;(void) SPI1_POPR;
     SPI1_SR |= SPI_SR_RFDF;
     dma_rx.enable();
+    //dma_tx.disable();
+    dma_tx2.disable();
 
-    SPI1_PUSHR = 0x1234;
-    dma_tx.enable();
+    //SPI1_PUSHR = 0x1234;
     /*uint16_t blah = 0xf231;
     KINETISK_SPI1.PUSHR = blah;*/
     debugPrintf("SPI SR %x PUSHR %x\n", SPI1_SR, SPI1_PUSHR_SLAVE);

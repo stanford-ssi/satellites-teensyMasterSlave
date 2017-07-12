@@ -152,43 +152,51 @@ void dma_slave_setup(void)
 DMAChannel dma_rx;
 DMAChannel dma_tx;
 DMAChannel dma_tx2;
-void dma_ch0_isr(void)
+void received_packet_isr(void)
 {
     DMA_CINT=0;
     DMA_CDNE=0;
+    SPI1_PUSHR = 0xabcd;
+    dma_tx2.enable();
     debugPrintf("Hey0\n");
 }
-void dma_ch1_isr(void)
+void sent_packet_isr(void)
 {
+    SPI1_PUSHR = 0xabcd;
+    dma_tx2.clearInterrupt();
     debugPrintf("Hey1\n");
 }
 const uint16_t buffer_size = 600;
 uint16_t spi_rx_dest[buffer_size];
 uint32_t spi_tx_out[buffer_size];
-uint32_t spi_tx_src = 0x4242;
-uint16_t spi_tx_out_16 = 0;
-uint32_t spi_clr_src = SPI_SR_RFDF;
+uint16_t spi_tx_out_16[510];
+uint32_t spi_clr_src = 0x42000000 | SPI_SR_RFDF;
+uint16_t spi_word_received = 0xbad0;
 void setup_dma_receive(void) {
     for (int i = 0; i < 100; i++) {
         spi_tx_out[i] = 100 + i;
     }
-    dma_rx.source((uint16_t&) KINETISK_SPI1.POPR);
+    dma_rx.source((uint16_t&) spi_word_received);
     dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, 24);
-    dma_rx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
+    dma_rx.triggerAtCompletionOf(dma_tx);
     dma_rx.disableOnCompletion();
     dma_rx.interruptAtCompletion();
-    dma_rx.attachInterrupt(dma_ch0_isr);
+    dma_rx.attachInterrupt(received_packet_isr);
 
     spi_rx_dest[0] = 0xbeef;
-    dma_tx.sourceBuffer((uint32_t *) spi_tx_out, 24);
-    //dma_tx.destinationBuffer((uint16_t*) KINETISK_SPI1.PUSHR, 2);
-    dma_tx.destination(KINETISK_SPI1.PUSHR); // SPI1_PUSHR_SLAVE
-    dma_tx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
-    dma_tx.disableOnCompletion();
 
-    /*dma_tx2.source((uint32_t&) spi_clr_src);
-    dma_tx2.destination((volatile uint32_t&) SPI1_SR); // SPI1_PUSHR_SLAVE
-    dma_tx2.triggerAtCompletionOf(dma_tx);*/
+    dma_tx.sourceBuffer((uint16_t*) &KINETISK_SPI1.POPR, 2);
+    dma_tx.destination((uint16_t&) spi_word_received);
+    dma_tx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
+
+    dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, 100);
+    //dma_tx.destinationBuffer((uint16_t*) KINETISK_SPI1.PUSHR, 2);
+    dma_tx2.destination(KINETISK_SPI1.PUSHR); // SPI1_PUSHR_SLAVE
+    dma_tx2.disableOnCompletion();
+    dma_tx2.interruptAtCompletion();
+    dma_tx2.attachInterrupt(sent_packet_isr);
+    dma_tx2.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
+    //dma_tx2.triggerAtCompletionOf(dma_tx);
 
     /*auto kinetis_spi_cs = spi.setCS(spi_cs_pin);
     spi_tx_src[0] = SPI_PUSHR_PCS(kinetis_spi_cs) | SPI_PUSHR_CONT | SPI_PUSHR_CTAS(1) | 0x4242;
