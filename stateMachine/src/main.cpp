@@ -67,6 +67,9 @@ bool assertionError(const char* file, int line, const char* assertion) {
 
 extern uint16_t spi_rx_dest[];
 extern uint16_t spi_tx_out[];
+extern uint16_t spi_tx_out_16;
+extern DMAChannel dma_rx;
+extern DMAChannel dma_tx;
 void heartbeat() {
     debugPrintf("State %d,", state);
     debugPrintf("transmitting %d, packetsReceived %d, ", transmitting, packetsReceived);
@@ -74,8 +77,17 @@ void heartbeat() {
     //ignoreLoopTime = true; // Reset this counter because we don't want to count heartbeat time in loop time
     maxLoopTime = 0;
 
+    (void) SPI1_POPR;(void) SPI1_POPR;
+    SPI1_SR |= SPI_SR_RFDF;
+    dma_rx.enable();
+
+    SPI1_PUSHR = 0x1234;
+    dma_tx.enable();
+    /*uint16_t blah = 0xf231;
+    KINETISK_SPI1.PUSHR = blah;*/
+    debugPrintf("SPI SR %x PUSHR %x\n", SPI1_SR, SPI1_PUSHR_SLAVE);
     //TODO:REMOVE
-    debugPrintf("\n\nBuf %x %x %x %x\n\n", spi_rx_dest[0], spi_rx_dest[1], spi_rx_dest[4], spi_tx_out[0]);
+    debugPrintf("\n\nBuf %x %x %x %x %x %x %x\n\n", spi_rx_dest[0], spi_rx_dest[1], spi_rx_dest[4], spi_tx_out[0], spi_tx_out[1], spi_tx_out[2], spi_tx_out_16);
 }
 
 extern volatile unsigned int frontOfBuffer, backOfBuffer;

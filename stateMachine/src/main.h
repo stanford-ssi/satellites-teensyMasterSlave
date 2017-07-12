@@ -9,6 +9,7 @@
 #include <tests.h>
 #include <packet.h>
 #include <tracking.h>
+#include <DMAChannel.h>
 
 #define DEBUG true
 

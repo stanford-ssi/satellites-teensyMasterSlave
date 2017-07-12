@@ -40,7 +40,7 @@ uint16_t xx[NDAT],yy[NDAT];
 unsigned int numReceived = 0;
 unsigned int numSent = 0;
 
-void dma_ch0_isr(void)
+/*void dma_ch0_isr(void)
 { DMA_CINT=0;
   DMA_CDNE=0;
   numSent++;
@@ -62,7 +62,7 @@ void dma_ch1_isr(void)
     }
   }
   numReceived++;
-}
+}*/
 
 void setDest(void) {
      for(int ii=0;ii<NDAT;ii++) xx[ii]=yy[ii];
@@ -151,19 +151,44 @@ void dma_slave_setup(void)
 
 DMAChannel dma_rx;
 DMAChannel dma_tx;
+DMAChannel dma_tx2;
+void dma_ch0_isr(void)
+{
+    DMA_CINT=0;
+    DMA_CDNE=0;
+    debugPrintf("Hey0\n");
+}
+void dma_ch1_isr(void)
+{
+    debugPrintf("Hey1\n");
+}
 const uint16_t buffer_size = 600;
 uint16_t spi_rx_dest[buffer_size];
-uint16_t spi_tx_out[buffer_size];
-uint32_t spi_tx_src = SPI_PUSHR_PCS(0) | SPI_PUSHR_CTAS(0) | 0x4242;
+uint32_t spi_tx_out[buffer_size];
+uint32_t spi_tx_src = 0x4242;
+uint16_t spi_tx_out_16 = 0;
+uint32_t spi_clr_src = SPI_SR_RFDF;
 void setup_dma_receive(void) {
+    for (int i = 0; i < 100; i++) {
+        spi_tx_out[i] = 100 + i;
+    }
     dma_rx.source((uint16_t&) KINETISK_SPI1.POPR);
-    dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, sizeof(spi_rx_dest));
+    dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, 24);
     dma_rx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
+    dma_rx.disableOnCompletion();
+    dma_rx.interruptAtCompletion();
+    dma_rx.attachInterrupt(dma_ch0_isr);
 
     spi_rx_dest[0] = 0xbeef;
-    dma_tx.source((uint32_t&) spi_tx_src);
-    dma_tx.destination((uint32_t&) KINETISK_SPI1.PUSHR); // SPI1_PUSHR_SLAVE
+    dma_tx.sourceBuffer((uint32_t *) spi_tx_out, 24);
+    //dma_tx.destinationBuffer((uint16_t*) KINETISK_SPI1.PUSHR, 2);
+    dma_tx.destination(KINETISK_SPI1.PUSHR); // SPI1_PUSHR_SLAVE
     dma_tx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
+    dma_tx.disableOnCompletion();
+
+    /*dma_tx2.source((uint32_t&) spi_clr_src);
+    dma_tx2.destination((volatile uint32_t&) SPI1_SR); // SPI1_PUSHR_SLAVE
+    dma_tx2.triggerAtCompletionOf(dma_tx);*/
 
     /*auto kinetis_spi_cs = spi.setCS(spi_cs_pin);
     spi_tx_src[0] = SPI_PUSHR_PCS(kinetis_spi_cs) | SPI_PUSHR_CONT | SPI_PUSHR_CTAS(1) | 0x4242;
