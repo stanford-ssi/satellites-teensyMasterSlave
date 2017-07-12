@@ -19,7 +19,7 @@ using namespace std;
 
 unsigned int errors = 0;
 unsigned int bugs = 0;
-const int spiSpeed = 500000;
+const int spiSpeed = 6250000;
 
 bool assertionError(const char* file, int line, const char* assertion) {
     errors++;
@@ -146,13 +146,17 @@ void transmitH(uint16_t *buf, bool verbos) {
     uint16_t len = getBuf(to_send, i+1);
     uint16_t lenCheck = ~getBuf(to_send, i+2);
     assert(len == lenCheck);
-    assert(len < 500);
-    if (len > 500 || len != lenCheck) {
+    assert(len <= 500);
+    if (len >= 500 || len != lenCheck) {
         len = 30;
     }
     uint16_t responseNumber = getBuf(to_send, i+3);
     uint16_t numToPrint = len + i + 2;
     assert(getBuf(to_send, len + i - 1) == 0x4321);
+
+    if (numToPrint > 500) {
+        numToPrint = 30;
+    }
 
     for (i = 0; i < numToPrint; i++) {
         if (verbos) {

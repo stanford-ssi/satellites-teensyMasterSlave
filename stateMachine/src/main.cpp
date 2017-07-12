@@ -65,12 +65,17 @@ bool assertionError(const char* file, int line, const char* assertion) {
     return false;
 }
 
+extern uint16_t spi_rx_dest[];
+extern uint16_t spi_tx_out[];
 void heartbeat() {
     debugPrintf("State %d,", state);
     debugPrintf("transmitting %d, packetsReceived %d, ", transmitting, packetsReceived);
     debugPrintf("%d errors, bugs %d, last loop %d micros, max loop time %d micros", errors, bugs, lastLoopTime, maxLoopTime);
     //ignoreLoopTime = true; // Reset this counter because we don't want to count heartbeat time in loop time
     maxLoopTime = 0;
+
+    //TODO:REMOVE
+    debugPrintf("\n\nBuf %x %x %x %x\n\n", spi_rx_dest[0], spi_rx_dest[1], spi_rx_dest[4], spi_tx_out[0]);
 }
 
 extern volatile unsigned int frontOfBuffer, backOfBuffer;

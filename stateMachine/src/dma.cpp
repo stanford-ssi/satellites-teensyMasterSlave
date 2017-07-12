@@ -1,6 +1,6 @@
 #include "dma.h"
 #include <array>
-#include <DMAChannel.h>
+//#include <DMAChannel.h>
 
 const uint8_t spi_cs_pin = 15;   // pin 15 SPI0 chip select
 const uint8_t trigger_pin = 18;  // PTB11.  This pin will receive conversion ready signal
