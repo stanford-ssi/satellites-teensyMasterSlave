@@ -19,7 +19,7 @@ using namespace std;
 
 unsigned int errors = 0;
 unsigned int bugs = 0;
-const int spiSpeed = 62500;
+const int spiSpeed = 6250000;
 
 bool assertionError(const char* file, int line, const char* assertion) {
     errors++;

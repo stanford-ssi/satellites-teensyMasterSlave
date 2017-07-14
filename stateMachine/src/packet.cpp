@@ -154,18 +154,41 @@ DMAChannel dma_tx;
 DMAChannel dma_tx2;
 DMAChannel dma_rx_never;
 DMAChannel dma_tx_never;
+const uint16_t buffer_size = 600;
+uint16_t spi_rx_dest[buffer_size];
+uint32_t spi_tx_out[buffer_size];
+uint16_t spi_tx_out_16[510];
+uint32_t spi_clr_src = 0x42000000 | SPI_SR_RFDF;
+uint16_t spi_word_received = 0xbad0;
+volatile bool dma_transmitting = false;
+
+void reset_packet_dma(void) {
+    dma_rx.disable();
+    dma_tx2.disable();
+    dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, 10);
+    dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, 10);
+    dma_tx2.triggerAtTransfersOf(dma_rx);
+    dma_transmitting = false;
+    dma_tx2.enable();
+    dma_rx.enable();
+}
+
 void received_packet_isr(void)
 {
-
+    dma_rx.disable();
+    dma_tx2.disable();
     //dma_rx.clearComplete();
     debugPrintf("Hey0\n");
     SPI1_PUSHR = 0xabcd;
-    dma_rx.disable();
-    dma_rx.triggerAtCompletionOf(dma_rx_never);
     dma_rx.clearInterrupt();
-    return;
-    dma_tx2.triggerAtCompletionOf(dma_tx);
-    dma_tx2.enable();
+    if (!dma_transmitting) {
+        dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, 100);
+        dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, 100);
+        dma_tx2.triggerAtTransfersOf(dma_rx);
+        dma_transmitting = true;
+        dma_tx2.enable();
+        dma_rx.enable();
+    }
 }
 void sent_packet_isr(void)
 {
@@ -177,18 +200,13 @@ void sent_packet_isr(void)
     dma_rx.enable();*/
     debugPrintf("Hey1\n");
 }
-const uint16_t buffer_size = 600;
-uint16_t spi_rx_dest[buffer_size];
-uint32_t spi_tx_out[buffer_size];
-uint16_t spi_tx_out_16[510];
-uint32_t spi_clr_src = 0x42000000 | SPI_SR_RFDF;
-uint16_t spi_word_received = 0xbad0;
+
 void setup_dma_receive(void) {
     for (int i = 0; i < 500; i++) {
         spi_tx_out[i] = 0x100 + i;
     }
     dma_rx.source((uint16_t&) KINETISK_SPI1.POPR);
-    dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, 40);
+    dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, 10);
     //dma_rx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
     dma_rx.disableOnCompletion();
     dma_rx.interruptAtCompletion();
@@ -202,7 +220,7 @@ void setup_dma_receive(void) {
     dma_tx.destinationCircular((uint16_t*) &spi_word_received, 2);
     dma_tx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);*/
 
-    dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, 40);
+    dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, 10);
     //dma_tx.destinationBuffer((uint16_t*) KINETISK_SPI1.PUSHR, 2);
     dma_tx2.destination(KINETISK_SPI1.PUSHR); // SPI1_PUSHR_SLAVE
     dma_tx2.disableOnCompletion();
@@ -224,18 +242,10 @@ void packet_setup(void) {
     SPI_SLAVE.begin_SLAVE(SCK1, MOSI1, MISO1, T3_SPI1_CS0);
     SPI_SLAVE.setCTAR_SLAVE(16, T3_SPI_MODE0);
     setup_dma_receive();
-    //dma_slave_setup();
-    //startXfer();
-    /*NVIC_ENABLE_IRQ(IRQ_SPI1);
-    NVIC_SET_PRIORITY(IRQ_SPI1, 16);
-
-    pinMode(PACKET_RECEIVED_TRIGGER, OUTPUT);
-    digitalWrite(PACKET_RECEIVED_TRIGGER, LOW);
 
     // Not sure what priority this should be; this shouldn't fire at the same time as IRQ_SPI0
     attachInterrupt(SLAVE_CHIP_SELECT, clearBuffer, FALLING);
-    //attachInterrupt(PACKET_RECEIVED_PIN, handlePacket, FALLING);
-
+    /*
     // Low priority for pin 26 -- packet received interrupt
     NVIC_SET_PRIORITY(IRQ_PORTE, 144);*/
 }
@@ -468,13 +478,25 @@ void setupTransmission(uint16_t header, unsigned int bodyLength){
 }
 
 void clearBuffer(void) {
-  if (packetPointer != 0 && packetPointer != PACKET_SIZE) {
+    noInterrupts();
+    dma_transmitting = false;
+    dma_rx.disable();
+    dma_tx2.disable();
+    dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, PACKET_SIZE * 2);
+    dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, PACKET_SIZE * 2);
+    dma_tx2.triggerAtTransfersOf(dma_rx);
+    dma_tx2.enable();
+    dma_rx.enable();
+    interrupts();
+    /*
+    if (packetPointer != 0 && packetPointer != PACKET_SIZE) {
     debugPrintf("Clearing %d bytes of data\n", packetPointer);
-  }
-  noInterrupts();
-  packetPointer = 0;
-  outPointer = 0;
-  transmissionSize = 0;
-  transmitting = false;
-  interrupts();
+    }
+    noInterrupts();
+    packetPointer = 0;
+    outPointer = 0;
+    transmissionSize = 0;
+    transmitting = false;
+    interrupts();
+    */
 }

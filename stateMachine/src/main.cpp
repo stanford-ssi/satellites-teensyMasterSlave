@@ -78,9 +78,9 @@ void heartbeat() {
     //ignoreLoopTime = true; // Reset this counter because we don't want to count heartbeat time in loop time
     maxLoopTime = 0;
 
-    (void) SPI1_POPR;(void) SPI1_POPR;
+    /*(void) SPI1_POPR;(void) SPI1_POPR;
     SPI1_SR |= SPI_SR_RFDF;
-    dma_rx.enable();
+    dma_rx.enable();*/
     //dma_tx.disable();
     //dma_tx2.disable();
 
