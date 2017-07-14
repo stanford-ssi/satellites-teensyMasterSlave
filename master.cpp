@@ -112,7 +112,7 @@ uint16_t getBuf(uint16_t* buf, int j) {
 void transmitH(uint16_t *buf, bool verbos) {
     digitalWrite(CHIPSELECT, HIGH);
     digitalWrite(CHIPSELECT, LOW);
-    delayMicroseconds(1);
+    //delayMicroseconds(1);
     int j = 0;
     uint16_t to_send[10000];
     setBuf(to_send, j, 0x1234);

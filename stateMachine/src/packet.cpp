@@ -162,7 +162,7 @@ uint32_t spi_clr_src = 0x42000000 | SPI_SR_RFDF;
 uint16_t spi_word_received = 0xbad0;
 volatile bool dma_transmitting = false;
 
-void reset_packet_dma(void) {
+/*void reset_packet_dma(void) {
     dma_rx.disable();
     dma_tx2.disable();
     dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, 10);
@@ -171,28 +171,30 @@ void reset_packet_dma(void) {
     dma_transmitting = false;
     dma_tx2.enable();
     dma_rx.enable();
-}
+}*/
 
 void received_packet_isr(void)
 {
+    noInterrupts();
     dma_rx.disable();
     dma_tx2.disable();
-    //dma_rx.clearComplete();
-    debugPrintf("Hey0\n");
-    SPI1_PUSHR = 0xabcd;
+    //SPI1_PUSHR = 0xabcd;
     dma_rx.clearInterrupt();
     if (!dma_transmitting) {
-        dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, 100);
-        dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, 100);
+        dma_rx.destinationBuffer((uint16_t*) spi_rx_dest + 5, 2 * 500);
+        dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, 2 * 500);
         dma_tx2.triggerAtTransfersOf(dma_rx);
         dma_transmitting = true;
+
         dma_tx2.enable();
         dma_rx.enable();
     }
+    debugPrintf("Hey");
+    interrupts();
 }
 void sent_packet_isr(void)
 {
-    SPI1_PUSHR = 0xdcba;
+    //SPI1_PUSHR = 0xdcba;
     dma_tx2.clearInterrupt();
     /*dma_tx2.clearComplete();
     dma_tx2.triggerAtCompletionOf(dma_tx_never);
@@ -201,12 +203,16 @@ void sent_packet_isr(void)
     debugPrintf("Hey1\n");
 }
 
+uint32_t beef_only[11];
 void setup_dma_receive(void) {
     for (int i = 0; i < 500; i++) {
         spi_tx_out[i] = 0x100 + i;
     }
+    for (int i = 0; i < 11; i++) {
+        beef_only[i] = 0xabcd;
+    }
     dma_rx.source((uint16_t&) KINETISK_SPI1.POPR);
-    dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, 10);
+    dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, PACKET_SIZE * 2);
     //dma_rx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
     dma_rx.disableOnCompletion();
     dma_rx.interruptAtCompletion();
@@ -220,7 +226,7 @@ void setup_dma_receive(void) {
     dma_tx.destinationCircular((uint16_t*) &spi_word_received, 2);
     dma_tx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);*/
 
-    dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, 10);
+    dma_tx2.sourceBuffer((uint32_t *) beef_only, PACKET_SIZE * 2);
     //dma_tx.destinationBuffer((uint16_t*) KINETISK_SPI1.PUSHR, 2);
     dma_tx2.destination(KINETISK_SPI1.PUSHR); // SPI1_PUSHR_SLAVE
     dma_tx2.disableOnCompletion();
@@ -479,14 +485,18 @@ void setupTransmission(uint16_t header, unsigned int bodyLength){
 
 void clearBuffer(void) {
     noInterrupts();
+    unsigned long startTime = micros();
     dma_transmitting = false;
     dma_rx.disable();
     dma_tx2.disable();
     dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, PACKET_SIZE * 2);
-    dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, PACKET_SIZE * 2);
+    dma_tx2.sourceBuffer((uint32_t *) beef_only, PACKET_SIZE * 2);
     dma_tx2.triggerAtTransfersOf(dma_rx);
+    (void) SPI1_POPR; (void) SPI1_POPR; SPI1_SR |= SPI_SR_RFDF;
     dma_tx2.enable();
     dma_rx.enable();
+    unsigned long endTime = micros();
+    debugPrintf("Time took %d\n", endTime - startTime);
     interrupts();
     /*
     if (packetPointer != 0 && packetPointer != PACKET_SIZE) {
