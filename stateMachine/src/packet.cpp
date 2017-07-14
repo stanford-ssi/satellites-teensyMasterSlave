@@ -2,7 +2,7 @@
 #include "main.h"
 #include "states.h"
 #include "pidData.h"
-#include<DMAChannel.h>
+#include <DMAChannel.h>
 
 T3SPI SPI_SLAVE;
 
@@ -35,172 +35,31 @@ void responseImuDump();
 void setupTransmission(uint16_t header, unsigned int bodyLength);
 void setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uint16_t bodyChecksum, volatile uint16_t *packetBuffer);
 
-#define NDAT 10
-uint16_t xx[NDAT],yy[NDAT];
-unsigned int numReceived = 0;
-unsigned int numSent = 0;
-
-/*void dma_ch0_isr(void)
-{ DMA_CINT=0;
-  DMA_CDNE=0;
-  numSent++;
-  debugPrintf("Hey\n");
-}
-
-void setDest(void);
-void dma_ch1_isr(void)
-{ DMA_CINT=1;
-  DMA_CDNE=1;
-  SPI1_MCR |= SPI_MCR_HALT | SPI_MCR_MDIS;
-  setDest();
-    int ii;
-    Serial.printf("Slave: ");
-
-  for(ii=0;ii<8;ii++) {
-    if (yy[ii] != 0xffff) {
-      Serial.printf("%x ",xx[ii]); Serial.println();
-    }
-  }
-  numReceived++;
-}*/
-
-void setDest(void) {
-     for(int ii=0;ii<NDAT;ii++) xx[ii]=yy[ii];
-// set transmit
-      DMA_TCD0_DADDR=&SPI1_PUSHR_SLAVE;
-        DMA_TCD0_DOFF=0;
-        DMA_TCD0_DLASTSGA= 0;
-
-        DMA_TCD0_ATTR=1<<8|1;
-        DMA_TCD0_NBYTES_MLNO=2;
-
-        DMA_TCD0_SADDR=xx;
-        DMA_TCD0_SOFF=2;
-        DMA_TCD0_SLAST=-2*NDAT;
-
-        DMA_TCD0_CITER_ELINKNO = DMA_TCD0_BITER_ELINKNO=NDAT;
-
-        DMA_TCD0_CSR = DMA_TCD_CSR_INTMAJOR | DMA_TCD_CSR_DREQ;
-
-  DMAMUX0_CHCFG0 = DMAMUX_DISABLE;
-  DMAMUX0_CHCFG0 = DMAMUX_SOURCE_SPI1_TX | DMAMUX_ENABLE;
-}
-
-void startXfer(void)
-{
-  //spi SETUP
-  /*SPI1_MCR =  //SPI_MCR_MDIS |   // module disable
-  SPI_MCR_HALT |   // stop transfer
-  SPI_MCR_PCSIS(0x1F); // set all inactive states high
-  SPI1_MCR |= SPI_MCR_CLR_TXF;
-  SPI1_MCR |= SPI_MCR_CLR_RXF;
-
-  SPI1_CTAR0_SLAVE = SPI_CTAR_FMSZ(15);
-
-  SPI1_MCR = 0;
-
-  // start SPI
-   SPI1_RSER = SPI_RSER_TFFF_DIRS | SPI_RSER_TFFF_RE | // transmit fifo fill flag to DMA
-    SPI_RSER_RFDF_DIRS | SPI_RSER_RFDF_RE;  // receive fifo drain flag to DMA*/
-
-// set receive
-  DMA_TCD1_SADDR=&SPI1_POPR;
-  DMA_TCD1_SOFF=0;
-  DMA_TCD1_SLAST= 0;
-
-  DMA_TCD1_ATTR=1<<8|1;
-  DMA_TCD1_NBYTES_MLNO=2;
-
-  DMA_TCD1_DADDR=yy;
-  DMA_TCD1_DOFF=2;
-  DMA_TCD1_DLASTSGA=-2*NDAT;
-
-  DMA_TCD1_CITER_ELINKNO = DMA_TCD1_BITER_ELINKNO=NDAT;
-
-  DMA_TCD1_CSR = DMA_TCD_CSR_INTMAJOR | DMA_TCD_CSR_DREQ;
-
-  DMAMUX0_CHCFG1 = DMAMUX_DISABLE;
-  DMAMUX0_CHCFG1 = DMAMUX_SOURCE_SPI1_RX | DMAMUX_ENABLE;
-
-  //start DMA
-        DMA_SERQ = 0;
-  NVIC_ENABLE_IRQ(IRQ_DMA_CH0);
-        DMA_SERQ = 1;
-  NVIC_ENABLE_IRQ(IRQ_DMA_CH1);
-}
-
-void dma_slave_setup(void)
-{
-    SIM_SCGC6 |= SIM_SCGC6_SPI1;
-    SIM_SCGC6 |= SIM_SCGC6_DMAMUX;
-    SIM_SCGC7 |= SIM_SCGC7_DMA;
-
-    DMA_CR = 0;
-
-    /*CORE_PIN31_CONFIG = PORT_PCR_MUX(2); // CS
-    CORE_PIN32_CONFIG = PORT_PCR_MUX(2); // SCK
-    CORE_PIN1_CONFIG = PORT_PCR_SRE | PORT_PCR_DSE | PORT_PCR_MUX(2); // DOUT
-    CORE_PIN0_CONFIG = PORT_PCR_MUX(2); // DIN*/
-
-    int ii;
-
-   for(ii=0;ii<NDAT;ii++) yy[ii]=0;
-   for(ii=0;ii<NDAT;ii++) xx[ii]=0xabcd;
-
-}
-
 DMAChannel dma_rx;
 DMAChannel dma_tx;
-DMAChannel dma_tx2;
-DMAChannel dma_rx_never;
-DMAChannel dma_tx_never;
 const uint16_t buffer_size = 600;
 uint16_t spi_rx_dest[buffer_size];
 uint32_t spi_tx_out[buffer_size];
-uint16_t spi_tx_out_16[510];
-uint32_t spi_clr_src = 0x42000000 | SPI_SR_RFDF;
-uint16_t spi_word_received = 0xbad0;
 volatile bool dma_transmitting = false;
-
-/*void reset_packet_dma(void) {
-    dma_rx.disable();
-    dma_tx2.disable();
-    dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, 10);
-    dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, 10);
-    dma_tx2.triggerAtTransfersOf(dma_rx);
-    dma_transmitting = false;
-    dma_tx2.enable();
-    dma_rx.enable();
-}*/
 
 void received_packet_isr(void)
 {
     noInterrupts();
+    assert(spi_rx_dest[0] == 0x1234);
     dma_rx.disable();
-    dma_tx2.disable();
-    //SPI1_PUSHR = 0xabcd;
+    dma_tx.disable();
     dma_rx.clearInterrupt();
     if (!dma_transmitting) {
-        dma_rx.destinationBuffer((uint16_t*) spi_rx_dest + 5, 2 * 500);
-        dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, 2 * 500);
-        dma_tx2.triggerAtTransfersOf(dma_rx);
+        dma_rx.destinationBuffer((uint16_t*) spi_rx_dest + PACKET_SIZE, 2 * 500);
+        dma_tx.sourceBuffer((uint32_t *) spi_tx_out, 2 * 500);
+        dma_tx.triggerAtTransfersOf(dma_rx);
         dma_transmitting = true;
 
-        dma_tx2.enable();
+        dma_tx.enable();
         dma_rx.enable();
     }
-    debugPrintf("Hey");
+    debugPrintf("Hey\n");
     interrupts();
-}
-void sent_packet_isr(void)
-{
-    //SPI1_PUSHR = 0xdcba;
-    dma_tx2.clearInterrupt();
-    /*dma_tx2.clearComplete();
-    dma_tx2.triggerAtCompletionOf(dma_tx_never);
-    dma_rx.triggerAtCompletionOf(dma_tx);
-    dma_rx.enable();*/
-    debugPrintf("Hey1\n");
 }
 
 uint32_t beef_only[11];
@@ -219,26 +78,17 @@ void setup_dma_receive(void) {
     dma_rx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
     dma_rx.attachInterrupt(received_packet_isr);
 
-    spi_rx_dest[0] = 0xbeef;
-
-    /*dma_tx.source((uint16_t&) KINETISK_SPI1.POPR);
-    //dma_tx.sourceBuffer((uint16_t*) &spi_word_received, 2);
-    dma_tx.destinationCircular((uint16_t*) &spi_word_received, 2);
-    dma_tx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);*/
-
-    dma_tx2.sourceBuffer((uint32_t *) beef_only, PACKET_SIZE * 2);
+    dma_tx.sourceBuffer((uint32_t *) beef_only, PACKET_SIZE * 2);
     //dma_tx.destinationBuffer((uint16_t*) KINETISK_SPI1.PUSHR, 2);
-    dma_tx2.destination(KINETISK_SPI1.PUSHR); // SPI1_PUSHR_SLAVE
-    dma_tx2.disableOnCompletion();
-    dma_tx2.interruptAtCompletion();
-    dma_tx2.attachInterrupt(sent_packet_isr);
-    dma_tx2.triggerAtTransfersOf(dma_rx);
+    dma_tx.destination(KINETISK_SPI1.PUSHR); // SPI1_PUSHR_SLAVE
+    dma_tx.disableOnCompletion();
+    dma_tx.triggerAtTransfersOf(dma_rx);
 
     SPI1_RSER = SPI_RSER_RFDF_RE | SPI_RSER_RFDF_DIRS; // DMA on receive FIFO drain flag
     SPI1_SR = 0xFF0F0000;
+
     dma_rx.enable();
-    //dma_tx.enable();
-    dma_tx2.enable();
+    dma_tx.enable();
 }
 
 void packet_setup(void) {
@@ -485,18 +335,15 @@ void setupTransmission(uint16_t header, unsigned int bodyLength){
 
 void clearBuffer(void) {
     noInterrupts();
-    unsigned long startTime = micros();
     dma_transmitting = false;
     dma_rx.disable();
-    dma_tx2.disable();
+    dma_tx.disable();
     dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, PACKET_SIZE * 2);
-    dma_tx2.sourceBuffer((uint32_t *) beef_only, PACKET_SIZE * 2);
-    dma_tx2.triggerAtTransfersOf(dma_rx);
+    dma_tx.sourceBuffer((uint32_t *) beef_only, PACKET_SIZE * 2);
+    dma_tx.triggerAtTransfersOf(dma_rx);
     (void) SPI1_POPR; (void) SPI1_POPR; SPI1_SR |= SPI_SR_RFDF;
-    dma_tx2.enable();
+    dma_tx.enable();
     dma_rx.enable();
-    unsigned long endTime = micros();
-    debugPrintf("Time took %d\n", endTime - startTime);
     interrupts();
     /*
     if (packetPointer != 0 && packetPointer != PACKET_SIZE) {

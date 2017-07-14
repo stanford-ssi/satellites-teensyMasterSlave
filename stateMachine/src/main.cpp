@@ -67,7 +67,6 @@ bool assertionError(const char* file, int line, const char* assertion) {
 
 extern uint16_t spi_rx_dest[];
 extern uint16_t spi_tx_out[];
-extern uint16_t spi_tx_out_16;
 extern DMAChannel dma_rx;
 extern DMAChannel dma_tx;
 extern DMAChannel dma_tx2;
@@ -89,7 +88,7 @@ void heartbeat() {
     KINETISK_SPI1.PUSHR = blah;*/
     debugPrintf("SPI SR %x PUSHR %x\n", SPI1_SR, SPI1_PUSHR_SLAVE);
     //TODO:REMOVE
-    debugPrintf("\n\nBuf %x %x %x %x %x %x %x\n\n", spi_rx_dest[0], spi_rx_dest[1], spi_rx_dest[4], spi_tx_out[0], spi_tx_out[1], spi_tx_out[2], spi_tx_out_16);
+    debugPrintf("\n\nBuf %x %x %x %x %x %x\n\n", spi_rx_dest[0], spi_rx_dest[1], spi_rx_dest[4], spi_tx_out[0], spi_tx_out[1], spi_tx_out[2]);
     for (int i = 0; i < 10; i++) {
         debugPrintf("%x ", spi_rx_dest[i]);
     }
