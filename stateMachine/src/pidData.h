@@ -40,6 +40,48 @@ typedef struct pidSample {
     }
 } pidSample;
 
+// Twice the size
+typedef struct expandedPidSample {
+    pidSample a;
+    pidSample b;
+} expandedPidSample;
+
+void writeExpandedPidSample(const pidSample* in, expandedPidSample* out);
+
+/*typedef struct expandedPidSample {
+    adcSample sample;
+    adcSample incoherentOutput;
+    mirrorOutput out;
+
+    expandedPidSample(): sample(), incoherentOutput(), out() {
+    }
+
+    expandedPidSample(const volatile pidSample& s) {
+        copy(s);
+    }
+
+    expandedPidSample(const volatile adcSample& sampleAdc, const volatile adcSample& incoherent, const volatile mirrorOutput& o) {
+        sample.copy(sampleAdc);
+        incoherentOutput.copy(incoherent);
+        out.copy(o);
+    }
+
+    void copy(const volatile pidSample& s) {
+        sample = s.sample;
+        incoherentOutput = s.incoherentOutput;
+        out = s.out;
+    }
+
+    expandedPidSample& operator =(const volatile pidSample& s) {
+        copy(s);
+        return *this;
+    }
+
+    volatile uint16_t getChecksum() {
+        return sample.getChecksum() + out.getChecksum();
+    }
+} expandedPidSample;*/
+
 #define IMU_NUM_CHANNELS 4
 #define IMU_SAMPLE_SIZE (sizeof(pidSample) / 2) // 16-bit
 #define IMU_DATA_DUMP_SIZE 20
@@ -50,7 +92,7 @@ typedef struct pidSample {
 
 // Only variable visible should be packet related
 extern volatile bool imuPacketReady;
-extern volatile uint16_t* imuDumpPacket;
+extern volatile uint32_t* imuDumpPacket;
 extern volatile uint16_t imuPacketChecksum;
 
 extern volatile unsigned int imuDataPointer, imuSentDataPointer, imuSamplesSent;

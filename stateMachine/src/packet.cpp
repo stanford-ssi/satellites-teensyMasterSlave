@@ -46,7 +46,7 @@ void received_packet_isr(void)
     if (!transmitting) {
         packetReceived();
         dma_rx.destinationBuffer((uint16_t*) packet + PACKET_SIZE, 2 * 500);
-        dma_tx.sourceBuffer((uint32_t *) spi_tx_out, 2 * 500);
+        dma_tx.sourceBuffer((uint32_t *) currentlyTransmittingPacket - ABCD_BUFFER_SIZE, 2 * 500);
         dma_tx.triggerAtTransfersOf(dma_rx);
         transmitting = true;
         dma_tx.enable();
@@ -92,11 +92,7 @@ void packet_setup(void) {
     SPI_SLAVE.setCTAR_SLAVE(16, T3_SPI_MODE0);
     setup_dma_receive();
 
-    // Not sure what priority this should be; this shouldn't fire at the same time as IRQ_SPI0
     attachInterrupt(SLAVE_CHIP_SELECT, clearBuffer, FALLING);
-    /*
-    // Low priority for pin 26 -- packet received interrupt
-    NVIC_SET_PRIORITY(IRQ_PORTE, 144);*/
 }
 
 uint16_t getHeader() {
@@ -218,18 +214,9 @@ void create_response() {
     }
 }
 
-void clearSendBuffer() { // Just for debugging purposes
-    if (DEBUG && shouldClearSendBuffer) {
-        for (int i = 0; i < buffer_size; i++) {
-            outData[i] = 0xbeef;
-        }
-    }
-}
-
 void response_echo() {
     //assert(packetPointer == PACKET_SIZE);
     assert(!transmitting);
-    clearSendBuffer();
     int bodySize = 7;
     for (int i = 0; i < bodySize; i++) {
       if (i < PACKET_SIZE) {
@@ -238,7 +225,6 @@ void response_echo() {
         outBody[i] = 0;
       }
     }
-    assert(outBody[bodySize] == 0xbeef);
     setupTransmission(RESPONSE_OK, bodySize);
 }
 
@@ -250,7 +236,6 @@ void write32(volatile uint32_t* buffer, unsigned int index, uint32_t item) {
 void response_status() {
     //assert(packetPointer == PACKET_SIZE);
     assert(!transmitting);
-    clearSendBuffer();
     int bodySize = 13;
     outBody[0] = state;
     write32(outBody, 1, packetsReceived);
@@ -267,22 +252,18 @@ void response_status() {
 }
 
 void responseImuDump() {
-    debugPrintf("YIKES\n");
-    //////setupTransmissionWithChecksum(RESPONSE_PID_DATA, IMU_DATA_DUMP_SIZE * sizeof(pidSample) * 8 / 16, imuPacketChecksum, imuDumpPacket);
+    setupTransmissionWithChecksum(RESPONSE_PID_DATA, IMU_DATA_DUMP_SIZE * sizeof(pidSample) * 8 / 16, imuPacketChecksum, imuDumpPacket);
 }
 
 void responseBadPacket(uint16_t flag) {
     errors++;
-    //assert(packetPointer == PACKET_SIZE);
     assert(!transmitting);
-    clearSendBuffer();
     debugPrintf("Bad packet: flag %d\n", flag);
     unsigned int bodySize = 4;
     outBody[0] = flag;
     for (unsigned int i = 1; i < bodySize; i++) {
         outBody[i] = 0;
     }
-    assert(outBody[bodySize] == 0xbeef);
     setupTransmission(RESPONSE_BAD_PACKET, bodySize);
 }
 

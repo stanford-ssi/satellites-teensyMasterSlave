@@ -20,11 +20,11 @@ elapsedMicros timeSinceLastRead;
 
 // This packet ships out directly to audacy
 // This is more than we need; OUT_PACKET_OVERHEAD is measured in units of uint16_t, not pidSample
-volatile pidSample imuDumpPacketMemory[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
+volatile expandedPidSample imuDumpPacketMemory[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
 // We skip the first few uint16 because we want the packet body to begin at imuDumpPacketMemory[1], which has a good byte offset mod 32bit.
 // Assume header size is less than IMU_SAMPLE_SIZE
-volatile uint16_t *imuDumpPacket = ((uint16_t *) imuDumpPacketMemory) + (IMU_SAMPLE_SIZE - OUT_PACKET_BODY_BEGIN);
-volatile pidSample *imuDumpPacketBody = (pidSample *) (imuDumpPacket + OUT_PACKET_BODY_BEGIN);
+volatile uint32_t *imuDumpPacket = ((uint32_t *) imuDumpPacketMemory) + (2 * IMU_SAMPLE_SIZE - OUT_PACKET_BODY_BEGIN);
+volatile expandedPidSample *imuDumpPacketBody = (expandedPidSample *) (imuDumpPacket + OUT_PACKET_BODY_BEGIN);
 volatile uint16_t imuPacketChecksum = 0;
 volatile unsigned int imuPacketBodyPointer = 0;
 volatile bool imuPacketReady = false;
@@ -48,14 +48,25 @@ void imuSetup() {
     assert (imuSamples[IMU_BUFFER_SIZE] == 0xbeef);*/
 }
 
+void writeExpandedPidSample(const pidSample* in, volatile expandedPidSample* out) {
+    assert(sizeof(pidSample) * 2 == sizeof(expandedPidSample));
+    assert(sizeof(pidSample) == 4 * 4 * 3);
+    unsigned int num_uint32 = sizeof(pidSample) / 4;
+    for (unsigned int i = 0; i < num_uint32; i++) {
+        uint32_t num = ((uint32_t *) in)[i];
+        ((uint32_t *) out)[2 * i] = num >> 16; // msb
+        ((uint32_t *) out)[2 * i + 1] = num % (1 << 16); // lsb
+    }
+}
+
 void checkDataDump() {
-    /*assert(imuSentDataPointer % IMU_SAMPLE_SIZE == 0);
+    assert(imuSentDataPointer % IMU_SAMPLE_SIZE == 0);
     assert(imuDataPointer % IMU_SAMPLE_SIZE == 0);
-    assert((imuPacketBodyPointer == IMU_DATA_DUMP_SIZE) == imuPacketReady);*/
+    assert((imuPacketBodyPointer == IMU_DATA_DUMP_SIZE) == imuPacketReady);
     if ((imuPacketBodyPointer < IMU_DATA_DUMP_SIZE) && (imuSentDataPointer % IMU_BUFFER_SIZE) != (imuDataPointer % IMU_BUFFER_SIZE)) {
         pidSample sample = imuSamples[imuSentDataPointer];
         imuPacketChecksum += sample.getChecksum();
-        ((pidSample *) imuDumpPacketBody)[imuPacketBodyPointer] = sample;
+        writeExpandedPidSample(&sample, &(imuDumpPacketBody[imuPacketBodyPointer]));
         imuPacketBodyPointer++;
         imuSentDataPointer++;
     }
