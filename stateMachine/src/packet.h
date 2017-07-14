@@ -4,11 +4,9 @@
 
 //Initialize T3SPI class as SPI_SLAVE
 extern T3SPI SPI_SLAVE;
-extern volatile unsigned int packetsReceived;
-extern volatile int packetPointer;
-extern volatile unsigned int outPointer;
 extern volatile uint16_t transmissionSize;
 extern volatile bool transmitting;
+extern volatile unsigned int packetsReceived;
 
 #define SLAVE_CHIP_SELECT 31
 #define PACKET_RECEIVED_PIN 26
@@ -30,6 +28,7 @@ extern volatile bool transmitting;
 #define BODY_LENGTH (PACKET_BODY_END - PACKET_BODY_BEGIN)
 #define PACKET_OVERHEAD (PACKET_SIZE - BODY_LENGTH)
 
+#define ABCD_BUFFER_SIZE 3
 #define OUT_PACKET_BODY_BEGIN 4
 #define OUT_PACKET_BODY_END_SIZE 2
 #define OUT_PACKET_OVERHEAD (OUT_PACKET_BODY_END_SIZE + OUT_PACKET_BODY_BEGIN)

@@ -148,14 +148,14 @@ void transmitH(uint16_t *buf, bool verbos) {
     assert(len == lenCheck);
     assert(len <= 500);
     if (len >= 500 || len != lenCheck) {
-        len = 100;
+        len = 75;
     }
     uint16_t responseNumber = getBuf(to_send, i+3);
     uint16_t numToPrint = len + i + 2;
     assert(getBuf(to_send, len + i - 1) == 0x4321);
 
     if (numToPrint > 500) {
-        numToPrint = 100;
+        numToPrint = 75;
     }
 
     for (i = 0; i < numToPrint; i++) {

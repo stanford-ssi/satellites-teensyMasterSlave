@@ -65,7 +65,7 @@ bool assertionError(const char* file, int line, const char* assertion) {
     return false;
 }
 
-extern uint16_t spi_rx_dest[];
+extern uint16_t packet[];
 extern uint16_t spi_tx_out[];
 extern DMAChannel dma_rx;
 extern DMAChannel dma_tx;
@@ -74,23 +74,13 @@ void heartbeat() {
     debugPrintf("State %d,", state);
     debugPrintf("transmitting %d, packetsReceived %d, ", transmitting, packetsReceived);
     debugPrintf("%d errors, bugs %d, last loop %d micros, max loop time %d micros", errors, bugs, lastLoopTime, maxLoopTime);
-    //ignoreLoopTime = true; // Reset this counter because we don't want to count heartbeat time in loop time
     maxLoopTime = 0;
 
-    /*(void) SPI1_POPR;(void) SPI1_POPR;
-    SPI1_SR |= SPI_SR_RFDF;
-    dma_rx.enable();*/
-    //dma_tx.disable();
-    //dma_tx2.disable();
-
-    //SPI1_PUSHR = 0x1234;
-    /*uint16_t blah = 0xf231;
-    KINETISK_SPI1.PUSHR = blah;*/
     debugPrintf("SPI SR %x PUSHR %x\n", SPI1_SR, SPI1_PUSHR_SLAVE);
     //TODO:REMOVE
-    debugPrintf("\n\nBuf %x %x %x %x %x %x\n\n", spi_rx_dest[0], spi_rx_dest[1], spi_rx_dest[4], spi_tx_out[0], spi_tx_out[1], spi_tx_out[2]);
+    debugPrintf("\n\nBuf %x %x %x %x %x %x\n\n", packet[0], packet[1], packet[4], spi_tx_out[0], spi_tx_out[1], spi_tx_out[2]);
     for (int i = 0; i < 10; i++) {
-        debugPrintf("%x ", spi_rx_dest[i]);
+        debugPrintf("%x ", packet[i]);
     }
     debugPrintf("\n");
     for (int i = 0; i < 10; i++) {
