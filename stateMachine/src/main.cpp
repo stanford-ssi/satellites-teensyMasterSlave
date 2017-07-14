@@ -82,7 +82,7 @@ void heartbeat() {
     SPI1_SR |= SPI_SR_RFDF;
     dma_rx.enable();
     //dma_tx.disable();
-    dma_tx2.disable();
+    //dma_tx2.disable();
 
     //SPI1_PUSHR = 0x1234;
     /*uint16_t blah = 0xf231;
@@ -90,6 +90,14 @@ void heartbeat() {
     debugPrintf("SPI SR %x PUSHR %x\n", SPI1_SR, SPI1_PUSHR_SLAVE);
     //TODO:REMOVE
     debugPrintf("\n\nBuf %x %x %x %x %x %x %x\n\n", spi_rx_dest[0], spi_rx_dest[1], spi_rx_dest[4], spi_tx_out[0], spi_tx_out[1], spi_tx_out[2], spi_tx_out_16);
+    for (int i = 0; i < 10; i++) {
+        debugPrintf("%x ", spi_rx_dest[i]);
+    }
+    debugPrintf("\n");
+    for (int i = 0; i < 10; i++) {
+        debugPrintf("%x ", spi_tx_out[i]);
+    }
+    debugPrintf("\n");
 }
 
 extern volatile unsigned int frontOfBuffer, backOfBuffer;

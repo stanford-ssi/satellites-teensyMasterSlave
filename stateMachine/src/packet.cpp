@@ -152,18 +152,29 @@ void dma_slave_setup(void)
 DMAChannel dma_rx;
 DMAChannel dma_tx;
 DMAChannel dma_tx2;
+DMAChannel dma_rx_never;
+DMAChannel dma_tx_never;
 void received_packet_isr(void)
 {
-    DMA_CINT=0;
-    DMA_CDNE=0;
-    SPI1_PUSHR = 0xabcd;
-    dma_tx2.enable();
+
+    //dma_rx.clearComplete();
     debugPrintf("Hey0\n");
+    SPI1_PUSHR = 0xabcd;
+    dma_rx.disable();
+    dma_rx.triggerAtCompletionOf(dma_rx_never);
+    dma_rx.clearInterrupt();
+    return;
+    dma_tx2.triggerAtCompletionOf(dma_tx);
+    dma_tx2.enable();
 }
 void sent_packet_isr(void)
 {
-    SPI1_PUSHR = 0xabcd;
+    SPI1_PUSHR = 0xdcba;
     dma_tx2.clearInterrupt();
+    /*dma_tx2.clearComplete();
+    dma_tx2.triggerAtCompletionOf(dma_tx_never);
+    dma_rx.triggerAtCompletionOf(dma_tx);
+    dma_rx.enable();*/
     debugPrintf("Hey1\n");
 }
 const uint16_t buffer_size = 600;
@@ -173,52 +184,37 @@ uint16_t spi_tx_out_16[510];
 uint32_t spi_clr_src = 0x42000000 | SPI_SR_RFDF;
 uint16_t spi_word_received = 0xbad0;
 void setup_dma_receive(void) {
-    for (int i = 0; i < 100; i++) {
-        spi_tx_out[i] = 100 + i;
+    for (int i = 0; i < 500; i++) {
+        spi_tx_out[i] = 0x100 + i;
     }
-    dma_rx.source((uint16_t&) spi_word_received);
-    dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, 24);
-    dma_rx.triggerAtCompletionOf(dma_tx);
+    dma_rx.source((uint16_t&) KINETISK_SPI1.POPR);
+    dma_rx.destinationBuffer((uint16_t*) spi_rx_dest, 40);
+    //dma_rx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
     dma_rx.disableOnCompletion();
     dma_rx.interruptAtCompletion();
+    dma_rx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
     dma_rx.attachInterrupt(received_packet_isr);
 
     spi_rx_dest[0] = 0xbeef;
 
-    dma_tx.sourceBuffer((uint16_t*) &KINETISK_SPI1.POPR, 2);
-    dma_tx.destination((uint16_t&) spi_word_received);
-    dma_tx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
+    /*dma_tx.source((uint16_t&) KINETISK_SPI1.POPR);
+    //dma_tx.sourceBuffer((uint16_t*) &spi_word_received, 2);
+    dma_tx.destinationCircular((uint16_t*) &spi_word_received, 2);
+    dma_tx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);*/
 
-    dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, 100);
+    dma_tx2.sourceBuffer((uint32_t *) spi_tx_out, 40);
     //dma_tx.destinationBuffer((uint16_t*) KINETISK_SPI1.PUSHR, 2);
     dma_tx2.destination(KINETISK_SPI1.PUSHR); // SPI1_PUSHR_SLAVE
     dma_tx2.disableOnCompletion();
     dma_tx2.interruptAtCompletion();
     dma_tx2.attachInterrupt(sent_packet_isr);
-    dma_tx2.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
-    //dma_tx2.triggerAtCompletionOf(dma_tx);
-
-    /*auto kinetis_spi_cs = spi.setCS(spi_cs_pin);
-    spi_tx_src[0] = SPI_PUSHR_PCS(kinetis_spi_cs) | SPI_PUSHR_CONT | SPI_PUSHR_CTAS(1) | 0x4242;
-    spi_tx_src[1] = SPI_PUSHR_PCS(kinetis_spi_cs) | SPI_PUSHR_EOQ | SPI_PUSHR_CTAS(1) | 0x4343u;
-    dma_tx.TCD->SADDR = spi_tx_src;
-    dma_tx.TCD->ATTR_SRC = 2; // 32-bit read from source
-    dma_tx.TCD->SOFF = 4;
-    // transfer both 32-bit entries in one minor loop
-    dma_tx.TCD->NBYTES = 8;
-    dma_tx.TCD->SLAST = -sizeof(spi_tx_src); // go back to beginning of buffer
-    dma_tx.TCD->DADDR = &KINETISK_SPI0.PUSHR;
-    dma_tx.TCD->DOFF = 0;
-    dma_tx.TCD->ATTR_DST = 2; // 32-bit write to dest
-    // one major loop iteration
-    dma_tx.TCD->BITER = 1;
-    dma_tx.TCD->CITER = 1;
-    dma_tx.triggerAtCompletionOf(dma_start_spi);*/
+    dma_tx2.triggerAtTransfersOf(dma_rx);
 
     SPI1_RSER = SPI_RSER_RFDF_RE | SPI_RSER_RFDF_DIRS; // DMA on receive FIFO drain flag
     SPI1_SR = 0xFF0F0000;
     dma_rx.enable();
-    dma_tx.enable();
+    //dma_tx.enable();
+    dma_tx2.enable();
 }
 
 void packet_setup(void) {
