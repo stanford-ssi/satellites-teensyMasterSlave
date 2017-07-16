@@ -14,7 +14,7 @@ volatile unsigned int wordsReceived = 0;
 DMAChannel dma_rx;
 DMAChannel dma_tx;
 uint32_t beef_only[11];
-const uint16_t buffer_size = 600;
+const uint16_t buffer_size = 750;
 uint16_t packet[buffer_size];
 uint32_t spi_tx_out[buffer_size];
 volatile bool transmitting = false;
@@ -46,8 +46,8 @@ void received_packet_isr(void)
     dma_rx.clearInterrupt();
     if (!transmitting) {
         packetReceived();
-        dma_rx.destinationBuffer((uint16_t*) packet + PACKET_SIZE, 2 * 500);
-        dma_tx.sourceBuffer((uint32_t *) currentlyTransmittingPacket - ABCD_BUFFER_SIZE, 2 * 500);
+        dma_rx.destinationBuffer((uint16_t*) packet + PACKET_SIZE, sizeof(uint16_t) * 500);
+        dma_tx.sourceBuffer((uint32_t *) currentlyTransmittingPacket - ABCD_BUFFER_SIZE, sizeof(uint32_t) * 500);
         dma_tx.triggerAtTransfersOf(dma_rx);
         transmitting = true;
         dma_tx.enable();
@@ -61,7 +61,11 @@ void received_packet_isr(void)
     interrupts();
 }
 
+extern expandedPidSample imuDumpPacketMemory[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
 void setup_dma_receive(void) {
+    for (unsigned int i = 0; i < sizeof(imuDumpPacketMemory) / 2; i++) {
+        ((uint16_t *) imuDumpPacketMemory)[i] = i;
+    }
     for (int i = 0; i < buffer_size; i++) {
         spi_tx_out[i] = 0xffff0100 + i;
     }

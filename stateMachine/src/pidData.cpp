@@ -86,20 +86,9 @@ void checkDataDump() {
         assert((sizeof(pidSample) * 8) % 16 == 0);
         imuPacketReady = true;
 
-        imuPacketBodyPointerSave = imuPacketBodyPointer;
-        imuPacketReadySave = imuPacketReady;
-        if(!assert((imuPacketBodyPointerSave == IMU_DATA_DUMP_SIZE) == imuPacketReadySave)) {
-            debugPrintf("packetBodyPointer %d, ready? %d\n", imuPacketBodyPointerSave, imuPacketReadySave);
-        }
-
         digitalWriteFast(IMU_DATA_READY_PIN, HIGH);
     }
 
-    imuPacketBodyPointerSave = imuPacketBodyPointer;
-    imuPacketReadySave = imuPacketReady;
-    if(!assert((imuPacketBodyPointerSave == IMU_DATA_DUMP_SIZE) == imuPacketReadySave)) {
-        debugPrintf("packetBodyPointer %d, ready? %d\n", imuPacketBodyPointerSave, imuPacketReadySave);
-    }
     interrupts();
 }
 /*

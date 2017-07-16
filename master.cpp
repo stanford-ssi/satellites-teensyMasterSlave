@@ -125,7 +125,7 @@ void transmitH(uint16_t *buf, bool verbos) {
     setBuf(to_send, j, checksum);
     setBuf(to_send, j, 0x4321);
 
-    int numIters = 600;
+    int numIters = 550;
 
     memset(to_send + j, 0xff, 2 * numIters);
     uint16_t to_send_copy[10000];
@@ -148,19 +148,19 @@ void transmitH(uint16_t *buf, bool verbos) {
     assert(len == lenCheck);
     assert(len <= 600);
     if (len >= 600 || len != lenCheck) {
+        cout << "Truncated" << endl;
         len = 75;
     }
     uint16_t responseNumber = getBuf(to_send, i+3);
     uint16_t numToPrint = len + i + 2;
     assert(getBuf(to_send, len + i - 1) == 0x4321);
-
     if (numToPrint > 600) {
         numToPrint = 75;
     }
-
+    numToPrint = 550;
     for (i = 0; i < numToPrint; i++) {
         if (verbos) {
-            printf("Sent: %x, received %x\n", getBuf(to_send_copy, i), getBuf(to_send, i));
+            printf("Sent: %x, received %x, i %d\n", getBuf(to_send_copy, i), getBuf(to_send, i), i);
         }
     }
 
