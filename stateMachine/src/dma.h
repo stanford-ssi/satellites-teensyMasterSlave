@@ -90,6 +90,8 @@ typedef struct expandedAdcSample {
 #define DMA_SAMPLE_DEPTH 4 // bytes
 #define DMA_SAMPLE_NUMAXES 4 // uint32s
 
+extern volatile unsigned int numSamplesRead;
+
 uint32_t dmaGetOffset(); // return offset of size uint32
 volatile adcSample* dmaGetSample();
 bool dmaSampleReady();

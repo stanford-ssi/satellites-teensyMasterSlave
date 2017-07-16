@@ -36,6 +36,7 @@ void firstLoopTracking() {
     assert(!enteringTracking);
     enterIMU();
     debugPrintf("Entered tracking\n");
+    debugPrintf("Offset %d\n", dmaGetOffset());
 }
 
 void leaveTracking() {
@@ -71,9 +72,11 @@ void taskTracking() {
         enteringTracking = false;
         firstLoopTracking();
     }
-    assert(dmaGetOffset() < 5); // We should be able to keep up with data generation
-    if (dmaGetOffset() >= 5) {
-        debugPrintf("Offset is too high! It is %d\n", dmaGetOffset());
+    if (micros() % 10000 == 0) {
+        assert(dmaGetOffset() < 5); // We should be able to keep up with data generation
+        if (dmaGetOffset() >= 5) {
+            debugPrintf("Offset is too high! It is %d\n", dmaGetOffset());
+        }
     }
     if (dmaSampleReady()) {
         //debugPrintf("Getting sample\n");
@@ -93,7 +96,7 @@ void trackingHeartbeat() {
     char lastPidOutBuf[40];
     lastAdcRead.toString(lastAdcReadBuf, 40);
     lastPidOut.toString(lastPidOutBuf, 40);
-    //debugPrintf("Last pid output %s, last adc read %s, samples processed %d\n", lastPidOutBuf, lastAdcReadBuf, samplesProcessed);
+    debugPrintf("Last pid output %s, last adc read %s, samples processed %d\n", lastPidOutBuf, lastAdcReadBuf, samplesProcessed);
 }
 
 void enterCalibration() {

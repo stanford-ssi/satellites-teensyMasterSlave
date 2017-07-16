@@ -60,8 +60,8 @@ void writeExpandedPidSample(const pidSample* in, volatile expandedPidSample* out
 }
 
 void checkDataDump() {
-    assert(imuSentDataPointer % IMU_SAMPLE_SIZE == 0);
-    assert(imuDataPointer % IMU_SAMPLE_SIZE == 0);
+    //assert(imuSentDataPointer % IMU_SAMPLE_SIZE == 0);
+    //assert(imuDataPointer % IMU_SAMPLE_SIZE == 0);
     assert((imuPacketBodyPointer == IMU_DATA_DUMP_SIZE) == imuPacketReady);
     if ((imuPacketBodyPointer < IMU_DATA_DUMP_SIZE) && (imuSentDataPointer % IMU_BUFFER_SIZE) != (imuDataPointer % IMU_BUFFER_SIZE)) {
         pidSample sample = imuSamples[imuSentDataPointer];

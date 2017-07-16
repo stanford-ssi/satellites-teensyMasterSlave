@@ -92,7 +92,7 @@ void heartbeat() {
 extern volatile unsigned int frontOfBuffer, backOfBuffer;
 void heartbeat2() {
     debugPrintf(", last state %d, last read %d, dma offset %d %d %d", lastLoopState, lastAnalogRead, dmaGetOffset(), backOfBuffer, frontOfBuffer);
-    debugPrintf(", %d loops, time alive %d\n", numLoops, timeAlive);
+    debugPrintf(", %d loops, time alive %d, numSamplesRead %d\n", numLoops, timeAlive, numSamplesRead);
     debugPrintf("%d last, %d max, %d fast, %d med, %d slow loops\n", lastLoopTime, maxLoopTime, numFastLoops, numMediumLoops, numSlowLoops);
 }
 
@@ -105,7 +105,13 @@ void heartbeat3() {
     debugPrintf("-----------------------\n");
 }
 
-void heartbeat4() {}
+extern volatile int numFail;
+extern volatile int numSuccess;
+extern volatile int numStartCalls;
+extern volatile int numSpi0Calls;
+void heartbeat4() {
+    debugPrintf("DMA Fail %d success %d starts %d spi0s %d\n", numFail, numSuccess, numStartCalls, numSpi0Calls);
+}
 
 void taskIdle(void) {
 }
