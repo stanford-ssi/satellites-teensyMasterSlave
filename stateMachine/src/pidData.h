@@ -46,41 +46,7 @@ typedef struct expandedPidSample {
     pidSample b;
 } expandedPidSample;
 
-void writeExpandedPidSample(const pidSample* in, expandedPidSample* out);
-
-/*typedef struct expandedPidSample {
-    adcSample sample;
-    adcSample incoherentOutput;
-    mirrorOutput out;
-
-    expandedPidSample(): sample(), incoherentOutput(), out() {
-    }
-
-    expandedPidSample(const volatile pidSample& s) {
-        copy(s);
-    }
-
-    expandedPidSample(const volatile adcSample& sampleAdc, const volatile adcSample& incoherent, const volatile mirrorOutput& o) {
-        sample.copy(sampleAdc);
-        incoherentOutput.copy(incoherent);
-        out.copy(o);
-    }
-
-    void copy(const volatile pidSample& s) {
-        sample = s.sample;
-        incoherentOutput = s.incoherentOutput;
-        out = s.out;
-    }
-
-    expandedPidSample& operator =(const volatile pidSample& s) {
-        copy(s);
-        return *this;
-    }
-
-    volatile uint16_t getChecksum() {
-        return sample.getChecksum() + out.getChecksum();
-    }
-} expandedPidSample;*/
+void writeExpandedPidSampleWithChecksum(const pidSample* in, expandedPidSample* out, volatile uint16_t& pidBufferChecksum);
 
 #define IMU_NUM_CHANNELS 4
 #define IMU_SAMPLE_SIZE (sizeof(pidSample) / 2) // 16-bit

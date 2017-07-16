@@ -75,7 +75,7 @@ void heartbeat() {
     debugPrintf("transmitting %d, packetsReceived %d, ", transmitting, packetsReceived);
     debugPrintf("%d errors, bugs %d, last loop %d micros, max loop time %d micros", errors, bugs, lastLoopTime, maxLoopTime);
     maxLoopTime = 0;
-    // 
+    //
     // debugPrintf("SPI SR %x PUSHR %x\n", SPI1_SR, SPI1_PUSHR_SLAVE);
     // //TODO:REMOVE
     // debugPrintf("\n\nBuf %x %x %x %x %x %x\n\n", packet[0], packet[1], packet[4], spi_tx_out[0], spi_tx_out[1], spi_tx_out[2]);
@@ -102,7 +102,6 @@ void heartbeat3() {
     } else if (state == CALIBRATION_STATE) {
         calibrationHeartbeat();
     }
-    debugPrintf("-----------------------\n");
 }
 
 extern volatile int numFail;
@@ -111,6 +110,7 @@ extern volatile int numStartCalls;
 extern volatile int numSpi0Calls;
 void heartbeat4() {
     debugPrintf("DMA Fail %d success %d starts %d spi0s %d\n", numFail, numSuccess, numStartCalls, numSpi0Calls);
+    debugPrintf("-----------------------\n");
 }
 
 void taskIdle(void) {

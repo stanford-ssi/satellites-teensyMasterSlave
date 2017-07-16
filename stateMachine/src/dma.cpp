@@ -46,12 +46,13 @@ volatile adcSample* dmaGetSample() {
     assert(dmaSampleReady());
     volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
     backOfBuffer = (backOfBuffer + 1) % DMASIZE;
-    /*adcSample* sample = (adcSample *) toReturn;
+    adcSample* sample = (adcSample *) toReturn;
     if (!(sample->axis2 == 0 &&  sample->axis3 == 0 && sample->axis4 == 0)) {
-        char debugBuf[40];
+        /*char debugBuf[40];
         sample->toString(debugBuf, 39);
-        debugPrintf("Ruh roh, sample is %s\n", debugBuf);
-    }*/
+        debugPrintf("Ruh roh, sample is %s\n", debugBuf);*/
+        debugPrintf("Ruh roh, sample is %x %x\n", sample->axis3, sample->axis4);
+    }
     return toReturn;
 }
 
@@ -75,30 +76,22 @@ void spi0_isr(void) {
     if (numSpi0Calls % sizeofAdcSample != adcIsrIndex % (sizeof(adcSample) / (16 / 8))) {
         //debugPrintf("uh oh, spi calls %d index %d num read %d\n", numSpi0Calls, adcIsrIndex, numSamplesRead);
     }
+    assert(adcIsrIndex < sizeofAdcSample);
+    ((volatile uint16_t *) &nextSample)[adcIsrIndex] = spiRead;
     numSpi0Calls++;
-    if (!(adcIsrIndex < sizeofAdcSample - 1)) {
+    adcIsrIndex++;
+    if (!(adcIsrIndex < sizeofAdcSample)) {
         adcSamplesRead[frontOfBuffer] = nextSample;
         frontOfBuffer = (frontOfBuffer + 1) % DMASIZE;
         numSamplesRead += 1;
         adcIsrIndex++;
         return;
+    } else {
+        SPI0_PUSHR = ((uint16_t) adcIsrIndex) | SPI_PUSHR_CTAS(1);
     }
-    //debugPrintf("spibegin");
-
-    assert(adcIsrIndex < sizeofAdcSample);
-    ((volatile uint16_t *) &nextSample)[adcIsrIndex] = spiRead;
-    adcIsrIndex++;
-    SPI0_PUSHR = ((uint16_t) adcIsrIndex) | SPI_PUSHR_CTAS(1);
 }
 
 void beginAdcRead(void) {
-    digitalWriteFast(33, HIGH);
-    for (volatile int i = 0; i < 10; i++) {
-    }
-    digitalWriteFast(33, LOW);
-    // if (numStartCalls >= 2) {
-    //     return;
-    // }
     numStartCalls++;
     long timeNow = micros();
     if (lastSampleTime != 0) {
@@ -127,7 +120,6 @@ void dmaReceiveSetup() {
     adcSamplesRead[DMASIZE].axis2 = 0xdeadbeef;
     adcSamplesRead[DMASIZE].axis3 = 0xdeadbeef;
     adcSamplesRead[DMASIZE].axis4 = 0xdeadbeef;
-    pinMode(33, OUTPUT); // TODO:REMOVE
     SPI.begin();
     SPI.beginTransaction(spi_settings);
     SPI0_RSER = 0x00020000;

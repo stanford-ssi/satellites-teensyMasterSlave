@@ -64,7 +64,7 @@ void received_packet_isr(void)
 extern expandedPidSample imuDumpPacketMemory[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
 void setup_dma_receive(void) {
     for (unsigned int i = 0; i < sizeof(imuDumpPacketMemory) / 2; i++) {
-        ((uint16_t *) imuDumpPacketMemory)[i] = i;
+        ((uint16_t *) imuDumpPacketMemory)[i] = 0xabcd;
     }
     for (int i = 0; i < buffer_size; i++) {
         spi_tx_out[i] = 0xffff0100 + i;
@@ -289,18 +289,20 @@ void setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uin
     packetBuffer[3] = header;
     assert(packetBuffer[OUT_PACKET_BODY_BEGIN] != 0xbeef);
     assert(packetBuffer[OUT_PACKET_BODY_BEGIN + bodyLength - 1] != 0xbeef);
-    uint16_t checksum = bodyChecksum + transmissionSize + header;
+    uint16_t checksum = bodyChecksum;
+    for (int i = 1; i <= 3; i++) {
+        checksum += packetBuffer[i];
+    }
     packetBuffer[transmissionSize - 2] = checksum;
     packetBuffer[transmissionSize - 1] = LAST_WORD;
-    //debugPrintf("Sending checksum: %x\n", checksum);
 }
 
 // Call this after body of transmission is filled
 void setupTransmissionWithBuffer(uint16_t header, unsigned int bodyLength, volatile uint32_t *packetBuffer) {
     transmissionSize = bodyLength + OUT_PACKET_OVERHEAD;
-    uint16_t bodyChecksum = transmissionSize + header;
+    uint16_t bodyChecksum = 0;
     for (unsigned int i = OUT_PACKET_BODY_BEGIN; i < (unsigned int) (transmissionSize - OUT_PACKET_BODY_END_SIZE); i++) {
-      bodyChecksum += packetBuffer[i];
+        bodyChecksum += packetBuffer[i];
     }
     setupTransmissionWithChecksum(header, bodyLength, bodyChecksum, packetBuffer);
 }

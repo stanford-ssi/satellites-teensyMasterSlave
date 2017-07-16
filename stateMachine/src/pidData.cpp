@@ -48,14 +48,16 @@ void imuSetup() {
     assert (imuSamples[IMU_BUFFER_SIZE] == 0xbeef);*/
 }
 
-void writeExpandedPidSample(const pidSample* in, volatile expandedPidSample* out) {
+void writeExpandedPidSampleWithChecksum(const pidSample* in, volatile expandedPidSample* out, volatile uint16_t& pidBufferChecksum) {
     assert(sizeof(pidSample) * 2 == sizeof(expandedPidSample));
     assert(sizeof(pidSample) == 4 * 4 * 3);
     unsigned int num_uint32 = sizeof(pidSample) / 4;
     for (unsigned int i = 0; i < num_uint32; i++) {
         uint32_t num = ((uint32_t *) in)[i];
         ((uint32_t *) out)[2 * i] = num >> 16; // msb
+        pidBufferChecksum += num >> 16;
         ((uint32_t *) out)[2 * i + 1] = num % (1 << 16); // lsb
+        pidBufferChecksum += num % (1 << 16);
     }
 }
 
@@ -73,8 +75,8 @@ void checkDataDump() {
     noInterrupts();
     if ((imuPacketBodyPointer < IMU_DATA_DUMP_SIZE) && (imuSentDataPointer % IMU_BUFFER_SIZE) != (imuDataPointer % IMU_BUFFER_SIZE)) {
         pidSample sample = imuSamples[imuSentDataPointer];
-        imuPacketChecksum += sample.getChecksum();
-        writeExpandedPidSample(&sample, &(imuDumpPacketBody[imuPacketBodyPointer]));
+        //imuPacketChecksum += sample.getChecksum();
+        writeExpandedPidSampleWithChecksum(&sample, &(imuDumpPacketBody[imuPacketBodyPointer]), imuPacketChecksum);
         imuPacketBodyPointer++;
         imuSentDataPointer++;
     }

@@ -151,16 +151,22 @@ void transmitH(uint16_t *buf, bool verbos) {
         cout << "Truncated" << endl;
         len = 75;
     }
+    uint16_t computedChecksum = 0;
+    uint16_t checksumIndex = len + i - 2;
+    for (int j = i+1; j < checksumIndex; j++) {
+        computedChecksum += getBuf(to_send, j);
+    }
+    assert(computedChecksum == getBuf(to_send, checksumIndex));
+    // printf("Computed checksum %x, received %x\n", computedChecksum, getBuf(to_send, checksumIndex));
     uint16_t responseNumber = getBuf(to_send, i+3);
     uint16_t numToPrint = len + i + 2;
     assert(getBuf(to_send, len + i - 1) == 0x4321);
     if (numToPrint > 600) {
         numToPrint = 75;
     }
-    numToPrint = 550;
     for (i = 0; i < numToPrint; i++) {
         if (verbos) {
-            printf("Sent: %x, received %x, i %d\n", getBuf(to_send_copy, i), getBuf(to_send, i), i);
+            printf("i %d\tSent: %x, received %x\n", i, getBuf(to_send_copy, i), getBuf(to_send, i));
         }
     }
 
