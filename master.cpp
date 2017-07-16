@@ -125,7 +125,7 @@ void transmitH(uint16_t *buf, bool verbos) {
     setBuf(to_send, j, checksum);
     setBuf(to_send, j, 0x4321);
 
-    int numIters = 500;
+    int numIters = 600;
 
     memset(to_send + j, 0xff, 2 * numIters);
     uint16_t to_send_copy[10000];
@@ -146,15 +146,15 @@ void transmitH(uint16_t *buf, bool verbos) {
     uint16_t len = getBuf(to_send, i+1);
     uint16_t lenCheck = ~getBuf(to_send, i+2);
     assert(len == lenCheck);
-    assert(len <= 500);
-    if (len >= 500 || len != lenCheck) {
+    assert(len <= 600);
+    if (len >= 600 || len != lenCheck) {
         len = 75;
     }
     uint16_t responseNumber = getBuf(to_send, i+3);
     uint16_t numToPrint = len + i + 2;
     assert(getBuf(to_send, len + i - 1) == 0x4321);
 
-    if (numToPrint > 500) {
+    if (numToPrint > 600) {
         numToPrint = 75;
     }
 
@@ -180,6 +180,8 @@ void transmitH(uint16_t *buf, bool verbos) {
             printf("Bad header");
         }
         cout << endl;
+        cout << "Num: " << numToPrint << endl;
+        cout << "Errors: " << errors << endl;
         printf("---------------------------------\n");
     }
     delayMicroseconds(1);

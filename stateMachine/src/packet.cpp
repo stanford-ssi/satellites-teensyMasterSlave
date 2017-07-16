@@ -35,6 +35,7 @@ void create_response();
 void responseImuDump();
 void setupTransmission(uint16_t header, unsigned int bodyLength);
 void setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uint16_t bodyChecksum, volatile uint32_t *packetBuffer);
+uint16_t getHeader(void);
 
 void received_packet_isr(void)
 {
@@ -51,13 +52,17 @@ void received_packet_isr(void)
         transmitting = true;
         dma_tx.enable();
         dma_rx.enable();
+    } else {
+        if (((state == TRACKING_STATE) || (state == CALIBRATION_STATE)) && getHeader() == RESPONSE_PID_DATA) {
+            assert(imuPacketReady);
+            imuPacketSent();
+        }
     }
-    debugPrintf("Hey\n");
     interrupts();
 }
 
 void setup_dma_receive(void) {
-    for (int i = 0; i < 500; i++) {
+    for (int i = 0; i < buffer_size; i++) {
         spi_tx_out[i] = 0xffff0100 + i;
     }
     for (int i = 0; i < 11; i++) {
@@ -132,7 +137,7 @@ void packetReceived() {
 }
 
 void handlePacket() {
-  unsigned int startTimePacketPrepare = micros();
+  // unsigned int startTimePacketPrepare = micros();
 
   // Check for erroneous data
   if (transmitting) {
@@ -156,16 +161,16 @@ void handlePacket() {
       return;
   }
 
-  unsigned int midTimePacketPrepare = micros();
-  (void) midTimePacketPrepare;
+  // unsigned int midTimePacketPrepare = micros();
+  // (void) midTimePacketPrepare;
 
   create_response();
 
-  unsigned int endTimePacketPrepare = micros();
+  // unsigned int endTimePacketPrepare = micros();
   //assert (endTimePacketPrepare - startTimePacketPrepare <= 1);
-  if (endTimePacketPrepare - startTimePacketPrepare > 1) {
-      debugPrintf("Packet took %d, %d micros\n", endTimePacketPrepare - startTimePacketPrepare, midTimePacketPrepare - startTimePacketPrepare);
-  }
+  // if (endTimePacketPrepare - startTimePacketPrepare > 1) {
+  //     debugPrintf("Packet took %d, %d micros\n", endTimePacketPrepare - startTimePacketPrepare, midTimePacketPrepare - startTimePacketPrepare);
+  // }
 }
 
 void create_response() {

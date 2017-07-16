@@ -75,18 +75,18 @@ void heartbeat() {
     debugPrintf("transmitting %d, packetsReceived %d, ", transmitting, packetsReceived);
     debugPrintf("%d errors, bugs %d, last loop %d micros, max loop time %d micros", errors, bugs, lastLoopTime, maxLoopTime);
     maxLoopTime = 0;
-
-    debugPrintf("SPI SR %x PUSHR %x\n", SPI1_SR, SPI1_PUSHR_SLAVE);
-    //TODO:REMOVE
-    debugPrintf("\n\nBuf %x %x %x %x %x %x\n\n", packet[0], packet[1], packet[4], spi_tx_out[0], spi_tx_out[1], spi_tx_out[2]);
-    for (int i = 0; i < 10; i++) {
-        debugPrintf("%x ", packet[i]);
-    }
-    debugPrintf("\n");
-    for (int i = 0; i < 10; i++) {
-        debugPrintf("%x ", spi_tx_out[i]);
-    }
-    debugPrintf("\n");
+    // 
+    // debugPrintf("SPI SR %x PUSHR %x\n", SPI1_SR, SPI1_PUSHR_SLAVE);
+    // //TODO:REMOVE
+    // debugPrintf("\n\nBuf %x %x %x %x %x %x\n\n", packet[0], packet[1], packet[4], spi_tx_out[0], spi_tx_out[1], spi_tx_out[2]);
+    // for (int i = 0; i < 10; i++) {
+    //     debugPrintf("%x ", packet[i]);
+    // }
+    // debugPrintf("\n");
+    // for (int i = 0; i < 10; i++) {
+    //     debugPrintf("%x ", spi_tx_out[i]);
+    // }
+    // debugPrintf("\n");
 }
 
 extern volatile unsigned int frontOfBuffer, backOfBuffer;

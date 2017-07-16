@@ -84,10 +84,10 @@ void writeExpandedPidSample(const pidSample* in, expandedPidSample* out);
 
 #define IMU_NUM_CHANNELS 4
 #define IMU_SAMPLE_SIZE (sizeof(pidSample) / 2) // 16-bit
-#define IMU_DATA_DUMP_SIZE 20
+#define IMU_DATA_DUMP_SIZE 10
 #define IMU_BUFFER_SIZE 3000 // units are IMU_SAMPLE_SIZE
-#define IMU_SAMPLE_FREQUENCY 5000 // Hz
-#define IMU_SAMPLE_PERIOD (1000000/IMU_SAMPLE_FREQUENCY) // micros
+// #define IMU_SAMPLE_FREQUENCY 5000 // Hz
+// #define IMU_SAMPLE_PERIOD (1000000/IMU_SAMPLE_FREQUENCY) // micros
 #define IMU_DATA_READY_PIN 19
 
 // Only variable visible should be packet related

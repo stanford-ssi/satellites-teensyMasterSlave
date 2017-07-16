@@ -60,9 +60,17 @@ void writeExpandedPidSample(const pidSample* in, volatile expandedPidSample* out
 }
 
 void checkDataDump() {
-    //assert(imuSentDataPointer % IMU_SAMPLE_SIZE == 0);
-    //assert(imuDataPointer % IMU_SAMPLE_SIZE == 0);
-    assert((imuPacketBodyPointer == IMU_DATA_DUMP_SIZE) == imuPacketReady);
+    noInterrupts();
+    unsigned int imuPacketBodyPointerSave = imuPacketBodyPointer;
+    unsigned int imuPacketReadySave = imuPacketReady;
+    if(!assert((imuPacketBodyPointerSave == IMU_DATA_DUMP_SIZE) == imuPacketReadySave)) {
+        debugPrintf("packetBodyPointer %d, ready? %d\n", imuPacketBodyPointerSave, imuPacketReadySave);
+    }
+    if (imuPacketReady) {
+        interrupts();
+        return;
+    }
+    noInterrupts();
     if ((imuPacketBodyPointer < IMU_DATA_DUMP_SIZE) && (imuSentDataPointer % IMU_BUFFER_SIZE) != (imuDataPointer % IMU_BUFFER_SIZE)) {
         pidSample sample = imuSamples[imuSentDataPointer];
         imuPacketChecksum += sample.getChecksum();
@@ -77,9 +85,22 @@ void checkDataDump() {
         noInterrupts();
         assert((sizeof(pidSample) * 8) % 16 == 0);
         imuPacketReady = true;
+
+        imuPacketBodyPointerSave = imuPacketBodyPointer;
+        imuPacketReadySave = imuPacketReady;
+        if(!assert((imuPacketBodyPointerSave == IMU_DATA_DUMP_SIZE) == imuPacketReadySave)) {
+            debugPrintf("packetBodyPointer %d, ready? %d\n", imuPacketBodyPointerSave, imuPacketReadySave);
+        }
+
         digitalWriteFast(IMU_DATA_READY_PIN, HIGH);
-        interrupts();
     }
+
+    imuPacketBodyPointerSave = imuPacketBodyPointer;
+    imuPacketReadySave = imuPacketReady;
+    if(!assert((imuPacketBodyPointerSave == IMU_DATA_DUMP_SIZE) == imuPacketReadySave)) {
+        debugPrintf("packetBodyPointer %d, ready? %d\n", imuPacketBodyPointerSave, imuPacketReadySave);
+    }
+    interrupts();
 }
 /*
 bool shouldSample() {
@@ -136,13 +157,12 @@ void taskIMU() {
 }
 
 void imuPacketSent() {
+    digitalWrite(IMU_DATA_READY_PIN, LOW);
     if ((assert(imuPacketReady))) {
         noInterrupts();
         imuPacketChecksum = 0;
         imuPacketBodyPointer = 0;
         imuPacketReady = false;
-        digitalWrite(IMU_DATA_READY_PIN, LOW);
-        imuPacketChecksum = 0;
         imuSamplesSent += IMU_DATA_DUMP_SIZE;
         interrupts();
     }
