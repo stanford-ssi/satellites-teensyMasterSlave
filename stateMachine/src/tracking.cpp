@@ -1,8 +1,9 @@
 #include <tracking.h>
 #include <pidData.h>
 #include <main.h>
+#include <dma.h>
 
-void writePidOutput(mirrorOutput& out);
+void sendOutput(mirrorOutput& output);
 
 mirrorOutput lastPidOut;
 adcSample lastAdcRead;
@@ -56,16 +57,8 @@ void pidProcess(const volatile adcSample& s) {
     lastPidOut.copy(out);
     pidSample samplePid(s, incoherentOutput, out);
     recordPid(samplePid);
-    //debugPrintf("Done recording\n");
-    writePidOutput(out);
+    sendOutput(out);
     samplesProcessed++;
-}
-
-void writePidOutput(mirrorOutput& out) {
-    send32(out.x_low);
-    send32(out.x_high);
-    send32(out.y_low);
-    send32(out.y_high);
 }
 
 void taskTracking() {

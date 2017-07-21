@@ -19,7 +19,7 @@ volatile unsigned int adcIsrIndex = 0; // indexes into nextSample
 volatile unsigned int numSamplesRead = 0;
 
 mirrorOutput currentOutput;
-volatile unsigned int mirrorOutputIndex;
+volatile unsigned int mirrorOutputIndex = sizeof(mirrorOutput) / (16 / 8);
 
 //TODO:remove
 volatile int numFail = 0;
@@ -130,35 +130,35 @@ void mirrorOutputSetup() {
 }
 
 void sendOutput(mirrorOutput& output) {
+    if (!assert(mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8))) {
+        //return;
+    }
     noInterrupts();
     currentOutput = output;
-    assert(mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8));
     mirrorOutputIndex = 0;
+    (void) SPI2_POPR;
     SPI2_PUSHR = ((uint16_t) mirrorOutputIndex) | SPI_PUSHR_CTAS(1);
     interrupts();
 }
 
 void spi2_isr(void) {
-    noInterrupts();
     assert(mirrorOutputIndex < sizeof(mirrorOutput) / (16 / 8));
     (void) SPI2_POPR;
     uint16_t toWrite = ((volatile uint16_t *) &currentOutput)[mirrorOutputIndex];
     SPI2_SR |= SPI_SR_RFDF;
     mirrorOutputIndex++;
-    if (adcIsrIndex < sizeof(mirrorOutput) / (16 / 8)) {
-        SPI0_PUSHR = ((uint16_t) toWrite) | SPI_PUSHR_CTAS(1);
+    if (mirrorOutputIndex < sizeof(mirrorOutput) / (16 / 8)) {
+        SPI2_PUSHR = ((uint16_t) toWrite) | SPI_PUSHR_CTAS(1);
     } else {
         assert(mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8));
     }
-    interrupts();
 }
 
 
 void dmaSetup() {
-    //mirrorOutputSetup();
+    mirrorOutputSetup();
     debugPrintf("Setting up dma, offset is %d\n", dmaGetOffset());
     dmaReceiveSetup();
-    SPI2.begin();
     debugPrintf("Dma setup complete, offset is %d. Setting up ftm timers.\n", dmaGetOffset());
     init_FTM0();
     debugPrintf("FTM timer setup complete.\n");
