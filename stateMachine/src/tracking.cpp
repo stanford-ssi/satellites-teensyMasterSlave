@@ -52,6 +52,7 @@ void pidProcess(const volatile adcSample& s) {
     adcSample incoherentOutput;
     incoherentProcess(s, incoherentOutput);
     mirrorOutput out;
+    out.x_low = incoherentOutput.axis1; // TODO: REMOVE
     lastPidOut.copy(out);
     pidSample samplePid(s, incoherentOutput, out);
     recordPid(samplePid);
@@ -73,8 +74,8 @@ void taskTracking() {
         firstLoopTracking();
     }
     if (micros() % 10000 == 0) {
-        assert(dmaGetOffset() < 5); // We should be able to keep up with data generation
-        if (dmaGetOffset() >= 5) {
+        assert(dmaGetOffset() < 2); // We should be able to keep up with data generation
+        if (dmaGetOffset() >= 1) {
             debugPrintf("Offset is too high! It is %d\n", dmaGetOffset());
         }
     }

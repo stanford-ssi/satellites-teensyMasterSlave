@@ -157,7 +157,6 @@ void transmitH(uint16_t *buf, bool verbos) {
         computedChecksum += getBuf(to_send, j);
     }
     assert(computedChecksum == getBuf(to_send, checksumIndex));
-    // printf("Computed checksum %x, received %x\n", computedChecksum, getBuf(to_send, checksumIndex));
     uint16_t responseNumber = getBuf(to_send, i+3);
     uint16_t numToPrint = len + i + 2;
     assert(getBuf(to_send, len + i - 1) == 0x4321);

@@ -93,27 +93,6 @@ void checkDataDump() {
 
     interrupts();
 }
-/*
-bool shouldSample() {
-    if ((imuDataPointer + IMU_SAMPLE_SIZE) % IMU_BUFFER_SIZE == imuSentDataPointer) {
-        // Buffer is full
-        sampling = false;
-    }
-    if (!sampling) {
-        return false;
-    }
-    assert(timeSinceLastRead < 1.05 * IMU_SAMPLE_PERIOD);
-    if (!(assert(timeSinceLastRead < 2 * IMU_SAMPLE_PERIOD))) { // ruh roh
-        timeSinceLastRead = 0;
-        return true;
-    }
-    if (timeSinceLastRead > IMU_SAMPLE_PERIOD) {
-        timeSinceLastRead -= IMU_SAMPLE_PERIOD;
-        return true;
-    }
-
-    return false;
-}*/
 
 void recordPid(const volatile pidSample& s) {
     //debugPrintf("Sampling %d imuDataPointer %d IMU_BUFFER_SIZE %d\n", sampling, imuDataPointer, IMU_BUFFER_SIZE);

@@ -40,7 +40,9 @@ uint16_t getHeader(void);
 void received_packet_isr(void)
 {
     noInterrupts();
-    assert(packet[0] == 0x1234);
+    /*if(assert(packet[0] == 0x1234)) {
+        debugPrintf("Packet header: %x %x\n", packet[0], packet[1]);
+    }*/
     dma_rx.disable();
     dma_tx.disable();
     dma_rx.clearInterrupt();
@@ -108,32 +110,6 @@ uint16_t getHeader() {
     return currentlyTransmittingPacket[3];
 }
 
-//Interrupt Service Routine to handle incoming data
-/*void spi1_isr(void) {
-  assert(outPointer <= transmissionSize);
-  assert(packetPointer <= PACKET_SIZE);
-  assert(transmitting || outPointer == 0);
-  wordsReceived++;
-  uint16_t to_send = EMPTY_WORD;
-  if (transmitting && outPointer < transmissionSize) {
-    to_send = currentlyTransmittingPacket[outPointer];
-    outPointer++;
-    if (outPointer == transmissionSize && ((state == TRACKING_STATE) || (state == CALIBRATION_STATE)) && getHeader() == RESPONSE_PID_DATA) {
-        assert(imuPacketReady);
-        imuPacketSent();
-    }
-  }
-  uint16_t received = SPI_SLAVE.rxtx16(to_send);
-  if (packetPointer < PACKET_SIZE) {
-    //debugPrintf("Received %x\n", received);
-    packet[packetPointer] = received;
-    packetPointer++;
-    if (packetPointer == PACKET_SIZE) {
-      packetReceived();
-    }
-  }
-}*/
-
 void packetReceived() {
   packetsReceived++;
 
@@ -152,7 +128,7 @@ void handlePacket() {
   }
 
   if (packet[0] != FIRST_WORD || packet[PACKET_SIZE - 1] != LAST_WORD) {
-    debugPrintf("Invalid packet endings: start %x, end %x\n", packet[0], packet[PACKET_SIZE - 1]);
+    debugPrintf("Invalid packet endings: start %x, %x, end %x, %x\n", packet[0], packet[1], packet[PACKET_SIZE - 2], packet[PACKET_SIZE - 1]);
     responseBadPacket(INVALID_BORDER);
     return;
   }

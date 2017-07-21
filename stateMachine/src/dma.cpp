@@ -46,13 +46,6 @@ volatile adcSample* dmaGetSample() {
     assert(dmaSampleReady());
     volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
     backOfBuffer = (backOfBuffer + 1) % DMASIZE;
-    adcSample* sample = (adcSample *) toReturn;
-    if (!(sample->axis2 == 0 &&  sample->axis3 == 0 && sample->axis4 == 0)) {
-        /*char debugBuf[40];
-        sample->toString(debugBuf, 39);
-        debugPrintf("Ruh roh, sample is %s\n", debugBuf);*/
-        debugPrintf("Ruh roh, sample is %x %x\n", sample->axis3, sample->axis4);
-    }
     return toReturn;
 }
 
@@ -71,12 +64,6 @@ void spi0_isr(void) {
     uint16_t spiRead = SPI0_POPR;
     (void) spiRead;
     SPI0_SR |= SPI_SR_RFDF;
-    assert(adcIsrIndex <= sizeofAdcSample);
-    //assert(numSpi0Calls % (sizeof(adcSample) / (16 / 8)) == adcIsrIndex);
-    if (numSpi0Calls % sizeofAdcSample != adcIsrIndex % (sizeof(adcSample) / (16 / 8))) {
-        //debugPrintf("uh oh, spi calls %d index %d num read %d\n", numSpi0Calls, adcIsrIndex, numSamplesRead);
-    }
-    assert(adcIsrIndex < sizeofAdcSample);
     ((volatile uint16_t *) &nextSample)[adcIsrIndex] = spiRead;
     numSpi0Calls++;
     adcIsrIndex++;
