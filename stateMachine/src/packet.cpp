@@ -48,8 +48,10 @@ void received_packet_isr(void)
     dma_rx.clearInterrupt();
     if (!transmitting) {
         packetReceived();
-        dma_rx.destinationBuffer((uint16_t*) packet + PACKET_SIZE, sizeof(uint16_t) * 504);
-        dma_tx.sourceBuffer((uint32_t *) currentlyTransmittingPacket - ABCD_BUFFER_SIZE, sizeof(uint32_t) * 504);
+        const uint32_t sizeOfBuffer = IMU_DATA_DUMP_SIZE_UINT16 + OUT_PACKET_OVERHEAD + ABCD_BUFFER_SIZE + 2;
+        assert(sizeOfBuffer <= 512);
+        dma_rx.destinationBuffer((uint16_t*) packet + PACKET_SIZE, sizeof(uint16_t) * sizeOfBuffer);
+        dma_tx.sourceBuffer((uint32_t *) currentlyTransmittingPacket - ABCD_BUFFER_SIZE, sizeof(uint32_t) * sizeOfBuffer);
         dma_tx.triggerAtTransfersOf(dma_rx);
         transmitting = true;
         dma_tx.enable();
@@ -128,7 +130,11 @@ void handlePacket() {
   }
 
   if (packet[0] != FIRST_WORD || packet[PACKET_SIZE - 1] != LAST_WORD) {
-    debugPrintf("Invalid packet endings: start %x, %x, end %x, %x\n", packet[0], packet[1], packet[PACKET_SIZE - 2], packet[PACKET_SIZE - 1]);
+    debugPrintf("Invalid packet endings: ");
+    for (int i = 0; i < PACKET_SIZE; i++) {
+        debugPrintf("%x ", packet[i]);
+    }
+    debugPrintln("");
     responseBadPacket(INVALID_BORDER);
     return;
   }
@@ -218,17 +224,22 @@ void write32(volatile uint32_t* buffer, unsigned int index, uint32_t item) {
     buffer[index + 1] = item % (1 << 16);
 }
 
+void write64(volatile uint32_t* buffer, unsigned int index, uint64_t item) {
+    buffer[index] = item >> 48;
+    buffer[index + 1] = (item >> 32) % (1 << 16);
+    buffer[index + 2] = (item >> 16) % (1 << 16);
+    buffer[index + 3] = item  % (1 << 16);
+}
+
 void response_status() {
     //assert(packetPointer == PACKET_SIZE);
     assert(!transmitting);
-    int bodySize = 0;
-    /*outBody[0] = state;
-    write32(outBody, 1, packetsReceived);
-    write32(outBody, 3, wordsReceived);
-    write32(outBody, 5, timeAlive);
-    write32(outBody, 7, lastLoopTime);
-    write32(outBody, 9, maxLoopTime);
-    write32(outBody, 11, errors);*/
+    int bodySize = 14;
+
+    write64(outBody, 0, numLockedOn);
+    write64(outBody, 4, totalPowerReceivedBeforeIncoherent);
+    write64(outBody, 8, totalPowerReceived);
+    write32(outBody, 12, samplesProcessed);
     if (DEBUG && shouldClearSendBuffer) {
         assert(outBody[bodySize-1] != 0xbeef);
         assert(outBody[bodySize] == 0xbeef);
@@ -265,11 +276,10 @@ void setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uin
     packetBuffer[3] = header;
     packetBuffer[4] = state;
     write32(packetBuffer, 5, packetsReceived);
-    write32(packetBuffer, 7, wordsReceived);
-    write32(packetBuffer, 9, timeAlive);
-    write32(packetBuffer, 11, lastLoopTime);
-    write32(packetBuffer, 13, maxLoopTime);
-    write32(packetBuffer, 15, errors);
+    write32(packetBuffer, 7, timeAlive);
+    write32(packetBuffer, 9, lastLoopTime);
+    write32(packetBuffer, 11, maxLoopTime);
+    write32(packetBuffer, 13, errors);
     assert(packetBuffer[OUT_PACKET_BODY_BEGIN] != 0xbeef);
     assert(packetBuffer[OUT_PACKET_BODY_BEGIN + bodyLength - 1] != 0xbeef);
     uint16_t checksum = bodyChecksum;
@@ -296,10 +306,10 @@ void setupTransmission(uint16_t header, unsigned int bodyLength){
 
 void clearBuffer(void) {
     noInterrupts();
-    (void) SPI1_POPR; (void) SPI1_POPR; SPI1_SR |= SPI_SR_RFDF;
-    transmitting = false;
     dma_rx.disable();
     dma_tx.disable();
+    (void) SPI1_POPR; (void) SPI1_POPR; SPI1_SR |= SPI_SR_RFDF;
+    transmitting = false;
     dma_rx.destinationBuffer((uint16_t*) packet, PACKET_SIZE * 2);
     dma_tx.sourceBuffer((uint32_t *) beef_only, PACKET_SIZE * 2);
     dma_tx.triggerAtTransfersOf(dma_rx);

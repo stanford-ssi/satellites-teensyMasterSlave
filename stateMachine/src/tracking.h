@@ -11,4 +11,9 @@ void enterCalibration();
 void leaveCalibration();
 void taskCalibration();
 void calibrationHeartbeat();
+
+extern volatile uint64_t numLockedOn;
+extern volatile uint64_t totalPowerReceivedBeforeIncoherent;
+extern volatile uint64_t totalPowerReceived;
+extern volatile unsigned samplesProcessed;
 #endif

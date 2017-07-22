@@ -159,7 +159,6 @@ void transmitH(uint16_t *buf, bool verbos) {
     assert(computedChecksum == getBuf(to_send, checksumIndex));
     uint16_t responseNumber = getBuf(to_send, i+3);
     uint16_t numToPrint = len + i + 2;
-    cout << len << " " << i << " " << numToPrint << endl;
     assert(getBuf(to_send, len + i - 1) == 0x4321);
     if (numToPrint > 600) {
         numToPrint = 75;

@@ -34,11 +34,13 @@ void enterTracking() {
 }
 
 void firstLoopTracking() {
+    noInterrupts();
     numLockedOn = 0;
     samplesProcessed = 0;
     lockedOn = false;
     totalPowerReceivedBeforeIncoherent = 0;
     totalPowerReceived = 0;
+    interrupts();
 
     debugPrintf("About to clear dma: offset is (this might be high) %d\n", dmaGetOffset());
     dmaStartSampling();
@@ -51,8 +53,14 @@ void firstLoopTracking() {
 }
 
 void leaveTracking() {
-    enteringTracking = false;
     leaveIMU();
+    noInterrupts();
+    enteringTracking = false;
+    numLockedOn = 0;
+    totalPowerReceivedBeforeIncoherent = 0;
+    totalPowerReceived = 0;
+    samplesProcessed = 0;
+    interrupts();
 }
 
 void incoherentProcess(const volatile adcSample& s, adcSample& output) {
@@ -119,6 +127,7 @@ void enterCalibration() {
 }
 
 void leaveCalibration() {
+    leaveTracking();
 }
 
 void taskCalibration() {
