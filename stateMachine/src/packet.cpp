@@ -237,7 +237,7 @@ void response_status() {
 }
 
 void responseImuDump() {
-    setupTransmissionWithChecksum(RESPONSE_PID_DATA, IMU_DATA_DUMP_SIZE * sizeof(pidSample) * 8 / 16, imuPacketChecksum, imuDumpPacket);
+    setupTransmissionWithChecksum(RESPONSE_PID_DATA, IMU_DATA_DUMP_SIZE_UINT16, imuPacketChecksum, imuDumpPacket);
 }
 
 void responseBadPacket(uint16_t flag) {
@@ -289,25 +289,14 @@ void setupTransmission(uint16_t header, unsigned int bodyLength){
 
 void clearBuffer(void) {
     noInterrupts();
+    (void) SPI1_POPR; (void) SPI1_POPR; SPI1_SR |= SPI_SR_RFDF;
     transmitting = false;
     dma_rx.disable();
     dma_tx.disable();
     dma_rx.destinationBuffer((uint16_t*) packet, PACKET_SIZE * 2);
     dma_tx.sourceBuffer((uint32_t *) beef_only, PACKET_SIZE * 2);
     dma_tx.triggerAtTransfersOf(dma_rx);
-    (void) SPI1_POPR; (void) SPI1_POPR; SPI1_SR |= SPI_SR_RFDF;
     dma_tx.enable();
     dma_rx.enable();
     interrupts();
-    /*
-    if (packetPointer != 0 && packetPointer != PACKET_SIZE) {
-    debugPrintf("Clearing %d bytes of data\n", packetPointer);
-    }
-    noInterrupts();
-    packetPointer = 0;
-    outPointer = 0;
-    transmissionSize = 0;
-    transmitting = false;
-    interrupts();
-    */
 }

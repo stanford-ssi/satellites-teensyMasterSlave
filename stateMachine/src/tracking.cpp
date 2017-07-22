@@ -9,6 +9,10 @@ mirrorOutput lastPidOut;
 adcSample lastAdcRead;
 volatile unsigned samplesProcessed = 0;
 volatile bool enteringTracking = false;
+volatile bool lockedOn = false;
+volatile uint64_t numLockedOn = 0;
+volatile uint64_t totalPowerReceivedBeforeIncoherent = 0;
+volatile uint64_t totalPowerReceived = 0;
 
 // Most significant bit first
 void send32(uint32_t toSend) {
@@ -30,6 +34,12 @@ void enterTracking() {
 }
 
 void firstLoopTracking() {
+    numLockedOn = 0;
+    samplesProcessed = 0;
+    lockedOn = false;
+    totalPowerReceivedBeforeIncoherent = 0;
+    totalPowerReceived = 0;
+
     debugPrintf("About to clear dma: offset is (this might be high) %d\n", dmaGetOffset());
     dmaStartSampling();
     assert(!dmaSampleReady());
@@ -50,8 +60,22 @@ void incoherentProcess(const volatile adcSample& s, adcSample& output) {
 }
 
 void pidProcess(const volatile adcSample& s) {
+    totalPowerReceivedBeforeIncoherent += s.axis1;
+    totalPowerReceivedBeforeIncoherent += s.axis2;
+    totalPowerReceivedBeforeIncoherent += s.axis3;
+    totalPowerReceivedBeforeIncoherent += s.axis4;
+
     adcSample incoherentOutput;
     incoherentProcess(s, incoherentOutput);
+    lockedOn = false;
+    if (lockedOn) {
+        numLockedOn++;
+    }
+    totalPowerReceived += incoherentOutput.axis1;
+    totalPowerReceived += incoherentOutput.axis2;
+    totalPowerReceived += incoherentOutput.axis3;
+    totalPowerReceived += incoherentOutput.axis4;
+
     mirrorOutput out;
     out.x_low = incoherentOutput.axis1; // TODO: REMOVE
     lastPidOut.copy(out);
@@ -66,22 +90,19 @@ void taskTracking() {
         enteringTracking = false;
         firstLoopTracking();
     }
-    if (micros() % 10000 == 0) {
+
+    if (micros() % 100 == 0) {
         assert(dmaGetOffset() < 2); // We should be able to keep up with data generation
-        if (dmaGetOffset() >= 1) {
+        if (dmaGetOffset() >= 2) {
             debugPrintf("Offset is too high! It is %d\n", dmaGetOffset());
         }
     }
     if (dmaSampleReady()) {
-        //debugPrintf("Getting sample\n");
         volatile adcSample s = *dmaGetSample();
         s.axis1 = samplesProcessed; // TODO: remove
-        //debugPrintf("Processing sample\n");
         pidProcess(s);
     }
-    //debugPrintf("Performing imu\n");
     taskIMU();
-    //debugPrintf("samples %d\n", samplesProcessed);
 }
 
 void trackingHeartbeat() {
