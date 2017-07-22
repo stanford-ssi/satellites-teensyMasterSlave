@@ -23,7 +23,7 @@ elapsedMicros timeSinceLastRead;
 volatile expandedPidSample imuDumpPacketMemory[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
 // We skip the first few uint16 because we want the packet body to begin at imuDumpPacketMemory[1], which has a good byte offset mod 32bit.
 // Assume header size is less than IMU_SAMPLE_SIZE
-volatile uint32_t *imuDumpPacket = ((uint32_t *) imuDumpPacketMemory) + (2 * IMU_SAMPLE_SIZE - OUT_PACKET_BODY_BEGIN);
+volatile uint32_t *imuDumpPacket = ((uint32_t *) imuDumpPacketMemory) + (4 * IMU_SAMPLE_SIZE - OUT_PACKET_BODY_BEGIN);
 
 // Where the telemetry goes
 volatile expandedPidSample *imuDumpPacketBegin = (expandedPidSample *) (imuDumpPacket + OUT_PACKET_BODY_BEGIN);

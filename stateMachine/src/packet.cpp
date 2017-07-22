@@ -48,8 +48,8 @@ void received_packet_isr(void)
     dma_rx.clearInterrupt();
     if (!transmitting) {
         packetReceived();
-        dma_rx.destinationBuffer((uint16_t*) packet + PACKET_SIZE, sizeof(uint16_t) * 500);
-        dma_tx.sourceBuffer((uint32_t *) currentlyTransmittingPacket - ABCD_BUFFER_SIZE, sizeof(uint32_t) * 500);
+        dma_rx.destinationBuffer((uint16_t*) packet + PACKET_SIZE, sizeof(uint16_t) * 504);
+        dma_tx.sourceBuffer((uint32_t *) currentlyTransmittingPacket - ABCD_BUFFER_SIZE, sizeof(uint32_t) * 504);
         dma_tx.triggerAtTransfersOf(dma_rx);
         transmitting = true;
         dma_tx.enable();
@@ -221,14 +221,14 @@ void write32(volatile uint32_t* buffer, unsigned int index, uint32_t item) {
 void response_status() {
     //assert(packetPointer == PACKET_SIZE);
     assert(!transmitting);
-    int bodySize = 13;
-    outBody[0] = state;
+    int bodySize = 0;
+    /*outBody[0] = state;
     write32(outBody, 1, packetsReceived);
     write32(outBody, 3, wordsReceived);
     write32(outBody, 5, timeAlive);
     write32(outBody, 7, lastLoopTime);
     write32(outBody, 9, maxLoopTime);
-    write32(outBody, 11, errors);
+    write32(outBody, 11, errors);*/
     if (DEBUG && shouldClearSendBuffer) {
         assert(outBody[bodySize-1] != 0xbeef);
         assert(outBody[bodySize] == 0xbeef);
@@ -256,17 +256,24 @@ void setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uin
     assert(!transmitting);
     assert(header <= MAX_HEADER);
     assert(bodyLength <= 500);
-    assert(bodyLength > 0);
+    //assert(bodyLength > 0);
     currentlyTransmittingPacket = packetBuffer;
     transmissionSize = bodyLength + OUT_PACKET_OVERHEAD;
     packetBuffer[0] = FIRST_WORD;
     packetBuffer[1] = transmissionSize;
     packetBuffer[2] = ~transmissionSize;
     packetBuffer[3] = header;
+    packetBuffer[4] = state;
+    write32(packetBuffer, 5, packetsReceived);
+    write32(packetBuffer, 7, wordsReceived);
+    write32(packetBuffer, 9, timeAlive);
+    write32(packetBuffer, 11, lastLoopTime);
+    write32(packetBuffer, 13, maxLoopTime);
+    write32(packetBuffer, 15, errors);
     assert(packetBuffer[OUT_PACKET_BODY_BEGIN] != 0xbeef);
     assert(packetBuffer[OUT_PACKET_BODY_BEGIN + bodyLength - 1] != 0xbeef);
     uint16_t checksum = bodyChecksum;
-    for (int i = 1; i <= 3; i++) {
+    for (int i = 1; i < OUT_PACKET_BODY_BEGIN; i++) {
         checksum += packetBuffer[i];
     }
     packetBuffer[transmissionSize - 2] = checksum;
