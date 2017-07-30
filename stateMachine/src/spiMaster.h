@@ -1,5 +1,5 @@
-#ifndef DMA_H
-#define DMA_H
+#ifndef SPI_MASTER_H
+#define SPI_MASTER_H
 #include "mirrorDriver.h"
 #include "main.h"
 
@@ -40,15 +40,13 @@ typedef struct adcSample {
     }
 } adcSample;
 
-#define DMASIZE 2500 // in uint32s
-#define DMA_SAMPLE_DEPTH 4 // bytes
-#define DMA_SAMPLE_NUMAXES 4 // uint32s
+#define ADC_READ_BUFFER_SIZE 2500 // in uint32s
 
 extern volatile unsigned int numSamplesRead;
 
-uint32_t dmaGetOffset(); // return offset of size uint32
-volatile adcSample* dmaGetSample();
-bool dmaSampleReady();
-void dmaSetup();
-void dmaStartSampling();
-#endif // DMA_H
+uint32_t adcGetOffset(); // return offset of size uint32
+volatile adcSample* adcGetSample();
+bool adcSampleReady();
+void spiMasterSetup();
+void adcStartSampling();
+#endif // SPI_MASTER_H

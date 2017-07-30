@@ -40,16 +40,16 @@ uint16_t getHeader(void);
 void received_packet_isr(void)
 {
     noInterrupts();
-    /*if(assert(packet[0] == 0x1234)) {
+    if(!assert(packet[0] == 0x1234)) {
         debugPrintf("Packet header: %x %x\n", packet[0], packet[1]);
-    }*/
+    }
     dma_rx.disable();
     dma_tx.disable();
     dma_rx.clearInterrupt();
     if (!transmitting) {
         packetReceived();
         const uint32_t sizeOfBuffer = IMU_DATA_DUMP_SIZE_UINT16 + OUT_PACKET_OVERHEAD + ABCD_BUFFER_SIZE + 2;
-        assert(sizeOfBuffer <= 512);
+        (void) assert(sizeOfBuffer <= 512);
         dma_rx.destinationBuffer((uint16_t*) packet + PACKET_SIZE, sizeof(uint16_t) * sizeOfBuffer);
         dma_tx.sourceBuffer((uint32_t *) currentlyTransmittingPacket - ABCD_BUFFER_SIZE, sizeof(uint32_t) * sizeOfBuffer);
         dma_tx.triggerAtTransfersOf(dma_rx);
@@ -119,8 +119,6 @@ void packetReceived() {
 }
 
 void handlePacket() {
-  // unsigned int startTimePacketPrepare = micros();
-
   // Check for erroneous data
   if (transmitting) {
     debugPrintln("Error: I'm already transmitting!");
@@ -147,16 +145,7 @@ void handlePacket() {
       return;
   }
 
-  // unsigned int midTimePacketPrepare = micros();
-  // (void) midTimePacketPrepare;
-
   create_response();
-
-  // unsigned int endTimePacketPrepare = micros();
-  //assert (endTimePacketPrepare - startTimePacketPrepare <= 1);
-  // if (endTimePacketPrepare - startTimePacketPrepare > 1) {
-  //     debugPrintf("Packet took %d, %d micros\n", endTimePacketPrepare - startTimePacketPrepare, midTimePacketPrepare - startTimePacketPrepare);
-  // }
 }
 
 void create_response() {

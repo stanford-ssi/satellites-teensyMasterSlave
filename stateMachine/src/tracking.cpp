@@ -1,7 +1,7 @@
 #include <tracking.h>
 #include <pidData.h>
 #include <main.h>
-#include <dma.h>
+#include <spiMaster.h>
 
 void sendOutput(mirrorOutput& output);
 
@@ -33,14 +33,14 @@ void firstLoopTracking() {
     totalPowerReceived = 0;
     interrupts();
 
-    debugPrintf("About to clear dma: offset is (this might be high) %d\n", dmaGetOffset());
-    dmaStartSampling();
-    assert(!dmaSampleReady());
-    debugPrintf("Cleared dma: offset is (this should be <= 4) %d\n", dmaGetOffset());
+    debugPrintf("About to clear dma: offset is (this might be high) %d\n", adcGetOffset());
+    adcStartSampling();
+    assert(!adcSampleReady());
+    debugPrintf("Cleared dma: offset is (this should be <= 4) %d\n", adcGetOffset());
     assert(!enteringTracking);
     enterIMU();
     debugPrintf("Entered tracking\n");
-    debugPrintf("Offset %d\n", dmaGetOffset());
+    debugPrintf("Offset %d\n", adcGetOffset());
 }
 
 void leaveTracking() {
@@ -91,13 +91,13 @@ void taskTracking() {
     }
 
     if (micros() % 100 == 0) {
-        assert(dmaGetOffset() < 2); // We should be able to keep up with data generation
-        if (dmaGetOffset() >= 2) {
-            debugPrintf("Offset is too high! It is %d\n", dmaGetOffset());
+        assert(adcGetOffset() < 2); // We should be able to keep up with data generation
+        if (adcGetOffset() >= 2) {
+            debugPrintf("Offset is too high! It is %d\n", adcGetOffset());
         }
     }
-    if (dmaSampleReady()) {
-        volatile adcSample s = *dmaGetSample();
+    if (adcSampleReady()) {
+        volatile adcSample s = *adcGetSample();
         s.axis1 = samplesProcessed; // TODO: remove
         pidProcess(s);
     }

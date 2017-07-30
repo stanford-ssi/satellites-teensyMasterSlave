@@ -4,7 +4,7 @@
 #include <Wire.h>
 #include <ssiSpi.h>
 #include <string.h>
-#include <dma.h>
+#include <spiMaster.h>
 #include <ChipSelect.h>
 #include <tests.h>
 #include <packet.h>

@@ -46,7 +46,7 @@ void setup() {
   debugPrintf("Setting up imu state:\n");
   debugPrintf("Done.\n");
   debugPrintf("Setting up dma:\n");
-  dmaSetup();
+  spiMasterSetup();
   debugPrintf("Done!\n");
   debugPrintf("Setting up tracking:\n");
   trackingSetup();
@@ -91,7 +91,7 @@ void heartbeat() {
 
 extern volatile unsigned int frontOfBuffer, backOfBuffer;
 void heartbeat2() {
-    debugPrintf(", last state %d, last read %d, dma offset %d %d %d", lastLoopState, lastAnalogRead, dmaGetOffset(), backOfBuffer, frontOfBuffer);
+    debugPrintf(", last state %d, last read %d, dma offset %d %d %d", lastLoopState, lastAnalogRead, adcGetOffset(), backOfBuffer, frontOfBuffer);
     debugPrintf(", %d loops, time alive %d, numSamplesRead %d\n", numLoops, timeAlive, numSamplesRead);
     debugPrintf("%d last, %d max, %d fast, %d med, %d slow loops\n", lastLoopTime, maxLoopTime, numFastLoops, numMediumLoops, numSlowLoops);
 }

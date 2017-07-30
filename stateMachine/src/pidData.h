@@ -53,8 +53,6 @@ void writeExpandedPidSampleWithChecksum(const pidSample* in, expandedPidSample* 
 #define IMU_DATA_DUMP_SIZE 20
 #define IMU_DATA_DUMP_SIZE_UINT16 (IMU_DATA_DUMP_SIZE * sizeof(pidSample) * 8 / 16)
 #define IMU_BUFFER_SIZE 3000 // units are IMU_SAMPLE_SIZE
-// #define IMU_SAMPLE_FREQUENCY 5000 // Hz
-// #define IMU_SAMPLE_PERIOD (1000000/IMU_SAMPLE_FREQUENCY) // micros
 #define IMU_DATA_READY_PIN 19
 
 // Only variable visible should be packet related

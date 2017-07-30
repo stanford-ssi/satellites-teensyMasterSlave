@@ -1,6 +1,5 @@
-#include "dma.h"
+#include "spiMaster.h"
 #include <array>
-//#include <DMAChannel.h>
 
 #define sizeofAdcSample (sizeof(adcSample) / 2)
 
@@ -16,7 +15,7 @@ SPISettings spi_settings(6250000, MSBFIRST, SPI_MODE0);
 
 uint32_t frontOfBuffer = 0;
 uint32_t backOfBuffer = 0;
-adcSample adcSamplesRead[DMASIZE + 1];
+adcSample adcSamplesRead[ADC_READ_BUFFER_SIZE + 1];
 volatile adcSample nextSample;
 volatile unsigned int adcIsrIndex = 0; // indexes into nextSample
 volatile unsigned int numSamplesRead = 0;
@@ -30,29 +29,29 @@ volatile int numSuccess = 0;
 volatile int numStartCalls = 0;
 volatile int numSpi0Calls = 0;
 
-uint32_t dmaGetOffset() {
+uint32_t adcGetOffset() {
     uint32_t offset;
     if (frontOfBuffer >= backOfBuffer) {
         offset = frontOfBuffer - backOfBuffer;
     } else {
-        assert(frontOfBuffer + DMASIZE >= backOfBuffer);
-        offset = frontOfBuffer + DMASIZE - backOfBuffer;
+        assert(frontOfBuffer + ADC_READ_BUFFER_SIZE >= backOfBuffer);
+        offset = frontOfBuffer + ADC_READ_BUFFER_SIZE - backOfBuffer;
     }
     return offset;
 }
 
-bool dmaSampleReady() {
-    return dmaGetOffset() >= 1;
+bool adcSampleReady() {
+    return adcGetOffset() >= 1;
 }
 
-volatile adcSample* dmaGetSample() {
-    assert(dmaSampleReady());
+volatile adcSample* adcGetSample() {
+    assert(adcSampleReady());
     volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
-    backOfBuffer = (backOfBuffer + 1) % DMASIZE;
+    backOfBuffer = (backOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
     return toReturn;
 }
 
-void dmaStartSampling() { // Clears out old samples so the first sample you read is fresh
+void adcStartSampling() { // Clears out old samples so the first sample you read is fresh
     backOfBuffer = frontOfBuffer;
 }
 
@@ -98,7 +97,7 @@ void spi0_isr(void) {
     adcIsrIndex++;
     if (!(adcIsrIndex < sizeofAdcSample)) {
         adcSamplesRead[frontOfBuffer] = nextSample;
-        frontOfBuffer = (frontOfBuffer + 1) % DMASIZE;
+        frontOfBuffer = (frontOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
         numSamplesRead += 1;
         adcIsrIndex++;
         return;
@@ -133,12 +132,12 @@ void beginAdcRead(void) {
     SPI0_PUSHR = ((uint16_t) adcIsrIndex) | SPI_PUSHR_CTAS(1);
 }
 
-void dmaReceiveSetup() {
+void adcReceiveSetup() {
     debugPrintln("Starting.");
-    adcSamplesRead[DMASIZE].axis1 = 0xdeadbeef;
-    adcSamplesRead[DMASIZE].axis2 = 0xdeadbeef;
-    adcSamplesRead[DMASIZE].axis3 = 0xdeadbeef;
-    adcSamplesRead[DMASIZE].axis4 = 0xdeadbeef;
+    adcSamplesRead[ADC_READ_BUFFER_SIZE].axis1 = 0xdeadbeef;
+    adcSamplesRead[ADC_READ_BUFFER_SIZE].axis2 = 0xdeadbeef;
+    adcSamplesRead[ADC_READ_BUFFER_SIZE].axis3 = 0xdeadbeef;
+    adcSamplesRead[ADC_READ_BUFFER_SIZE].axis4 = 0xdeadbeef;
     SPI.begin();
     SPI.beginTransaction(spi_settings);
     SPI0_RSER = 0x00020000;
@@ -187,11 +186,11 @@ void spi2_isr(void) {
 }
 
 
-void dmaSetup() {
+void spiMasterSetup() {
     mirrorOutputSetup();
-    debugPrintf("Setting up dma, offset is %d\n", dmaGetOffset());
-    dmaReceiveSetup();
-    debugPrintf("Dma setup complete, offset is %d. Setting up ftm timers.\n", dmaGetOffset());
+    debugPrintf("Setting up dma, offset is %d\n", adcGetOffset());
+    adcReceiveSetup();
+    debugPrintf("Dma setup complete, offset is %d. Setting up ftm timers.\n", adcGetOffset());
     init_FTM0();
     debugPrintf("FTM timer setup complete.\n");
 }
