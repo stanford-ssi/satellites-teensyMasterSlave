@@ -1,11 +1,6 @@
 #include <main.h>
 #include <pidData.h>
 
-// Imu code includes a lot of buffers moving around
-// Currently not circular
-// Very bug prone; needs more testing
-// Maybe add timestamps?
-
 // Imu samples go here
 // These are processed on the same main thread so hopefully no race conditions
 // Indexes into imuSamples; Marks index of next data point to transmit to audacy
@@ -41,15 +36,15 @@ volatile unsigned int imuSamplesQueued = 0;
 void imuSetup() {
 
     assert(((unsigned int) imuDumpPacketBody) % 4 == 0);  // Check offset; Misaligned data may segfault at 0x20000000
-    // assert(((unsigned int) imuSamples) % 4 == 0); // GCC says this is statically checkable
+    (void) assert(((unsigned int) imuSamples) % 4 == 0);
     debugPrintf("imuSamples location (we want this to be far from 0x2000000): %p to %p\n", imuSamples, imuSamples + IMU_BUFFER_SIZE);
     debugPrintf("imuDumpPacket location (we want this to be far from 0x2000000): memory begins %p, samples %p to %p\n", imuDumpPacketMemory, imuDumpPacket, imuDumpPacketMemory + IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD);
     pinMode(IMU_DATA_READY_PIN, OUTPUT);
-    /* TODO: put check back in // for (int i = 0; i < 10; i++) {
-        imuSamples[IMU_BUFFER_SIZE + i] = 0xbeef;
+    for (int i = 0; i < 10; i++) {
+        ((uint16_t *) &imuSamples[IMU_BUFFER_SIZE])[i] = 0xbeef;
         imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + i] = 0xbeef;
     }
-    assert (imuSamples[IMU_BUFFER_SIZE] == 0xbeef);*/
+    assert (imuSamples[IMU_BUFFER_SIZE].sample.axis1 == 0xbeefbeef);
 }
 
 void writeExpandedPidSampleWithChecksum(const pidSample* in, volatile expandedPidSample* out, volatile uint16_t& pidBufferChecksum) {
@@ -79,7 +74,6 @@ void checkDataDump() {
     noInterrupts();
     if ((imuPacketBodyPointer < IMU_DATA_DUMP_SIZE) && (imuSentDataPointer % IMU_BUFFER_SIZE) != (imuDataPointer % IMU_BUFFER_SIZE)) {
         pidSample sample = imuSamples[imuSentDataPointer];
-        //imuPacketChecksum += sample.getChecksum();
         writeExpandedPidSampleWithChecksum(&sample, &(imuDumpPacketBody[imuPacketBodyPointer]), imuPacketChecksum);
         imuPacketBodyPointer++;
         imuSentDataPointer++;
@@ -99,17 +93,12 @@ void checkDataDump() {
 }
 
 void recordPid(const volatile pidSample& s) {
-    //debugPrintf("Sampling %d imuDataPointer %d IMU_BUFFER_SIZE %d\n", sampling, imuDataPointer, IMU_BUFFER_SIZE);
-    //assert(sampling);
     if (!sampling) {
-        //debugPrintf("Warning: buffer is full!\n");
         return;
     }
-    //assert(imuDataPointer % IMU_NUM_CHANNELS == 0);
     ((pidSample *) imuSamples)[imuDataPointer] = s;
     imuDataPointer = (imuDataPointer + 1) % IMU_BUFFER_SIZE;
     imuSamplesRead++;
-    //debugPrintf("Base array %p, writing to %p, end of array %p\n", &((pidSample *) imuSamples)[0], &((pidSample *) imuSamples)[imuDataPointer], &imuSamples[IMU_BUFFER_SIZE]);
     assert(imuDataPointer <= IMU_BUFFER_SIZE);
 
     if (((imuDataPointer + 1) % IMU_BUFFER_SIZE) == (imuSentDataPointer % IMU_BUFFER_SIZE)) {
@@ -119,12 +108,9 @@ void recordPid(const volatile pidSample& s) {
 
 // Runs in main loop
 void taskIMU() {
-    // TODO: replace // assert (imuSamples[IMU_BUFFER_SIZE] == 0xbeef);
-    /* // TODO: replace // if (imuSamples[IMU_BUFFER_SIZE] != 0xbeef) {
-        debugPrintf("End of buf is %x\n", imuSamples[IMU_BUFFER_SIZE]);
-    } */
-    //assert (imuDumpPacket[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD] == 0xbeef);
-    // assert (imuDataPointer % IMU_SAMPLE_SIZE == 0);
+    if (!assert (imuSamples[IMU_BUFFER_SIZE].sample.axis1 == 0xbeefbeef)) {
+        debugPrintf("End of buf is %x\n", imuSamples[IMU_BUFFER_SIZE].sample.axis1);
+    }
     assert (imuDataPointer <= IMU_BUFFER_SIZE);
     assert (!(sampling && (imuDataPointer >= IMU_BUFFER_SIZE)));
     checkDataDump();
