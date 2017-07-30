@@ -14,15 +14,6 @@ volatile uint64_t numLockedOn = 0;
 volatile uint64_t totalPowerReceivedBeforeIncoherent = 0;
 volatile uint64_t totalPowerReceived = 0;
 
-// Most significant bit first
-void send32(uint32_t toSend) {
-    uint16_t first = toSend >> 16;
-    uint16_t second = toSend % (1 << 16);
-    assert((((uint32_t) first) << 16) + second == toSend);
-    SPI2.transfer16(first);
-    SPI2.transfer16(second);
-}
-
 void trackingSetup() {
     // Begin dma transaction
     imuSetup();

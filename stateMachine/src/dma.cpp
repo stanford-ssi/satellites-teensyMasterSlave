@@ -4,12 +4,15 @@
 
 #define sizeofAdcSample (sizeof(adcSample) / 2)
 
-const uint8_t spi_cs_pin = 15;   // pin 15 SPI0 chip select
+const uint8_t ADC0_CS = 35;
+const uint8_t ADC1_CS = 37;
+const uint8_t ADC2_CS = 7;
+const uint8_t ADC3_CS = 2;
 const uint8_t trigger_pin = 18;  // PTB11.  This pin will receive conversion ready signal
 
 unsigned long lastSampleTime = 0;
 
-SPISettings spi_settings(15000000, MSBFIRST, SPI_MODE0);
+SPISettings spi_settings(6250000, MSBFIRST, SPI_MODE0);
 
 uint32_t frontOfBuffer = 0;
 uint32_t backOfBuffer = 0;
@@ -60,11 +63,37 @@ void init_FTM0(){
 
 /* ********* Adc read code ********* */
 
+void checkChipSelect(void) {
+    if (adcIsrIndex == 0) {
+        // Take no chances
+        digitalWriteFast(ADC0_CS, LOW);
+        digitalWriteFast(ADC1_CS, HIGH);
+        digitalWriteFast(ADC2_CS, HIGH);
+        digitalWriteFast(ADC3_CS, HIGH);
+    } else if (adcIsrIndex == 2) {
+        digitalWriteFast(ADC0_CS, HIGH);
+        digitalWriteFast(ADC1_CS, LOW);
+        digitalWriteFast(ADC2_CS, HIGH);
+        digitalWriteFast(ADC3_CS, HIGH);
+    } else if (adcIsrIndex == 4) {
+        digitalWriteFast(ADC0_CS, HIGH);
+        digitalWriteFast(ADC1_CS, HIGH);
+        digitalWriteFast(ADC2_CS, LOW);
+        digitalWriteFast(ADC3_CS, HIGH);
+    } else if (adcIsrIndex == 6) {
+        digitalWriteFast(ADC0_CS, HIGH);
+        digitalWriteFast(ADC1_CS, HIGH);
+        digitalWriteFast(ADC2_CS, HIGH);
+        digitalWriteFast(ADC3_CS, LOW);
+    }
+}
+
 void spi0_isr(void) {
     uint16_t spiRead = SPI0_POPR;
     (void) spiRead;
     SPI0_SR |= SPI_SR_RFDF;
     ((volatile uint16_t *) &nextSample)[adcIsrIndex] = spiRead;
+    checkChipSelect();
     numSpi0Calls++;
     adcIsrIndex++;
     if (!(adcIsrIndex < sizeofAdcSample)) {
@@ -81,8 +110,10 @@ void spi0_isr(void) {
 void beginAdcRead(void) {
     numStartCalls++;
     long timeNow = micros();
+
+    // For debugging only; Check time since last sample
+    long diff = timeNow - lastSampleTime;
     if (lastSampleTime != 0) {
-        long diff = timeNow - lastSampleTime;
         if(!(diff >= 245 && diff <= 255)) {
             debugPrintf("Diff is %d, %d success %d fail %d %d\n", diff, numSuccess, numFail, numStartCalls, numSpi0Calls);
             numFail++;
@@ -91,9 +122,10 @@ void beginAdcRead(void) {
         }
     }
     lastSampleTime = timeNow;
-    if (adcIsrIndex != (sizeof(adcSample) / (16 / 8)) && adcIsrIndex != 0) {
-        //debugPrintf("Uh oh, adc index %d\n", adcIsrIndex);
-        if (adcIsrIndex < (sizeof(adcSample) / (16 / 8))) {
+
+    if (adcIsrIndex < (sizeof(adcSample) / (16 / 8)) && adcIsrIndex != 0) {
+        debugPrintf("Yikes -- we're reading adc already\n");
+        if (diff <= 245) {
             return;
         }
     }
