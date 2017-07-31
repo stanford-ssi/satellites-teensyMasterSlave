@@ -43,7 +43,6 @@ void setup() {
   debugPrintf("Begin Spi2\n");
   debugPrintf("Setting up packet:\n");
   packet_setup();
-  debugPrintf("Setting up imu state:\n");
   debugPrintf("Done.\n");
   debugPrintf("Setting up dma:\n");
   spiMasterSetup();

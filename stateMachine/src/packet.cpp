@@ -48,7 +48,7 @@ void received_packet_isr(void)
     dma_rx.clearInterrupt();
     if (!transmitting) {
         packetReceived();
-        const uint32_t sizeOfBuffer = IMU_DATA_DUMP_SIZE_UINT16 + OUT_PACKET_OVERHEAD + ABCD_BUFFER_SIZE + 2;
+        const uint32_t sizeOfBuffer = PID_DATA_DUMP_SIZE_UINT16 + OUT_PACKET_OVERHEAD + ABCD_BUFFER_SIZE + 2;
         (void) assert(sizeOfBuffer <= 512);
         dma_rx.destinationBuffer((uint16_t*) packet + PACKET_SIZE, sizeof(uint16_t) * sizeOfBuffer);
         dma_tx.sourceBuffer((uint32_t *) currentlyTransmittingPacket - ABCD_BUFFER_SIZE, sizeof(uint32_t) * sizeOfBuffer);
@@ -58,17 +58,17 @@ void received_packet_isr(void)
         dma_rx.enable();
     } else {
         if (((state == TRACKING_STATE) || (state == CALIBRATION_STATE)) && getHeader() == RESPONSE_PID_DATA) {
-            assert(imuPacketReady);
-            imuPacketSent();
+            assert(pidPacketReady);
+            pidPacketSent();
         }
     }
     interrupts();
 }
 
-extern expandedPidSample imuDumpPacketMemory[IMU_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
+extern expandedPidSample pidDumpPacketMemory[PID_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
 void setup_dma_receive(void) {
-    for (unsigned int i = 0; i < sizeof(imuDumpPacketMemory) / 2; i++) {
-        ((uint16_t *) imuDumpPacketMemory)[i] = 0xabcd;
+    for (unsigned int i = 0; i < sizeof(pidDumpPacketMemory) / 2; i++) {
+        ((uint16_t *) pidDumpPacketMemory)[i] = 0xabcd;
     }
     for (int i = 0; i < buffer_size; i++) {
         spi_tx_out[i] = 0xffff0100 + i;
@@ -183,8 +183,8 @@ void create_response() {
     } else if (command == COMMAND_REPORT_TRACKING) {
         if (!(state == TRACKING_STATE || state == CALIBRATION_STATE)) {
             responseBadPacket(INVALID_COMMAND);
-        } else if (!imuPacketReady) {
-            debugPrintf("Front of buf %d back %d samples sent %d\n", imuDataPointer, imuSentDataPointer, imuSamplesSent);
+        } else if (!pidPacketReady) {
+            debugPrintf("Front of buf %d back %d samples sent %d\n", pidDataPointer, pidSentDataPointer, pidSamplesSent);
             responseBadPacket(DATA_NOT_READY);
         } else {
             responseImuDump();
@@ -237,7 +237,7 @@ void response_status() {
 }
 
 void responseImuDump() {
-    setupTransmissionWithChecksum(RESPONSE_PID_DATA, IMU_DATA_DUMP_SIZE_UINT16, imuPacketChecksum, imuDumpPacket);
+    setupTransmissionWithChecksum(RESPONSE_PID_DATA, PID_DATA_DUMP_SIZE_UINT16, pidPacketChecksum, pidDumpPacket);
 }
 
 void responseBadPacket(uint16_t flag) {

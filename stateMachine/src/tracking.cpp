@@ -16,7 +16,7 @@ volatile uint64_t totalPowerReceived = 0;
 
 void trackingSetup() {
     // Begin dma transaction
-    imuSetup();
+    pidDataSetup();
 }
 
 void enterTracking() {
@@ -38,13 +38,13 @@ void firstLoopTracking() {
     assert(!adcSampleReady());
     debugPrintf("Cleared dma: offset is (this should be <= 4) %d\n", adcGetOffset());
     assert(!enteringTracking);
-    enterIMU();
+    enterPidData();
     debugPrintf("Entered tracking\n");
     debugPrintf("Offset %d\n", adcGetOffset());
 }
 
 void leaveTracking() {
-    leaveIMU();
+    leavePidData();
     noInterrupts();
     enteringTracking = false;
     numLockedOn = 0;
@@ -101,11 +101,11 @@ void taskTracking() {
         s.axis1 = samplesProcessed; // TODO: remove
         pidProcess(s);
     }
-    taskIMU();
+    taskPidData();
 }
 
 void trackingHeartbeat() {
-    imuHeartbeat();
+    pidDataHeartbeat();
     char lastAdcReadBuf[40];
     char lastPidOutBuf[40];
     lastAdcRead.toString(lastAdcReadBuf, 40);

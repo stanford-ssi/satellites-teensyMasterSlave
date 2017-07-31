@@ -1,5 +1,5 @@
-#ifndef IMU_H
-#define IMU_H
+#ifndef PID_H
+#define PID_H
 #include <main.h>
 #include <packet.h>
 
@@ -48,25 +48,25 @@ typedef struct expandedPidSample {
 
 void writeExpandedPidSampleWithChecksum(const pidSample* in, expandedPidSample* out, volatile uint16_t& pidBufferChecksum);
 
-#define IMU_NUM_CHANNELS 4
-#define IMU_SAMPLE_SIZE (sizeof(pidSample) / 2) // 16-bit
-#define IMU_DATA_DUMP_SIZE 20
-#define IMU_DATA_DUMP_SIZE_UINT16 (IMU_DATA_DUMP_SIZE * sizeof(pidSample) * 8 / 16)
-#define IMU_BUFFER_SIZE 3000 // units are IMU_SAMPLE_SIZE
-#define IMU_DATA_READY_PIN 19
+#define PID_NUM_CHANNELS 4
+#define PID_SAMPLE_SIZE (sizeof(pidSample) / 2) // 16-bit
+#define PID_DATA_DUMP_SIZE 20
+#define PID_DATA_DUMP_SIZE_UINT16 (PID_DATA_DUMP_SIZE * sizeof(pidSample) * 8 / 16)
+#define PID_BUFFER_SIZE 3000 // units are PID_SAMPLE_SIZE
+#define PID_DATA_READY_PIN 19
 
 // Only variable visible should be packet related
-extern volatile bool imuPacketReady;
-extern volatile uint32_t* imuDumpPacket;
-extern volatile uint16_t imuPacketChecksum;
+extern volatile bool pidPacketReady;
+extern volatile uint32_t* pidDumpPacket;
+extern volatile uint16_t pidPacketChecksum;
 
-extern volatile unsigned int imuDataPointer, imuSentDataPointer, imuSamplesSent;
+extern volatile unsigned int pidDataPointer, pidSentDataPointer, pidSamplesSent;
 
-void imuSetup();
-void taskIMU();
-void enterIMU();
-void leaveIMU();
-void imuPacketSent();
+void pidDataSetup();
+void taskPidData();
+void enterPidData();
+void leavePidData();
+void pidPacketSent();
 void recordPid(const volatile pidSample& s);
-void imuHeartbeat();
-#endif // IMU
+void pidDataHeartbeat();
+#endif // PID
