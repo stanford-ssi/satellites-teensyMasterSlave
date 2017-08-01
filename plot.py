@@ -3,8 +3,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 subprocess.call("scp pi:satellites-teensyMasterSlave/log.csv .", shell=True)
 csv_string = np.array([[int(x, 16) for x in line.split(',')] for line in open("log.csv")])
+for i in range(4):
+    print("Axis", i)
+    plt.plot(csv_string[:, i], label="ADC")
+    plt.plot(csv_string[:, 4 + i], label="INCOHERENT")
+    plt.plot(csv_string[:, 8 + i], label="PID")
+    plt.legend()
+    plt.show()
 print("ADC")
-# plt.plot(csv_string[:, 0], csv_string[:, 1], csv_string[:, 2], csv_string[:, 3])
 plt.plot(csv_string[:, 0], label='0')
 plt.plot(csv_string[:, 1], label='1')
 plt.plot(csv_string[:, 2], label='2')
@@ -25,3 +31,4 @@ plt.plot(csv_string[:, 10], label='2')
 plt.plot(csv_string[:, 11], label='3')
 plt.legend()
 plt.show()
+
