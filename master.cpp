@@ -3,6 +3,7 @@
 // WiringPiSpi library here: http://wiringpi.com/download-and-install/
 
 #include <iostream>
+#include <fstream>
 #include <errno.h>
 #include <stdlib.h>
 #include <wiringPi.h>
@@ -20,6 +21,8 @@ using namespace std;
 unsigned int errors = 0;
 unsigned int bugs = 0;
 const int spiSpeed = 6250000;
+
+ofstream fout;
 
 bool assertionError(const char* file, int line, const char* assertion) {
     errors++;
@@ -64,6 +67,7 @@ void loop();
 
 int main()
 {
+    fout.open("log.csv");
     wiringPiSetup () ;
     wiringPiSPISetup(CHANNEL, spiSpeed);
     pinMode(REVERSECS, INPUT);
@@ -158,6 +162,14 @@ void transmitH(uint16_t *buf, bool verbos) {
     }
     assert(computedChecksum == getBuf(to_send, checksumIndex));
     uint16_t responseNumber = getBuf(to_send, i+3);
+    if (responseNumber == RESPONSE_MIRROR_DATA) {
+        for (int j = checksumIndex - 480; j < checksumIndex; j+=24) {
+            for (int k = 0; k < 22; k+=2) {
+                fout << std::hex << ((unsigned int) getBuf(to_send, j + k)) * (1 << 16) + (unsigned int) getBuf(to_send, j + k + 1) << ",";
+            }
+            fout << getBuf(to_send, j + 22) * (1 << 16) + getBuf(to_send, j + 22 + 1) << endl;
+        }
+    }
     uint16_t numToPrint = len + i + 2;
     assert(getBuf(to_send, len + i - 1) == 0x4321);
     if (numToPrint > 600) {
