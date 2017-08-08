@@ -53,7 +53,7 @@ void writeExpandedPidSampleWithChecksum(const pidSample* in, expandedPidSample* 
 #define PID_DATA_DUMP_SIZE 20
 #define PID_DATA_DUMP_SIZE_UINT16 (PID_DATA_DUMP_SIZE * sizeof(pidSample) * 8 / 16)
 #define PID_BUFFER_SIZE 3000 // units are PID_SAMPLE_SIZE
-#define PID_DATA_READY_PIN 19
+#define PID_DATA_READY_PIN 42
 
 // Only variable visible should be packet related
 extern volatile bool pidPacketReady;

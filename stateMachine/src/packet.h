@@ -9,10 +9,6 @@ extern volatile bool transmitting;
 extern volatile unsigned int packetsReceived;
 
 #define SLAVE_CHIP_SELECT 31
-#define PACKET_RECEIVED_PIN 26
-// This pin will loopback to PACKET_RECEIVED_PIN to signal a packet is received
-#define PACKET_RECEIVED_TRIGGER 27
-
 // Always have first word in packet be constant for alignment checking
 #define FIRST_WORD 0x1234
 // Always have last word in packet be constant for alignment checking
