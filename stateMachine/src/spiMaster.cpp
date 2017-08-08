@@ -1,8 +1,8 @@
 #include "spiMaster.h"
 #include <array>
 
+/* *** Private Constants *** */
 #define sizeofAdcSample (sizeof(adcSample) / 2)
-
 #define ENABLE_170_PIN 54
 #define ENABLE_MINUS_7_PIN 52
 #define ENABLE_7_PIN 53
@@ -13,30 +13,35 @@
 #define trigger_pin 26 // test point 17
 #define sample_clock 29 // gpio1
 #define sync_pin 3 // gpio0
+#define ADC_OVERSAMPLING_RATE 64
+const unsigned int control_word = 0b1000011100100000;
 
-unsigned int control_word = 0b1000011100100000;
+void mirrorOutputSetup();
+void adcReceiveSetup();
+void init_FTM0();
 
+/* *** Internal Telemetry -- SPI0 *** */
 unsigned long lastSampleTime = 0;
+volatile int numFail = 0;
+volatile int numSuccess = 0;
+volatile int numStartCalls = 0;
+volatile int numSpi0Calls = 0;
+volatile unsigned int numSamplesRead = 0;
 
-SPISettings spi_settings(6250000, MSBFIRST, SPI_MODE0);
-
+/* *** SPI0 Adc Reading *** */
+SPISettings adcSpiSettings(6250000, MSBFIRST, SPI_MODE0); // For SPI0
 uint32_t frontOfBuffer = 0;
 uint32_t backOfBuffer = 0;
 adcSample adcSamplesRead[ADC_READ_BUFFER_SIZE + 1];
 volatile adcSample nextSample;
 volatile unsigned int adcIsrIndex = 0; // indexes into nextSample
-volatile unsigned int numSamplesRead = 0;
 
+/* *** SPI2 Mirror Driver *** */
 mirrorOutput currentOutput;
 volatile unsigned int mirrorOutputIndex = sizeof(mirrorOutput) / (16 / 8);
 
-//TODO:remove
-volatile int numFail = 0;
-volatile int numSuccess = 0;
-volatile int numStartCalls = 0;
-volatile int numSpi0Calls = 0;
-
-uint32_t adcGetOffset() {
+/* *** Adc Reading Public Functions *** */
+uint32_t adcGetOffset() { // Returns number of samples in buffer
     uint32_t offset;
     if (frontOfBuffer >= backOfBuffer) {
         offset = frontOfBuffer - backOfBuffer;
@@ -62,13 +67,16 @@ void adcStartSampling() { // Clears out old samples so the first sample you read
     backOfBuffer = frontOfBuffer;
 }
 
-void init_FTM0(){
-    pinMode(sample_clock, OUTPUT);
-    analogWriteFrequency(sample_clock, 4000 * 64);
-    analogWrite(sample_clock, 5); // Low duty cycle - if we go too low it won't even turn on
+void spiMasterSetup() {
+    mirrorOutputSetup();
+    debugPrintf("Setting up dma, offset is %d\n", adcGetOffset());
+    adcReceiveSetup();
+    debugPrintf("Dma setup complete, offset is %d. Setting up ftm timers.\n", adcGetOffset());
+    init_FTM0();
+    debugPrintf("FTM timer setup complete.\n");
 }
 
-/* ********* Adc read code ********* */
+/* ********* Private Interrupt-based Adc Read Code ********* */
 
 void checkChipSelect(void) {
     // Take no chances
@@ -88,14 +96,17 @@ void checkChipSelect(void) {
 }
 
 void spi0_isr(void) {
+    assert(adcIsrIndex < sizeofAdcSample);
     uint16_t spiRead = SPI0_POPR;
-    (void) spiRead;
+    (void) spiRead; // Clear spi interrupt
     SPI0_SR |= SPI_SR_RFDF;
+
     ((volatile uint16_t *) &nextSample)[adcIsrIndex] = spiRead;
     checkChipSelect();
     numSpi0Calls++;
     adcIsrIndex++;
     if (!(adcIsrIndex < sizeofAdcSample)) {
+        // Sample complete -- push to buffer
         adcSamplesRead[frontOfBuffer] = nextSample;
         frontOfBuffer = (frontOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
         numSamplesRead += 1;
@@ -106,6 +117,9 @@ void spi0_isr(void) {
     }
 }
 
+/* Entry point to an adc read.  This sends the first spi word, the rest of the work
+ * is done in spi0_isr interrupts
+ */
 void beginAdcRead(void) {
     numStartCalls++;
     long timeNow = micros();
@@ -128,6 +142,8 @@ void beginAdcRead(void) {
             return;
         }
     }
+
+    // Cleared for takeoff
     adcIsrIndex = 0;
     SPI0_PUSHR = ((uint16_t) adcIsrIndex) | SPI_PUSHR_CTAS(1);
 }
@@ -158,34 +174,25 @@ void setupAdc() {
     digitalWrite(sync_pin, LOW);
     digitalWrite(sync_pin, HIGH);
     digitalWrite(sync_pin, LOW);
-    delay(1);
-    digitalWrite(ADC_CS0, LOW);
-    uint16_t result = SPI.transfer16(control_word);
-    (void) result;
-    debugPrintf("Sent control word adc 0, received %x\n", result);
-    digitalWrite(ADC_CS0, HIGH);
-    delay(1);
-    digitalWrite(ADC_CS1, LOW);
-    result = SPI.transfer16(control_word);
-    (void) result;
-    debugPrintf("Sent control word adc 1, received %x\n", result);
-    digitalWrite(ADC_CS1, HIGH);
-    delay(1);
-    digitalWrite(ADC_CS2, LOW);
-    result = SPI.transfer16(control_word);
-    (void) result;
-    debugPrintf("Sent control word adc 2, received %x\n", result);
-    digitalWrite(ADC_CS2, HIGH);
-    delay(1);
-    digitalWrite(ADC_CS3, LOW);
-    result = SPI.transfer16(control_word);
-    (void) result;
-    debugPrintf("Sent control word adc 3, received %x\n", result);
-    digitalWrite(ADC_CS3, HIGH);
+    const uint8_t chipSelects[4] = {ADC_CS0, ADC_CS1, ADC_CS2, ADC_CS3};
+    for (int i = 0; i < 4; i++) {
+        delay(1);
+        digitalWrite(chipSelects[i], LOW);
+        uint16_t result = SPI.transfer16(control_word);
+        (void) result;
+        debugPrintf("Sent control word adc %d, received %x\n", i, result);
+        digitalWrite(chipSelects[i], HIGH);
+    }
 
     // Clear pop register - we don't want to fire the spi interrupt
     (void) SPI0_POPR; (void) SPI0_POPR;
     SPI0_SR |= SPI_SR_RFDF;
+}
+
+void init_FTM0(){
+    pinMode(sample_clock, OUTPUT);
+    analogWriteFrequency(sample_clock, 4000 * ADC_OVERSAMPLING_RATE);
+    analogWrite(sample_clock, 5); // Low duty cycle - if we go too low it won't even turn on
 }
 
 void adcReceiveSetup() {
@@ -195,14 +202,14 @@ void adcReceiveSetup() {
     adcSamplesRead[ADC_READ_BUFFER_SIZE].axis3 = 0xdeadbeef;
     adcSamplesRead[ADC_READ_BUFFER_SIZE].axis4 = 0xdeadbeef;
     SPI.begin();
-    SPI.beginTransaction(spi_settings);
+    SPI.beginTransaction(adcSpiSettings);
     setupAdc();
-    SPI0_RSER = 0x00020000;
+    SPI0_RSER = 0x00020000; // Transmit FIFO Fill Request Enable -- Interrupt on transmit complete
     pinMode(trigger_pin, INPUT_PULLUP);
     attachInterrupt(trigger_pin, beginAdcRead, FALLING);
     NVIC_ENABLE_IRQ(IRQ_SPI0);
     NVIC_SET_PRIORITY(IRQ_SPI0, 0);
-    NVIC_SET_PRIORITY(IRQ_PORTA, 0);
+    NVIC_SET_PRIORITY(IRQ_PORTA, 0); // Trigger_pin should be port A
     debugPrintln("Done!");
 }
 
@@ -211,12 +218,15 @@ void adcReceiveSetup() {
 void mirrorOutputSetup() {
     debugPrintln("Mirror setup starting.");
     SPI2.begin();
-    SPI2_RSER = 0x00020000;
+    SPI2_RSER = 0x00020000; // Transmit FIFO Fill Request Enable -- Interrupt on transmit complete
     NVIC_ENABLE_IRQ(IRQ_SPI2);
     NVIC_SET_PRIORITY(IRQ_SPI2, 0);
     debugPrintln("Done!");
 }
 
+/* Entry point to outputting a mirrorOutput; sending from SPI2 will trigger spi2_isr,
+ * which sends the rest of the mirrorOutput
+ */
 void sendOutput(mirrorOutput& output) {
     if (!assert(mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8))) {
         //return;
@@ -233,21 +243,12 @@ void spi2_isr(void) {
     assert(mirrorOutputIndex < sizeof(mirrorOutput) / (16 / 8));
     (void) SPI2_POPR;
     uint16_t toWrite = ((volatile uint16_t *) &currentOutput)[mirrorOutputIndex];
-    SPI2_SR |= SPI_SR_RFDF;
+    SPI2_SR |= SPI_SR_RFDF; // Clear interrupt
     mirrorOutputIndex++;
     if (mirrorOutputIndex < sizeof(mirrorOutput) / (16 / 8)) {
         SPI2_PUSHR = ((uint16_t) toWrite) | SPI_PUSHR_CTAS(1);
     } else {
+        // Done sending
         assert(mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8));
     }
-}
-
-
-void spiMasterSetup() {
-    mirrorOutputSetup();
-    debugPrintf("Setting up dma, offset is %d\n", adcGetOffset());
-    adcReceiveSetup();
-    debugPrintf("Dma setup complete, offset is %d. Setting up ftm timers.\n", adcGetOffset());
-    init_FTM0();
-    debugPrintf("FTM timer setup complete.\n");
 }
