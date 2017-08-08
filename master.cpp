@@ -167,7 +167,7 @@ void transmitH(uint16_t *buf, bool verbos) {
             for (int k = 0; k < 22; k+=2) {
                 fout << std::hex << ((unsigned int) getBuf(to_send, j + k)) * (1 << 16) + (unsigned int) getBuf(to_send, j + k + 1) << ",";
             }
-            fout << getBuf(to_send, j + 22) * (1 << 16) + getBuf(to_send, j + 22 + 1) << endl;
+            fout << getBuf(to_send, j + 22) * (1 << 16) + getBuf(to_send, j + 22 + 1) << "," << errors << "," << computedChecksum << "," << getBuf(to_send, checksumIndex) << endl;
         }
     }
     uint16_t numToPrint = len + i + 2;
