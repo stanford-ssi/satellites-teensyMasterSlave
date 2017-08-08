@@ -40,11 +40,11 @@ typedef struct adcSample {
     }
 } adcSample;
 
-#define ADC_READ_BUFFER_SIZE 2500 // in uint32s
+#define ADC_READ_BUFFER_SIZE 2500 // in adcSamples
 
 extern volatile unsigned int numSamplesRead;
 
-uint32_t adcGetOffset(); // return offset of size uint32
+uint32_t adcGetOffset();
 volatile adcSample* adcGetSample();
 bool adcSampleReady();
 void spiMasterSetup();
