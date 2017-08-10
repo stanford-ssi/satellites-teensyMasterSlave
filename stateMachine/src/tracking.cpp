@@ -3,7 +3,7 @@
 #include <main.h>
 #include <spiMaster.h>
 
-void sendOutput(mirrorOutput& output);
+/* *** Private variables *** */
 
 mirrorOutput lastPidOut;
 adcSample lastAdcRead;
@@ -13,6 +13,8 @@ volatile bool lockedOn = false;
 volatile uint64_t numLockedOn = 0;
 volatile uint64_t totalPowerReceivedBeforeIncoherent = 0;
 volatile uint64_t totalPowerReceived = 0;
+
+void sendOutput(mirrorOutput& output);
 
 void trackingSetup() {
     // Begin dma transaction

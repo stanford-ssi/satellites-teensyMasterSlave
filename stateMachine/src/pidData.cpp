@@ -1,29 +1,28 @@
 #include <main.h>
 #include <pidData.h>
 
-// PID samples go here
-// These are processed on the same main thread so hopefully no race conditions
+/* *** Circular buffer for PID samples queued for logging *** */
 // Indexes into pidSamples; Marks index of next data point to transmit to audacy
-// If sentDataPointer == dataPointer, buffer is empty
-// If dataPointer == sentDataPointer - PID_SAMPLE_SIZE, buffer is full
 volatile unsigned int pidSentDataPointer = 0;
+// If sentDataPointer == dataPointer, buffer is empty
+// If dataPointer == sentDataPointer - 1, buffer is full
 volatile unsigned int pidDataPointer = 0; // Marks index of next place to read into
 volatile unsigned int pidSamplesSent = 0;
 volatile pidSample pidSamples[PID_BUFFER_SIZE + 10]; // Add some extra space on the end in case we overflow
 volatile bool sampling = false;
 elapsedMicros timeSinceLastRead;
 
-// This packet ships out directly to audacy
-// This is more than we need; OUT_PACKET_OVERHEAD is measured in units of uint16_t, not pidSample
+/* *** The packet buffer ships out directly to audacy, it dequeues from the pidSamples buffer *** */
 volatile expandedPidSample pidDumpPacketMemory[PID_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
-// We skip the first few uint16 because we want the packet body to begin at pidDumpPacketMemory[1], which has a good byte offset mod 32bit.
+// We skip the first few uint32 because we want the packet body to begin at pidDumpPacketMemory[1], which has a good byte offset mod 32bit.
 // Assume header size is less than PID_SAMPLE_SIZE
+// This is uint32 instead of uint16 because DMA takes in 32-bit arguments but only uses the 16 least significant bits
 volatile uint32_t *pidDumpPacket = ((uint32_t *) pidDumpPacketMemory) + (6 * PID_SAMPLE_SIZE - OUT_PACKET_BODY_BEGIN);
 
 // Where the telemetry goes
 volatile expandedPidSample *pidDumpPacketBegin = (expandedPidSample *) (pidDumpPacket + OUT_PACKET_BODY_BEGIN);
 // Where the samples go
-volatile expandedPidSample *pidDumpPacketBody = pidDumpPacketBegin + 0;
+volatile expandedPidSample *pidDumpPacketBody = pidDumpPacketBegin + 0; // Currently no telemetry
 volatile uint16_t pidPacketChecksum = 0;
 volatile unsigned int pidPacketBodyPointer = 0;
 volatile bool pidPacketReady = false;
@@ -47,6 +46,7 @@ void pidDataSetup() {
     assert (pidSamples[PID_BUFFER_SIZE].sample.axis1 == 0xbeefbeef);
 }
 
+// Checksum is updated as samples are pushed into this buffer
 void writeExpandedPidSampleWithChecksum(const pidSample* in, volatile expandedPidSample* out, volatile uint16_t& pidBufferChecksum) {
     assert(sizeof(pidSample) * 2 == sizeof(expandedPidSample));
     assert(sizeof(pidSample) == 4 * 4 * 3);
@@ -60,11 +60,13 @@ void writeExpandedPidSampleWithChecksum(const pidSample* in, volatile expandedPi
     }
 }
 
+/* *** Dequeues from pidSamples and moves samples into next packet *** */
 void checkDataDump() {
     noInterrupts();
     unsigned int pidPacketBodyPointerSave = pidPacketBodyPointer;
     unsigned int pidPacketReadySave = pidPacketReady;
     if(!assert((pidPacketBodyPointerSave == PID_DATA_DUMP_SIZE) == pidPacketReadySave)) {
+        // Likely a race condition
         debugPrintf("packetBodyPointer %d, ready? %d\n", pidPacketBodyPointerSave, pidPacketReadySave);
     }
     if (pidPacketReady) {
@@ -73,6 +75,7 @@ void checkDataDump() {
     }
     noInterrupts();
     if ((pidPacketBodyPointer < PID_DATA_DUMP_SIZE) && (pidSentDataPointer % PID_BUFFER_SIZE) != (pidDataPointer % PID_BUFFER_SIZE)) {
+        // Move a sample from large buffer to packet buffer
         pidSample sample = pidSamples[pidSentDataPointer];
         writeExpandedPidSampleWithChecksum(&sample, &(pidDumpPacketBody[pidPacketBodyPointer]), pidPacketChecksum);
         pidPacketBodyPointer++;
@@ -81,7 +84,7 @@ void checkDataDump() {
     pidSentDataPointer = pidSentDataPointer % PID_BUFFER_SIZE;
     assert(pidPacketBodyPointer <= PID_DATA_DUMP_SIZE);
     if (pidPacketBodyPointer >= PID_DATA_DUMP_SIZE) {
-        // Prepare packet!
+        // Packet is ready!
         noInterrupts();
         assert((sizeof(pidSample) * 8) % 16 == 0);
         pidPacketReady = true;
@@ -92,6 +95,7 @@ void checkDataDump() {
     interrupts();
 }
 
+// Enqueue pid sample for logging
 void recordPid(const volatile pidSample& s) {
     if (!sampling) {
         return;
@@ -116,6 +120,7 @@ void taskPidData() {
     checkDataDump();
 }
 
+// Called from dma completion - clears packet buffer so we can prepare the next packet
 void pidPacketSent() {
     digitalWrite(PID_DATA_READY_PIN, LOW);
     if ((assert(pidPacketReady))) {
@@ -128,6 +133,7 @@ void pidPacketSent() {
     }
 }
 
+// Called from enterTracking
 void enterPidData() {
     digitalWriteFast(PID_DATA_READY_PIN, LOW);
     noInterrupts();
@@ -141,6 +147,7 @@ void enterPidData() {
     interrupts();
 }
 
+// Called from leaveTracking
 void leavePidData() {
     digitalWriteFast(PID_DATA_READY_PIN, LOW);
     noInterrupts();
