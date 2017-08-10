@@ -1,6 +1,6 @@
 # satellites-teensyMasterSlave
 
-Current setup as of 7/19:  
+Current setup as of 8/8:
 
 loader.py: programs platformio slave mode onto teensy and opens serial port
 make: opens master mode serial and reads in commands to send
@@ -15,10 +15,16 @@ SPI1: dma-based slave mode communications.
 - Chip select must cycle between commands
 - Interrupts on command read and response sent
 
-SPI2: blocking writes to mirror driver.  This should be moved to interrupts, as per SPI0
+SPI2: interrupt-based writes to the high-voltage mirror driver
 
 Slave can handle continuous sampling indefinitely, with some hiccups after long operation
-uint32s insufficient after long-term logging (1 hour).  Payload should not be powered on for longer than a few minutes
+uint32s for telemetry overflow long-term logging (1 hour), but the payload should not be powered on for longer than a few minutes.
+The overflow doesn't cause any internal error
+
+Common functions:
+- setup() functions are called once upon initialization
+- enter() and leave() functions are called before entering and after exiting a state when commanded by the host
+- Heartbeat() functions print internal telemetry at regular intervals (<= 1Hz) for debugging
 
 * Known issues:
 
