@@ -13,6 +13,7 @@ volatile bool lockedOn = false;
 volatile uint64_t numLockedOn = 0;
 volatile uint64_t totalPowerReceivedBeforeIncoherent = 0;
 volatile uint64_t totalPowerReceived = 0;
+const uint64_t maxPower = 1ULL << 32;
 
 void sendOutput(mirrorOutput& output);
 
@@ -61,6 +62,7 @@ void incoherentProcess(const volatile adcSample& s, adcSample& output) {
 }
 
 void pidProcess(const volatile adcSample& s) {
+    lastAdcRead.copy(s);
     totalPowerReceivedBeforeIncoherent += s.axis1;
     totalPowerReceivedBeforeIncoherent += s.axis2;
     totalPowerReceivedBeforeIncoherent += s.axis3;
@@ -100,7 +102,7 @@ void taskTracking() {
     }
     if (adcSampleReady()) {
         volatile adcSample s = *adcGetSample();
-        s.axis1 = samplesProcessed; // TODO: remove
+        //s.axis1 = samplesProcessed; // TODO: remove
         pidProcess(s);
     }
     taskPidData();
@@ -112,7 +114,7 @@ void trackingHeartbeat() {
     char lastPidOutBuf[40];
     lastAdcRead.toString(lastAdcReadBuf, 40);
     lastPidOut.toString(lastPidOutBuf, 40);
-    debugPrintf("Last pid output %s, last adc read %s, samples processed %d\n", lastPidOutBuf, lastAdcReadBuf, samplesProcessed);
+    debugPrintf("Last pid output %s, last adc read %s, total power in %u (percent of max), after incoherent %u,  samples processed %u\n", lastPidOutBuf, lastAdcReadBuf, (uint32_t) (totalPowerReceivedBeforeIncoherent / maxPower / 4), (uint32_t) (totalPowerReceived / maxPower / 4), samplesProcessed);
 }
 
 void enterCalibration() {
