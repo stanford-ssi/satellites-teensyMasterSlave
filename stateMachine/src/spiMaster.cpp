@@ -59,6 +59,7 @@ bool adcSampleReady() {
 volatile adcSample* adcGetSample() {
     assert(adcSampleReady());
     volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
+    toReturn->correctEndianness();
     backOfBuffer = (backOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
     return toReturn;
 }
@@ -79,18 +80,26 @@ void spiMasterSetup() {
 /* ********* Private Interrupt-based Adc Read Code ********* */
 
 void checkChipSelect(void) {
-    // Take no chances
-    digitalWriteFast(ADC_CS0, HIGH);
-    digitalWriteFast(ADC_CS1, HIGH);
-    digitalWriteFast(ADC_CS2, HIGH);
-    digitalWriteFast(ADC_CS3, HIGH);
     if (adcIsrIndex == 0) {
+        // Take no chances
         digitalWriteFast(ADC_CS0, LOW);
+        digitalWriteFast(ADC_CS1, HIGH);
+        digitalWriteFast(ADC_CS2, HIGH);
+        digitalWriteFast(ADC_CS3, HIGH);
     } else if (adcIsrIndex == 2) {
+        digitalWriteFast(ADC_CS0, HIGH);
         digitalWriteFast(ADC_CS1, LOW);
+        digitalWriteFast(ADC_CS2, HIGH);
+        digitalWriteFast(ADC_CS3, HIGH);
     } else if (adcIsrIndex == 4) {
+        digitalWriteFast(ADC_CS0, HIGH);
+        digitalWriteFast(ADC_CS1, HIGH);
         digitalWriteFast(ADC_CS2, LOW);
+        digitalWriteFast(ADC_CS3, HIGH);
     } else if (adcIsrIndex == 6) {
+        digitalWriteFast(ADC_CS0, HIGH);
+        digitalWriteFast(ADC_CS1, HIGH);
+        digitalWriteFast(ADC_CS2, HIGH);
         digitalWriteFast(ADC_CS3, LOW);
     }
 }
@@ -102,9 +111,9 @@ void spi0_isr(void) {
     SPI0_SR |= SPI_SR_RFDF;
 
     ((volatile uint16_t *) &nextSample)[adcIsrIndex] = spiRead;
-    checkChipSelect();
     numSpi0Calls++;
     adcIsrIndex++;
+    checkChipSelect();
     if (!(adcIsrIndex < sizeofAdcSample)) {
         // Sample complete -- push to buffer
         adcSamplesRead[frontOfBuffer] = nextSample;
@@ -113,7 +122,7 @@ void spi0_isr(void) {
         adcIsrIndex++;
         return;
     } else {
-        SPI0_PUSHR = ((uint16_t) adcIsrIndex) | SPI_PUSHR_CTAS(1);
+        SPI0_PUSHR = ((uint16_t) 0x0000) | SPI_PUSHR_CTAS(1);
     }
 }
 
@@ -145,7 +154,8 @@ void beginAdcRead(void) {
 
     // Cleared for takeoff
     adcIsrIndex = 0;
-    SPI0_PUSHR = ((uint16_t) adcIsrIndex) | SPI_PUSHR_CTAS(1);
+    checkChipSelect();
+    SPI0_PUSHR = ((uint16_t) 0x0000) | SPI_PUSHR_CTAS(1);
 }
 
 void setupHighVoltage() {
@@ -170,6 +180,7 @@ void setupAdcChipSelects() {
 
 void setupAdc() {
     setupHighVoltage();
+    setupAdcChipSelects();
     pinMode(sync_pin, OUTPUT);
     digitalWrite(sync_pin, LOW);
     digitalWrite(sync_pin, HIGH);

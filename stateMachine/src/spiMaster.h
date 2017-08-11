@@ -12,6 +12,21 @@ typedef struct adcSample {
         axis1 = axis2 = axis3 = axis4 = 0;
     }
 
+    void swap(volatile uint32_t& axis) volatile {
+        uint16_t temp = axis % (1 << 16);
+        axis = (axis / (1 << 16)) + (temp << 16);
+    }
+
+    // Teensy memory appears to be little-ended, so our 16-bit words are
+    // in the wrong order.  This problem appears because our spiMaster
+    // makes consecutive 16-bit writes
+    void correctEndianness() volatile {
+        swap(axis1);
+        swap(axis2);
+        swap(axis3);
+        swap(axis4);
+    }
+
     void copy(const volatile adcSample& s) {
         this->axis1 = s.axis1;
         this->axis2 = s.axis2;
