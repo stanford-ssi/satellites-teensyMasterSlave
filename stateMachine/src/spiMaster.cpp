@@ -130,6 +130,7 @@ void spi0_isr(void) {
  * is done in spi0_isr interrupts
  */
 void beginAdcRead(void) {
+    noInterrupts();
     numStartCalls++;
     long timeNow = micros();
 
@@ -148,6 +149,7 @@ void beginAdcRead(void) {
     if (adcIsrIndex < (sizeof(adcSample) / (16 / 8)) && adcIsrIndex != 0) {
         debugPrintf("Yikes -- we're reading adc already\n");
         if (diff <= 245) {
+            interrupts();
             return;
         }
     }
@@ -156,6 +158,7 @@ void beginAdcRead(void) {
     adcIsrIndex = 0;
     checkChipSelect();
     SPI0_PUSHR = ((uint16_t) 0x0000) | SPI_PUSHR_CTAS(1);
+    interrupts();
 }
 
 void setupHighVoltage() {
@@ -221,6 +224,7 @@ void adcReceiveSetup() {
     NVIC_ENABLE_IRQ(IRQ_SPI0);
     NVIC_SET_PRIORITY(IRQ_SPI0, 0);
     NVIC_SET_PRIORITY(IRQ_PORTA, 0); // Trigger_pin should be port A
+    NVIC_SET_PRIORITY(IRQ_PORTE, 0); // Just in case it's E
     debugPrintln("Done!");
 }
 

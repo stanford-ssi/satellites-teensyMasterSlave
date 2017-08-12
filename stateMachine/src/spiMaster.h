@@ -40,8 +40,11 @@ typedef struct adcSample {
         copy(s);
         return *this;
     }
+    static int toVoltage(int measurement) {
+        return (int) (((-1 * measurement / 1.6 / (1 << 16) / (1 << 16) * 2 * 5 + 2.5) * 20.0));
+    }
     void toString(char* buf, int len) {
-        snprintf(buf, len - 1, "axis1 %u, axis2 %u, axis3 %u, axis4 %u", (unsigned int) axis1, (unsigned int) axis2, (unsigned int) axis3, (unsigned int) axis4);
+        snprintf(buf, len - 1, "axis1 %d (%d volt), axis2 %d, axis3 %d, axis4 %d", (int) axis1, (int) toVoltage(axis1), (int) axis2, (int) axis3, (int) axis4);
     }
 
     // Sum of memory, by uint16s
