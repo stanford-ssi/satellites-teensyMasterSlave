@@ -165,7 +165,7 @@ void setupHighVoltage() {
     pinMode(ENABLE_170_PIN, OUTPUT);
     pinMode(ENABLE_MINUS_7_PIN, OUTPUT);
     pinMode(ENABLE_7_PIN, OUTPUT);
-    digitalWrite(ENABLE_170_PIN, HIGH); // +170 driver enable
+    digitalWrite(ENABLE_170_PIN, LOW); // +170 driver enable
     digitalWrite(ENABLE_MINUS_7_PIN, HIGH); // -7 driver enable
     digitalWrite(ENABLE_7_PIN, HIGH); // +7 driver enable
 }
