@@ -115,6 +115,11 @@ void trackingHeartbeat() {
     lastAdcRead.toString(lastAdcReadBuf, 40);
     lastPidOut.toString(lastPidOutBuf, 40);
     debugPrintf("Last pid output %s, last adc read %s, total power in %u (percent of max), after incoherent %u,  samples processed %u\n", lastPidOutBuf, lastAdcReadBuf, (uint32_t) (totalPowerReceivedBeforeIncoherent / maxPower / 4), (uint32_t) (totalPowerReceived / maxPower / 4), samplesProcessed);
+    int a = lastAdcRead.axis3/4;
+    int b = lastAdcRead.axis4/4;
+    int c = lastAdcRead.axis1/4;
+    int d = lastAdcRead.axis2/4;
+    debugPrintf("X %d Y %d\n", (a + d - b - c), a + b - c - d);
 }
 
 void enterCalibration() {

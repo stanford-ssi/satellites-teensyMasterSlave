@@ -165,9 +165,9 @@ void transmitH(uint16_t *buf, bool verbos) {
     if (responseNumber == RESPONSE_MIRROR_DATA) {
         for (int j = checksumIndex - 480; j < checksumIndex; j+=24) {
             for (int k = 0; k < 22; k+=2) {
-                fout << std::hex << ((unsigned int) getBuf(to_send, j + k)) * (1 << 16) + (unsigned int) getBuf(to_send, j + k + 1) << ",";
+                fout << (int) (((unsigned int) getBuf(to_send, j + k)) * (1 << 16) + (unsigned int) getBuf(to_send, j + k + 1)) << ",";
             }
-            fout << getBuf(to_send, j + 22) * (1 << 16) + getBuf(to_send, j + 22 + 1) << "," << errors << "," << computedChecksum << "," << getBuf(to_send, checksumIndex) << endl;
+            fout << (int) (getBuf(to_send, j + 22) * (1 << 16) + getBuf(to_send, j + 22 + 1)) << "," << errors << "," << computedChecksum << "," << getBuf(to_send, checksumIndex) << endl;
         }
     }
     uint16_t numToPrint = len + i + 2;
