@@ -18,17 +18,25 @@ const int samples_per_cell = 32;
 const int numCells = 4;
 const int envelope[4] = {0,1,0,-1};
 //Stores each sample for each cell to use for the incoherent detection
-int32_t buff[samples_per_cell*numCells];
+volatile int32_t buff[samples_per_cell*numCells];
 //Keeps track of where in the rolling buffer I am
-int sample;
+volatile int sample;
 //Stores the running sum of the previous four samples of each quad cell for both sine and cosine envelopes
-int32_t rolling_detectors[2*numCells];
+volatile int32_t rolling_detectors[2*numCells];
 
 void sendOutput(mirrorOutput& output);
 
 void trackingSetup() {
     // Begin dma transaction
     pidDataSetup();
+    sample = 0;
+    //Fill in initial values of the buffer
+    for(int i = 0; i < buffer_length; i++){
+      buff[i] = 0;
+    }
+    for(int i = 0; i < 2*numCells; i++){
+      rolling_detectors[i] = 0;
+    }
 }
 
 void enterTracking() {
