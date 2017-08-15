@@ -80,7 +80,7 @@ void pidProcess(const volatile adcSample& s) {
     totalPowerReceived += incoherentOutput.axis4;
 
     mirrorOutput out;
-    out.x_low = incoherentOutput.axis1; // TODO: REMOVE
+    out.x_low = incoherentOutput.axis1; //  TODO: REMOVE
     lastPidOut.copy(out);
     pidSample samplePid(s, incoherentOutput, out);
     recordPid(samplePid);
