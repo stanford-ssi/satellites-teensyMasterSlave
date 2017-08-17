@@ -15,29 +15,12 @@ volatile uint64_t numLockedOn = 0;
 volatile uint64_t totalPowerReceivedBeforeIncoherent = 0;
 volatile uint64_t totalPowerReceived = 0;
 const uint64_t maxPower = 1ULL << 32;
-const int samples_per_cell = 32;
-const int numCells = 4;
-const int envelope[4] = {0,1,0,-1};
-//Stores each sample for each cell to use for the incoherent detection
-volatile int32_t buff[samples_per_cell*numCells];
-//Keeps track of where in the rolling buffer I am
-volatile int sample;
-//Stores the running sum of the previous four samples of each quad cell for both sine and cosine envelopes
-volatile int32_t rolling_detectors[2*numCells];
 
 void sendOutput(mirrorOutput& output);
 
 void trackingSetup() {
     // Begin dma transaction
     pidDataSetup();
-    sample = 0;
-    //Fill in initial values of the buffer
-    for(int i = 0; i < buffer_length; i++){
-      buff[i] = 0;
-    }
-    for(int i = 0; i < 2*numCells; i++){
-      rolling_detectors[i] = 0;
-    }
 }
 
 void enterTracking() {
@@ -52,6 +35,7 @@ void firstLoopTracking() {
     lockedOn = false;
     totalPowerReceivedBeforeIncoherent = 0;
     totalPowerReceived = 0;
+    incoherentSetup();
     interrupts();
 
     debugPrintf("About to clear dma: offset is (this might be high) %d\n", adcGetOffset());
@@ -88,6 +72,11 @@ void pidProcess(const volatile adcSample& s) {
     if (lockedOn) {
         numLockedOn++;
     }
+    double xpos = 0xbeefabcd;
+    double ypos = 0xbeefdcba;
+    double theta = 0;
+    incoherentDisplacement(incoherentOutput, &xpos, &ypos, theta);
+
     totalPowerReceived += incoherentOutput.axis1;
     totalPowerReceived += incoherentOutput.axis2;
     totalPowerReceived += incoherentOutput.axis3;
