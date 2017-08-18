@@ -135,7 +135,6 @@ void pidPacketSent() {
 
 // Called from enterTracking
 void enterPidData() {
-    digitalWriteFast(PID_DATA_READY_PIN, LOW);
     noInterrupts();
     pidPacketChecksum = 0;
     pidPacketReady = false;
@@ -144,6 +143,7 @@ void enterPidData() {
     timeSinceLastRead = 0;
     pidPacketBodyPointer = 0;
     sampling = true;
+    digitalWriteFast(PID_DATA_READY_PIN, LOW);
     interrupts();
 }
 

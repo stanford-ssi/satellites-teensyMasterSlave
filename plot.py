@@ -27,18 +27,24 @@ args = parser.parse_args()
 if args.download:
     subprocess.call("scp pi:satellites-teensyMasterSlave/log.csv .", shell=True)
 csv_string = get_first_n_lines(open("log.csv"), args)
-csv_string = np.array([[int(x, 16) for x in line.split(',')] for line in csv_string])
+csv_string = np.array([[int(x) for x in line.split(',')] for line in csv_string])
 print("Read {} samples".format(csv_string.shape[0]))
-for i in range(0, 4):
-    print("Axis", i)
-    plt.plot(csv_string[:, i], label="ADC")
-    plt.plot(csv_string[:, 4 + i], label="INCOHERENT")
-    plt.plot(csv_string[:, 8 + i], label="PID")
-    plt.legend()
-    plt.show()
+# for i in range(0, 4):
+    # print("Axis", i)
+    # plt.plot(csv_string[:, i], label="ADC")
+    # plt.plot(csv_string[:, 4 + i], label="INCOHERENT")
+    # plt.plot(csv_string[:, 8 + i], label="PID")
+    # plt.legend()
+    # plt.show()
 print("ADC")
 # for i in range(12):
     # print(i, np.count_nonzero(csv_string[:, i]))
+a = csv_string[:, 2]
+b = csv_string[:, 3]
+c = csv_string[:, 0]
+d = csv_string[:, 1]
+plt.plot(a + d - b - c, label='x')
+plt.plot(a + b - c - d, label='y')
 plt.plot(csv_string[:, 0], label='0')
 plt.plot(csv_string[:, 1], label='1')
 plt.plot(csv_string[:, 2], label='2')

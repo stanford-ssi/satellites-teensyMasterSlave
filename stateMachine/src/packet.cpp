@@ -40,8 +40,9 @@ uint16_t getHeader(void);
 void received_packet_isr(void)
 {
     noInterrupts();
-    if(!assert(packet[0] == 0x1234)) {
-        debugPrintf("Packet header: %x %x\n", packet[0], packet[1]);
+    if(!(packet[0] == 0x1234)) {
+        //debugPrintf("Packet header: %x %x\n", packet[0], packet[1]);
+        errors++;
     }
     dma_rx.disable();
     dma_tx.disable();
@@ -122,17 +123,19 @@ void handlePacket() {
   // Check for erroneous data
   if (transmitting) {
     debugPrintln("Error: I'm already transmitting!");
+    errors++;
     // No response because we're presumably already transmitting
     // responseBadPacket(INTERNAL_ERROR);
     return;
   }
 
   if (packet[0] != FIRST_WORD || packet[PACKET_SIZE - 1] != LAST_WORD) {
-    debugPrintf("Invalid packet endings: ");
+    /*debugPrintf("Invalid packet endings: ");
     for (int i = 0; i < PACKET_SIZE; i++) {
         debugPrintf("%x ", packet[i]);
     }
-    debugPrintln("");
+    debugPrintln("");*/
+    errors++;
     responseBadPacket(INVALID_BORDER);
     return;
   }

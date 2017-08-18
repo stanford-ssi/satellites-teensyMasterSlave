@@ -1,4 +1,5 @@
 #include "spiMaster.h"
+#include "main.h"
 #include <array>
 
 /* *** Private Constants *** */
@@ -14,7 +15,7 @@
 #define sample_clock 29 // gpio1
 #define sync_pin 3 // gpio0
 #define ADC_OVERSAMPLING_RATE 64
-const unsigned int control_word = 0b1000011100100000;
+const unsigned int control_word = 0b1000110000010000;
 
 void mirrorOutputSetup();
 void adcReceiveSetup();
@@ -105,7 +106,9 @@ void checkChipSelect(void) {
 }
 
 void spi0_isr(void) {
-    assert(adcIsrIndex < sizeofAdcSample);
+    if(adcIsrIndex >= sizeofAdcSample) {
+        errors++;
+    }
     uint16_t spiRead = SPI0_POPR;
     (void) spiRead; // Clear spi interrupt
     SPI0_SR |= SPI_SR_RFDF;
@@ -130,12 +133,14 @@ void spi0_isr(void) {
  * is done in spi0_isr interrupts
  */
 void beginAdcRead(void) {
+    noInterrupts();
     numStartCalls++;
     long timeNow = micros();
 
     // For debugging only; Check time since last sample
     long diff = timeNow - lastSampleTime;
     if (lastSampleTime != 0) {
+        lastSampleTime = timeNow;
         if(!(diff >= 245 && diff <= 255)) { //  4kHz -> 250 microseconds
             debugPrintf("Diff is %d, %d success %d fail %d %d\n", diff, numSuccess, numFail, numStartCalls, numSpi0Calls);
             numFail++;
@@ -148,6 +153,7 @@ void beginAdcRead(void) {
     if (adcIsrIndex < (sizeof(adcSample) / (16 / 8)) && adcIsrIndex != 0) {
         debugPrintf("Yikes -- we're reading adc already\n");
         if (diff <= 245) {
+            interrupts();
             return;
         }
     }
@@ -156,13 +162,14 @@ void beginAdcRead(void) {
     adcIsrIndex = 0;
     checkChipSelect();
     SPI0_PUSHR = ((uint16_t) 0x0000) | SPI_PUSHR_CTAS(1);
+    interrupts();
 }
 
 void setupHighVoltage() {
     pinMode(ENABLE_170_PIN, OUTPUT);
     pinMode(ENABLE_MINUS_7_PIN, OUTPUT);
     pinMode(ENABLE_7_PIN, OUTPUT);
-    digitalWrite(ENABLE_170_PIN, HIGH); // +170 driver enable
+    digitalWrite(ENABLE_170_PIN, LOW); // +170 driver enable
     digitalWrite(ENABLE_MINUS_7_PIN, HIGH); // -7 driver enable
     digitalWrite(ENABLE_7_PIN, HIGH); // +7 driver enable
 }
@@ -221,6 +228,7 @@ void adcReceiveSetup() {
     NVIC_ENABLE_IRQ(IRQ_SPI0);
     NVIC_SET_PRIORITY(IRQ_SPI0, 0);
     NVIC_SET_PRIORITY(IRQ_PORTA, 0); // Trigger_pin should be port A
+    NVIC_SET_PRIORITY(IRQ_PORTE, 0); // Just in case it's E
     debugPrintln("Done!");
 }
 
@@ -235,13 +243,29 @@ void mirrorOutputSetup() {
     debugPrintln("Done!");
 }
 
+unsigned long timeOfLastOutput = 0;
+
 /* Entry point to outputting a mirrorOutput; sending from SPI2 will trigger spi2_isr,
  * which sends the rest of the mirrorOutput
  */
 void sendOutput(mirrorOutput& output) {
-    if (!assert(mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8))) {
-        //return;
+    long timeNow = micros();
+    long diff = timeNow - timeOfLastOutput;
+    assert(diff > 0);
+    if (!mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8)) {
+        if (diff % 100 == 0) {
+            debugPrintf("spiMaster.cpp:254: mirrorIndex %d\n", mirrorOutputIndex);
+        }
+        bugs++;
+        errors++;
+        // Not done transmitting the last mirror output
+        if (timeOfLastOutput != 0 && diff < 500) {
+            return;
+        } else {
+            // The last mirror output is taking too long, reset it
+        }
     }
+    timeOfLastOutput = timeNow;
     noInterrupts();
     currentOutput = output;
     mirrorOutputIndex = 0;
@@ -251,7 +275,9 @@ void sendOutput(mirrorOutput& output) {
 }
 
 void spi2_isr(void) {
-    assert(mirrorOutputIndex < sizeof(mirrorOutput) / (16 / 8));
+    if (mirrorOutputIndex >= sizeof(mirrorOutput) / (16 / 8)) {
+        errors++;
+    }
     (void) SPI2_POPR;
     uint16_t toWrite = ((volatile uint16_t *) &currentOutput)[mirrorOutputIndex];
     SPI2_SR |= SPI_SR_RFDF; // Clear interrupt

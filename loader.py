@@ -3,34 +3,51 @@ import RPi.GPIO as GPIO
 import time
 import subprocess
 
-reset = 2
+program_master = 2
+program_slave = 3
+reset_master = 4
 
-def reboot(pin, platformio_base, serialNumber):
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setwarnings(False)
-    GPIO.setup(pin,GPIO.OUT)
-    GPIO.setup(reset,GPIO.OUT)
-    print "turning LED on"
-    GPIO.output(pin,GPIO.HIGH)
-    GPIO.output(reset,GPIO.HIGH)
-    print "LED on"
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+GPIO.setup(reset_master,GPIO.OUT)
+GPIO.setup(program_master,GPIO.OUT)
+GPIO.setup(program_slave,GPIO.OUT)
+GPIO.output(reset_master, GPIO.LOW) # No power to FET - antagonist
+GPIO.output(program_slave, GPIO.HIGH) # Not program mode
+GPIO.output(program_master, GPIO.HIGH) # Not program mode
+
+def cycle(pin):
+    GPIO.output(pin, GPIO.HIGH)
+    GPIO.output(pin, GPIO.LOW)
+    time.sleep(0.5)
+    GPIO.output(pin, GPIO.HIGH)
     time.sleep(1)
-    print "LED off"
-    GPIO.output(pin,GPIO.LOW)
-    time.sleep(1)
-    GPIO.output(pin,GPIO.HIGH)
+
+def showSerial():
     print('-------------')
-    print("Serials available after killing ", platformio_base, ":")
+    print("Serials available:")
     subprocess.call("ls /dev/ttyACM*", shell=True)
     print('-------------')
+
+def program(platformio_base, mcu):
     time.sleep(1)
-    subprocess.call("cd " + platformio_base + " && platformio run && cd ../ && ./teensy_loader_cli --mcu=TEENSY36 " + platformio_base + ".pioenvs/teensy36/firmware.hex", shell=True)
+    command = "cd " + platformio_base + " && platformio run && cd ../ && ./teensy_loader_cli --mcu=TEENSY" + mcu + " " + platformio_base + ".pioenvs/teensy" + mcu + "/firmware.hex"
+    print(command)
+    subprocess.call(command, shell=True)
     time.sleep(1)
     #subprocess.call("g++ spitest.cpp -std=c++11 -lwiringPi -o spitest", shell=True) # compile master mode
 
-#reboot(2, "teensyMaster/", 0) #master
-reboot(3, "stateMachine/", 1)
-print("Serials available:")
+
+cycle(program_slave)
+print("Slave serial:")
 subprocess.call("ls /dev/ttyACM*", shell=True)
+program("stateMachine/", "36")
+GPIO.output(reset_master, GPIO.HIGH)
+time.sleep(1)
+print("Both serial:")
+subprocess.call("ls /dev/ttyACM*", shell=True)
+cycle(program_master)
+program("antagonist/", "31")
+showSerial()
 subprocess.call("./serial");
 #subprocess.call("g++ master.cpp -std=c++11 -lwiringPi -o master && ./master", shell=True) # compile master mode
