@@ -28,6 +28,8 @@ Common functions:
 
 * Known issues:
 
+Print statements in interrupts
+
 Small spi words not getting cleared on chip select low?
 
 Interrupt speed for chip select low
