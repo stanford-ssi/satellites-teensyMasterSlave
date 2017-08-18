@@ -15,7 +15,7 @@
 #define sample_clock 29 // gpio1
 #define sync_pin 3 // gpio0
 #define ADC_OVERSAMPLING_RATE 64
-const unsigned int control_word = 0b1000011100100000;
+const unsigned int control_word = 0b1000110000010000;
 
 void mirrorOutputSetup();
 void adcReceiveSetup();
