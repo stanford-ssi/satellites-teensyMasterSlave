@@ -32,7 +32,6 @@ def showSerial():
 def program(platformio_base, mcu):
     time.sleep(1)
     command = "cd " + platformio_base + " && platformio run && cd ../ && ./teensy_loader_cli --mcu=TEENSY" + mcu + " " + platformio_base + ".pioenvs/teensy" + mcu + "/firmware.hex"
-    command = "./teensy_loader_cli --mcu=TEENSY" + mcu + " " + platformio_base + ".pioenvs/teensy" + mcu + "/firmware.hex"
     print(command)
     subprocess.call(command, shell=True)
     time.sleep(1)
