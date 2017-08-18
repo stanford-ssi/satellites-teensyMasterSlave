@@ -75,7 +75,7 @@ void pidProcess(const volatile adcSample& s) {
     double xpos = 0xbeefabcd;
     double ypos = 0xbeefdcba;
     double theta = 0;
-    incoherentDisplacement(incoherentOutput, &xpos, &ypos, theta);
+    incoherentDisplacement(incoherentOutput, xpos, ypos, theta);
 
     totalPowerReceived += incoherentOutput.axis1;
     totalPowerReceived += incoherentOutput.axis2;
@@ -122,6 +122,7 @@ void trackingHeartbeat() {
     int b = lastAdcRead.axis4/4;
     int c = lastAdcRead.axis1/4;
     int d = lastAdcRead.axis2/4;
+    (void) (a + b + c + d);
     debugPrintf("X %d Y %d\n", (a + d - b - c), a + b - c - d);
 }
 
