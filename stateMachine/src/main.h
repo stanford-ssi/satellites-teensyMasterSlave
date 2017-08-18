@@ -26,6 +26,7 @@
 
 extern volatile unsigned int timeAlive;
 extern volatile unsigned int lastLoopTime;
+extern volatile unsigned int bugs;
 extern volatile unsigned int errors;
 extern volatile unsigned int maxLoopTime;
 

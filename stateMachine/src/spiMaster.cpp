@@ -1,4 +1,5 @@
 #include "spiMaster.h"
+#include "main.h"
 #include <array>
 
 /* *** Private Constants *** */
@@ -105,7 +106,9 @@ void checkChipSelect(void) {
 }
 
 void spi0_isr(void) {
-    assert(adcIsrIndex < sizeofAdcSample);
+    if(adcIsrIndex >= sizeofAdcSample) {
+        errors++;
+    }
     uint16_t spiRead = SPI0_POPR;
     (void) spiRead; // Clear spi interrupt
     SPI0_SR |= SPI_SR_RFDF;
@@ -137,6 +140,7 @@ void beginAdcRead(void) {
     // For debugging only; Check time since last sample
     long diff = timeNow - lastSampleTime;
     if (lastSampleTime != 0) {
+        lastSampleTime = timeNow;
         if(!(diff >= 245 && diff <= 255)) { //  4kHz -> 250 microseconds
             debugPrintf("Diff is %d, %d success %d fail %d %d\n", diff, numSuccess, numFail, numStartCalls, numSpi0Calls);
             numFail++;
@@ -239,13 +243,29 @@ void mirrorOutputSetup() {
     debugPrintln("Done!");
 }
 
+unsigned long timeOfLastOutput = 0;
+
 /* Entry point to outputting a mirrorOutput; sending from SPI2 will trigger spi2_isr,
  * which sends the rest of the mirrorOutput
  */
 void sendOutput(mirrorOutput& output) {
-    if (!assert(mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8))) {
-        //return;
+    long timeNow = micros();
+    long diff = timeNow - timeOfLastOutput;
+    assert(diff > 0);
+    if (!mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8)) {
+        if (diff % 100 == 0) {
+            debugPrintf("spiMaster.cpp:254: mirrorIndex %d\n", mirrorOutputIndex);
+        }
+        bugs++;
+        errors++;
+        // Not done transmitting the last mirror output
+        if (timeOfLastOutput != 0 && diff < 500) {
+            return;
+        } else {
+            // The last mirror output is taking too long, reset it
+        }
     }
+    timeOfLastOutput = timeNow;
     noInterrupts();
     currentOutput = output;
     mirrorOutputIndex = 0;
@@ -255,7 +275,9 @@ void sendOutput(mirrorOutput& output) {
 }
 
 void spi2_isr(void) {
-    assert(mirrorOutputIndex < sizeof(mirrorOutput) / (16 / 8));
+    if (mirrorOutputIndex >= sizeof(mirrorOutput) / (16 / 8)) {
+        errors++;
+    }
     (void) SPI2_POPR;
     uint16_t toWrite = ((volatile uint16_t *) &currentOutput)[mirrorOutputIndex];
     SPI2_SR |= SPI_SR_RFDF; // Clear interrupt
