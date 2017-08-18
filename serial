@@ -3,4 +3,9 @@ import os
 import sys
 import subprocess
 
-subprocess.call("pio device monitor --port=/dev/ttyACM0 | tee 0.log", shell=True)
+try:
+    serial_number = sys.argv[1]
+except:
+    serial_number = '0'
+
+subprocess.call("pio device monitor --port=/dev/ttyACM" + serial_number + " | tee " + serial_number + ".log", shell=True)
