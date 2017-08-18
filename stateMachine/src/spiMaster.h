@@ -4,15 +4,15 @@
 #include "main.h"
 
 typedef struct adcSample {
-    uint32_t axis1;
-    uint32_t axis2;
-    uint32_t axis3;
-    uint32_t axis4;
+    int32_t axis1;
+    int32_t axis2;
+    int32_t axis3;
+    int32_t axis4;
     adcSample() {
         axis1 = axis2 = axis3 = axis4 = 0;
     }
 
-    void swap(volatile uint32_t& axis) volatile {
+    void swap(volatile uint32_t &axis) volatile {
         uint16_t temp = axis % (1 << 16);
         axis = (axis / (1 << 16)) + (temp << 16);
     }
@@ -21,10 +21,14 @@ typedef struct adcSample {
     // in the wrong order.  This problem appears because our spiMaster
     // makes consecutive 16-bit writes
     void correctEndianness() volatile {
-        swap(axis1);
-        swap(axis2);
-        swap(axis3);
-        swap(axis4);
+        //uint32_t before = axis1;
+        swap((uint32_t &) axis1);
+        /*if (micros() % 40 == 0) {
+            Serial.printf("----------%u %u ----------\n", before, axis1);
+        }*/
+        swap((uint32_t &) axis2);
+        swap((uint32_t &) axis3);
+        swap((uint32_t &) axis4);
     }
 
     void copy(const volatile adcSample& s) {

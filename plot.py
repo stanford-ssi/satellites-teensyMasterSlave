@@ -29,13 +29,13 @@ if args.download:
 csv_string = get_first_n_lines(open("log.csv"), args)
 csv_string = np.array([[int(x) for x in line.split(',')] for line in csv_string])
 print("Read {} samples".format(csv_string.shape[0]))
-# for i in range(0, 4):
-    # print("Axis", i)
-    # plt.plot(csv_string[:, i], label="ADC")
-    # plt.plot(csv_string[:, 4 + i], label="INCOHERENT")
-    # plt.plot(csv_string[:, 8 + i], label="PID")
-    # plt.legend()
-    # plt.show()
+for i in range(0, 4):
+    print("Axis", i)
+    plt.plot(csv_string[:, i], label="ADC")
+    plt.plot(csv_string[:, 4 + i], label="INCOHERENT")
+    plt.plot(csv_string[:, 8 + i], label="PID")
+    plt.legend()
+    plt.show()
 print("ADC")
 # for i in range(12):
     # print(i, np.count_nonzero(csv_string[:, i]))

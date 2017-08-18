@@ -2,6 +2,21 @@
 
 extern uint32_t backOfBuffer;
 
+void swapUint(uint32_t &axis) {
+    uint16_t temp = axis % (1 << 16);
+    axis = (axis / (1 << 16)) + (temp << 16);
+}
+
+void testSwap() {
+    uint32_t blah = 0xbeefabcd;
+    int32_t blah2 = blah;
+    swapUint(blah);
+    swapUint((uint32_t &) blah2);
+    assert(blah == blah2);
+    assert(blah == 0xabcdbeef);
+    debugPrintf("Blah %u %d %u\n", blah, blah2, blah2);
+}
+
 void testDma() {
     assert(backOfBuffer == 0);
     //assert(!dmaSampleReady());
@@ -49,6 +64,7 @@ void testInteger() {
 
 void runTests() {
     if (DEBUG) {
+        testSwap();
         testDma();
         testBreakingLoop();
         testInteger();
