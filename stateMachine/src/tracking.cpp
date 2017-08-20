@@ -113,10 +113,10 @@ void taskTracking() {
 
 void trackingHeartbeat() {
     pidDataHeartbeat();
-    char lastAdcReadBuf[40];
-    char lastPidOutBuf[40];
-    lastAdcRead.toString(lastAdcReadBuf, 40);
-    lastPidOut.toString(lastPidOutBuf, 40);
+    char lastAdcReadBuf[62];
+    char lastPidOutBuf[62];
+    lastAdcRead.toString(lastAdcReadBuf, 60);
+    lastPidOut.toString(lastPidOutBuf, 60);
     debugPrintf("Last pid output %s, last adc read %s, total power in %u (percent of max), after incoherent %u,  samples processed %u\n", lastPidOutBuf, lastAdcReadBuf, (uint32_t) (totalPowerReceivedBeforeIncoherent / maxPower / 4), (uint32_t) (totalPowerReceived / maxPower / 4), samplesProcessed);
     int a = lastAdcRead.axis3/4;
     int b = lastAdcRead.axis4/4;

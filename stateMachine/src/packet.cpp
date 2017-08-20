@@ -66,10 +66,10 @@ void received_packet_isr(void)
     interrupts();
 }
 
-extern expandedPidSample pidDumpPacketMemory[PID_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + 10];
+extern pidDumpPacket_t pidDumpPacket;
 void setup_dma_receive(void) {
-    for (unsigned int i = 0; i < sizeof(pidDumpPacketMemory) / 2; i++) {
-        ((uint16_t *) pidDumpPacketMemory)[i] = 0xabcd;
+    for (unsigned int i = 0; i < sizeof(pidDumpPacket.body) / 2; i++) {
+        ((uint16_t *) pidDumpPacket.body)[i] = 0xabcd;
     }
     for (int i = 0; i < buffer_size; i++) {
         spi_tx_out[i] = 0xffff0100 + i;
@@ -240,7 +240,7 @@ void response_status() {
 }
 
 void responseImuDump() {
-    setupTransmissionWithChecksum(RESPONSE_PID_DATA, PID_DATA_DUMP_SIZE_UINT16, pidPacketChecksum, pidDumpPacket);
+    setupTransmissionWithChecksum(RESPONSE_PID_DATA, PID_DATA_DUMP_SIZE_UINT16, pidPacketChecksum, pidDumpPacketUints);
 }
 
 void responseBadPacket(uint16_t flag) {
