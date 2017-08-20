@@ -41,7 +41,6 @@ void received_packet_isr(void)
 {
     noInterrupts();
     if(!(packet[0] == 0x1234)) {
-        //debugPrintf("Packet header: %x %x\n", packet[0], packet[1]);
         errors++;
     }
     dma_rx.disable();
