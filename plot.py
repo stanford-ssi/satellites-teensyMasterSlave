@@ -2,6 +2,7 @@ import subprocess
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
+import numpy
 
 def get_first_n_lines(f, args):
     if args.num_plot is None:
@@ -29,11 +30,19 @@ if args.download:
 csv_string = get_first_n_lines(open("log.csv"), args)
 csv_string = np.array([[int(x) for x in line.split(',')] for line in csv_string])
 print("Read {} samples".format(csv_string.shape[0]))
+n = csv_string[:, 0].shape[0]
+x = np.arange(n) / 4000.
 for i in range(0, 4):
     print("Axis", i)
     plt.plot(csv_string[:, i], label="ADC")
     plt.plot(csv_string[:, 4 + i], label="INCOHERENT")
     plt.plot(csv_string[:, 8 + i], label="PID")
+    plt.legend()
+    plt.show()
+    fft = np.fft.fft(csv_string[:, i])
+    fft[0] = 0
+    fftfreq = np.fft.fftfreq(csv_string.shape[0], d = 1.0/4000.)
+    plt.plot(fftfreq, fft, label='fft')
     plt.legend()
     plt.show()
 print("ADC")
