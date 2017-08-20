@@ -43,7 +43,7 @@ void pidDataSetup() {
         ((uint16_t *) &pidSamples[PID_BUFFER_SIZE])[i] = 0xbeef;
         pidDumpPacket[PID_DATA_DUMP_SIZE + OUT_PACKET_OVERHEAD + i] = 0xbeef;
     }
-    assert (pidSamples[PID_BUFFER_SIZE].sample.axis1 == 0xbeefbeef);
+    assert ((uint32_t) pidSamples[PID_BUFFER_SIZE].sample.axis1 == 0xbeefbeef);
 }
 
 // Checksum is updated as samples are pushed into this buffer
@@ -112,7 +112,7 @@ void recordPid(const volatile pidSample& s) {
 
 // Runs in main loop
 void taskPidData() {
-    if (!assert (pidSamples[PID_BUFFER_SIZE].sample.axis1 == 0xbeefbeef)) {
+    if (!assert ((uint32_t) pidSamples[PID_BUFFER_SIZE].sample.axis1 == 0xbeefbeef)) {
         debugPrintf("End of buf is %x\n", pidSamples[PID_BUFFER_SIZE].sample.axis1);
     }
     assert (pidDataPointer <= PID_BUFFER_SIZE);

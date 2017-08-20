@@ -21,11 +21,7 @@ typedef struct adcSample {
     // in the wrong order.  This problem appears because our spiMaster
     // makes consecutive 16-bit writes
     void correctEndianness() volatile {
-        //uint32_t before = axis1;
         swap((uint32_t &) axis1);
-        /*if (micros() % 40 == 0) {
-            Serial.printf("----------%u %u ----------\n", before, axis1);
-        }*/
         swap((uint32_t &) axis2);
         swap((uint32_t &) axis3);
         swap((uint32_t &) axis4);
