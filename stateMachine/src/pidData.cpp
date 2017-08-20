@@ -31,9 +31,16 @@ volatile bool pidPacketReady = false;
 volatile unsigned int pidSamplesRead = 0;
 volatile unsigned int pidSamplesQueued = 0;
 
+bool pidBufferEmpty() {
+    return (pidSentDataPointer % PID_BUFFER_SIZE) == (pidDataPointer % PID_BUFFER_SIZE);
+}
+
+bool pidBufferFull() {
+    return ((pidDataPointer + 1) % PID_BUFFER_SIZE) == (pidSentDataPointer % PID_BUFFER_SIZE);
+}
+
 // Runs in main's setup()
 void pidDataSetup() {
-
     assert(((unsigned int) pidDumpPacketBody) % 4 == 0);  // Check offset; Misaligned data may segfault at 0x20000000
     (void) assert(((unsigned int) pidSamples) % 4 == 0);
     debugPrintf("pidSamples location (we want this to be far from 0x2000000): %p to %p\n", pidSamples, pidSamples + PID_BUFFER_SIZE);
@@ -74,7 +81,7 @@ void checkDataDump() {
         return;
     }
     noInterrupts();
-    if ((pidPacketBodyPointer < PID_DATA_DUMP_SIZE) && (pidSentDataPointer % PID_BUFFER_SIZE) != (pidDataPointer % PID_BUFFER_SIZE)) {
+    if ((pidPacketBodyPointer < PID_DATA_DUMP_SIZE) && !pidBufferEmpty()) {
         // Move a sample from large buffer to packet buffer
         pidSample sample = pidSamples[pidSentDataPointer];
         writeExpandedPidSampleWithChecksum(&sample, &(pidDumpPacketBody[pidPacketBodyPointer]), pidPacketChecksum);
@@ -105,7 +112,7 @@ void recordPid(const volatile pidSample& s) {
     pidSamplesRead++;
     assert(pidDataPointer <= PID_BUFFER_SIZE);
 
-    if (((pidDataPointer + 1) % PID_BUFFER_SIZE) == (pidSentDataPointer % PID_BUFFER_SIZE)) {
+    if (pidBufferFull()) {
         sampling = false;
     }
 }
