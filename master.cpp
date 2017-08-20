@@ -165,7 +165,7 @@ void transmitH(uint16_t *buf, bool verbos) {
     uint16_t responseNumber = getBuf(to_send, i+3);
     if (responseNumber == RESPONSE_MIRROR_DATA && linesLogged < 1000) {
         linesLogged += 1;
-        for (int j = checksumIndex - 480; j < checksumIndex; j+=24) {
+        for (int j = checksumIndex - (15 * 24); j < checksumIndex; j+=24) {
             for (int k = 0; k < 22; k+=2) {
                 fout << (int) (((unsigned int) getBuf(to_send, j + k)) * (1 << 16) + (unsigned int) getBuf(to_send, j + k + 1)) << ",";
             }

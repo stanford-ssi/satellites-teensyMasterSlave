@@ -23,9 +23,36 @@ volatile bool pidPacketReady = false;
 volatile unsigned int pidSamplesRead = 0;
 volatile unsigned int pidSamplesQueued = 0;
 
+void write32WithChecksum(const uint16_t& in, volatile uint32_t& out, volatile uint16_t& pidBufferChecksum) {
+    pidBufferChecksum += in;
+    out = in;
+}
+
+// Checksum is updated as samples are pushed into this buffer
+void writeExpandedPidSampleWithChecksum(const pidSample* in, volatile expandedPidSample* out, volatile uint16_t& pidBufferChecksum) {
+    assert(sizeof(pidSample) * 2 == sizeof(expandedPidSample));
+    assert(sizeof(pidSample) == 4 * 4 * 3);
+    unsigned int num_uint32 = sizeof(pidSample) / 4;
+    for (unsigned int i = 0; i < num_uint32; i++) {
+        uint32_t num = ((uint32_t *) in)[i];
+        ((uint32_t *) out)[2 * i] = num >> 16; // msb
+        pidBufferChecksum += num >> 16;
+        ((uint32_t *) out)[2 * i + 1] = num % (1 << 16); // lsb
+        pidBufferChecksum += num % (1 << 16);
+    }
+}
+
 void populateHeader() {
-    (void) pidDumpPacket.header;
-    (void) pidDumpPacket.pidHeader;
+    write32WithChecksum(0, pidDumpPacket.p_x, pidPacketChecksum);
+    write32WithChecksum(1, pidDumpPacket.i_x, pidPacketChecksum);
+    write32WithChecksum(2, pidDumpPacket.d_x, pidPacketChecksum);
+    write32WithChecksum(3, pidDumpPacket.p_y, pidPacketChecksum);
+    write32WithChecksum(4, pidDumpPacket.i_y, pidPacketChecksum);
+    write32WithChecksum(5, pidDumpPacket.d_y, pidPacketChecksum);
+    write32WithChecksum(6, pidDumpPacket.last_x, pidPacketChecksum);
+    write32WithChecksum(7, pidDumpPacket.last_y, pidPacketChecksum);
+    write32WithChecksum(8, pidDumpPacket.set_x, pidPacketChecksum);
+    write32WithChecksum(9, pidDumpPacket.set_y, pidPacketChecksum);
 }
 
 bool pidBufferEmpty() {
@@ -54,25 +81,12 @@ void pidDataSetup() {
     assert ((uint32_t) pidSamples[PID_BUFFER_SIZE].sample.axis1 == 0xbeefbeef);
 }
 
-// Checksum is updated as samples are pushed into this buffer
-void writeExpandedPidSampleWithChecksum(const pidSample* in, volatile expandedPidSample* out, volatile uint16_t& pidBufferChecksum) {
-    assert(sizeof(pidSample) * 2 == sizeof(expandedPidSample));
-    assert(sizeof(pidSample) == 4 * 4 * 3);
-    unsigned int num_uint32 = sizeof(pidSample) / 4;
-    for (unsigned int i = 0; i < num_uint32; i++) {
-        uint32_t num = ((uint32_t *) in)[i];
-        ((uint32_t *) out)[2 * i] = num >> 16; // msb
-        pidBufferChecksum += num >> 16;
-        ((uint32_t *) out)[2 * i + 1] = num % (1 << 16); // lsb
-        pidBufferChecksum += num % (1 << 16);
-    }
-}
-
 /*void restartSamplingIfApplicable() {
     noInterrupts();
     if (pidBufferEmpty() && !sampling && !tryingToRestartSampling && !pidPacketReady) {
         // Start sampling again!
         pidPacketBodyPointer = 0;
+        pidPacketChecksum = 0;
         tryingToRestartSampling = true;
     }
     interrupts();

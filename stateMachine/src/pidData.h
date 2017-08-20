@@ -54,7 +54,7 @@ void writeExpandedPidSampleWithChecksum(const pidSample* in, expandedPidSample* 
 #define PID_DATA_DUMP_SIZE_UINT16 (PID_DATA_DUMP_SIZE * sizeof(pidSample) * 8 / 16)
 #define PID_BUFFER_SIZE 3000 // units are PID_SAMPLE_SIZE
 #define PID_DATA_READY_PIN 42
-#define PID_HEADER_SIZE 0
+#define PID_HEADER_SIZE 10
 
 /* *** The packet buffer ships out directly to audacy, it dequeues from the pidSamples buffer *** */
 #pragma pack()
@@ -62,7 +62,11 @@ typedef struct pidDumpPacket_t {
     // This is uint32 instead of uint16 because DMA takes in 32-bit arguments but only uses the 16 least significant bits
     uint32_t abcdHeader[ABCD_BUFFER_SIZE];
     uint32_t header[OUT_PACKET_BODY_BEGIN];
-    uint32_t pidHeader[PID_HEADER_SIZE];
+    // Last computed pid values before sample 0 of body[]
+    uint32_t p_x, i_x, d_x;
+    uint32_t p_y, i_y, d_y;
+    uint32_t last_x, last_y; // Last read x and y on the quad
+    uint32_t set_x, set_y; // Last set values on the pid controller
     expandedPidSample body[PID_DATA_DUMP_SIZE];
     uint32_t footer[OUT_PACKET_BODY_END_SIZE];
     uint32_t abcdFooter[ABCD_BUFFER_SIZE + 10];

@@ -48,7 +48,7 @@ void received_packet_isr(void)
     dma_rx.clearInterrupt();
     if (!transmitting) {
         packetReceived();
-        const uint32_t sizeOfBuffer = PID_DATA_DUMP_SIZE_UINT16 + OUT_PACKET_OVERHEAD + ABCD_BUFFER_SIZE + 2;
+        const uint32_t sizeOfBuffer = PID_DATA_DUMP_SIZE_UINT16 + PID_HEADER_SIZE + OUT_PACKET_OVERHEAD + ABCD_BUFFER_SIZE + 2;
         (void) assert(sizeOfBuffer <= 512);
         dma_rx.destinationBuffer((uint16_t*) packet + PACKET_SIZE, sizeof(uint16_t) * sizeOfBuffer);
         dma_tx.sourceBuffer((uint32_t *) currentlyTransmittingPacket - ABCD_BUFFER_SIZE, sizeof(uint32_t) * sizeOfBuffer);
@@ -239,7 +239,7 @@ void response_status() {
 }
 
 void responseImuDump() {
-    setupTransmissionWithChecksum(RESPONSE_PID_DATA, PID_DATA_DUMP_SIZE_UINT16, pidPacketChecksum, pidDumpPacketUints);
+    setupTransmissionWithChecksum(RESPONSE_PID_DATA, PID_DATA_DUMP_SIZE_UINT16 + PID_HEADER_SIZE, pidPacketChecksum, pidDumpPacketUints);
 }
 
 void responseBadPacket(uint16_t flag) {
