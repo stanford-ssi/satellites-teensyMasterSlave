@@ -39,6 +39,7 @@ void testBreakingLoop() {
 void testInteger() {
     volatile uint32_t test = (1 << 31);
     int32_t testInt = test;
+    assert(testInt == -1 * testInt);
     (void) testInt;
     assert(test == (uint32_t) testInt);
     debugPrintf("Unsigned %u, signed %d\n", test, testInt);

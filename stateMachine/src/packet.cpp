@@ -32,7 +32,7 @@ void response_echo();
 void response_status();
 void responseBadPacket(uint16_t flag);
 void create_response();
-void responseImuDump();
+void responsePidDump();
 void setupTransmission(uint16_t header, unsigned int bodyLength);
 void setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uint16_t bodyChecksum, volatile uint32_t *packetBuffer);
 uint16_t getHeader(void);
@@ -189,7 +189,7 @@ void create_response() {
             debugPrintf("Front of buf %d back %d samples sent %d\n", pidDataPointer, pidSentDataPointer, pidSamplesSent);
             responseBadPacket(DATA_NOT_READY);
         } else {
-            responseImuDump();
+            responsePidDump();
         }
     } else {
         responseBadPacket(INVALID_COMMAND);
@@ -238,7 +238,7 @@ void response_status() {
     setupTransmission(RESPONSE_OK, bodySize);
 }
 
-void responseImuDump() {
+void responsePidDump() {
     setupTransmissionWithChecksum(RESPONSE_PID_DATA, PID_DATA_DUMP_SIZE_UINT16 + PID_HEADER_SIZE, pidPacketChecksum, pidDumpPacketUints);
 }
 

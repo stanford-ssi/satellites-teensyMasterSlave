@@ -60,7 +60,7 @@ bool adcSampleReady() {
 volatile adcSample* adcGetSample() {
     assert(adcSampleReady());
     volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
-    toReturn->correctEndianness();
+    toReturn->correctFormat();
     backOfBuffer = (backOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
     return toReturn;
 }
@@ -103,6 +103,11 @@ void checkChipSelect(void) {
         digitalWriteFast(ADC_CS2, HIGH);
         digitalWriteFast(ADC_CS3, LOW);
     }
+    volatile unsigned long long i = 0;
+    for (int j = 0; j < 3; j++) {
+        i += micros();
+    }
+    (void) i;
 }
 
 void spi0_isr(void) {

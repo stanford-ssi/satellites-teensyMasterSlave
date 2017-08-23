@@ -17,14 +17,26 @@ typedef struct adcSample {
         axis = (axis / (1 << 16)) + (temp << 16);
     }
 
+    // Multiply by -1 works for all ints except min_int
+    void negate(volatile int32_t &axis) volatile {
+        if (axis == (int32_t) (1U << 31)) { // min int
+            axis += 1;
+        }
+        axis *= -1;
+    }
+
     // Teensy memory appears to be little-ended, so our 16-bit words are
     // in the wrong order.  This problem appears because our spiMaster
     // makes consecutive 16-bit writes
-    void correctEndianness() volatile {
+    void correctFormat() volatile {
         swap((uint32_t &) axis1);
         swap((uint32_t &) axis2);
         swap((uint32_t &) axis3);
         swap((uint32_t &) axis4);
+        negate(axis1);
+        negate(axis2);
+        negate(axis3);
+        negate(axis4);
     }
 
     void copy(const volatile adcSample& s) {
@@ -41,7 +53,7 @@ typedef struct adcSample {
         return *this;
     }
     static int toVoltage(int measurement) {
-        return (int) (((-1 * measurement / 1.6 / (1 << 16) / (1 << 16) * 2 * 5 + 2.5) * 20.0));
+        return (int) (((measurement / 1.6 / (1 << 16) / (1 << 16) * 2 * 5 + 2.5) * 20.0));
     }
     void toString(char* buf, int len) {
         snprintf(buf, len - 1, "axis1 %d (%d volt), axis2 %d, axis3 %d, axis4 %d", (int) axis1, (int) toVoltage(axis1), (int) axis2, (int) axis3, (int) axis4);
