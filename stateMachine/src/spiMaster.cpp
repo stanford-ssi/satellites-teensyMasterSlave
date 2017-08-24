@@ -57,11 +57,30 @@ bool adcSampleReady() {
     return adcGetOffset() >= 1;
 }
 
+int succ__ = 0;
+int fail__ = 0;
 volatile adcSample* adcGetSample() {
     assert(adcSampleReady());
     volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
     toReturn->correctFormat();
     backOfBuffer = (backOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
+
+    if(!assert(toReturn->axis1 < 0)) {
+        debugPrintf("i %d toReturn %d\n", 1, toReturn->axis1);
+    }
+    if(!assert(toReturn->axis2 < 0)) {
+        debugPrintf("i %d toReturn %d\n", 2, toReturn->axis2);
+    }
+    if(!assert(toReturn->axis3 < 0)) {
+        debugPrintf("i %d toReturn %d\n", 3, toReturn->axis3);
+    }
+    if(!assert(toReturn->axis4 < 0)) {
+        fail__++;
+        debugPrintf("i %d toReturn %d succ %d fail %d\n", 4, toReturn->axis4, succ__, fail__);
+    } else {
+        succ__++;
+    }
+
     return toReturn;
 }
 
@@ -103,11 +122,6 @@ void checkChipSelect(void) {
         digitalWriteFast(ADC_CS2, HIGH);
         digitalWriteFast(ADC_CS3, LOW);
     }
-    volatile unsigned long long i = 0;
-    for (int j = 0; j < 3; j++) {
-        i += micros();
-    }
-    (void) i;
 }
 
 void spi0_isr(void) {

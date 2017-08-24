@@ -2,6 +2,11 @@
 import RPi.GPIO as GPIO
 import time
 import subprocess
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--nobuild", action="store_true")
+args = parser.parse_args()
 
 program_master = 2
 program_slave = 3
@@ -42,8 +47,9 @@ def program(platformio_base, mcu):
     time.sleep(1)
     #subprocess.call("g++ spitest.cpp -std=c++11 -lwiringPi -o spitest", shell=True) # compile master mode
 
-build("stateMachine/", "36")
-build("antagonist/", "31")
+if not args.nobuild:
+    build("stateMachine/", "36")
+    build("antagonist/", "31")
 cycle(program_slave)
 print("Slave serial:")
 subprocess.call("ls /dev/ttyACM*", shell=True)
