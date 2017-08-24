@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/Users/Jason/anaconda/bin/python
 import sys
 from os.path import expanduser
 

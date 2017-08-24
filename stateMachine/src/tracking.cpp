@@ -3,6 +3,7 @@
 #include <main.h>
 #include <spiMaster.h>
 #include <incoherent.h>
+#include <pid.h>
 
 /* *** Private variables *** */
 
@@ -37,6 +38,7 @@ void firstLoopTracking() {
     totalPowerReceived = 0;
     incoherentSetup();
     interrupts();
+    pidSetup();
 
     debugPrintf("About to clear dma: offset is (this might be high) %d\n", adcGetOffset());
     adcStartSampling();
@@ -83,7 +85,8 @@ void pidProcess(const volatile adcSample& s) {
     totalPowerReceived += incoherentOutput.axis4;
 
     mirrorOutput out;
-    out.x_low = incoherentOutput.axis1; //  TODO: REMOVE
+    pidCalculate(xpos, ypos, out);
+
     lastPidOut.copy(out);
     pidSample samplePid(s, incoherentOutput, out);
     recordPid(samplePid);

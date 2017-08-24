@@ -4,12 +4,10 @@
 #include <main.h>
 
 typedef struct mirrorOutput {
-    uint32_t x_high;
-    uint32_t x_low;
-    uint32_t y_high;
-    uint32_t y_low;
+    uint32_t x;
+    uint32_t y;
     mirrorOutput() {
-        x_high = x_low = y_high = y_low = 0;
+        x = y = 0;
     }
 
     void copy(const volatile mirrorOutput& s) {
@@ -23,7 +21,7 @@ typedef struct mirrorOutput {
         return *this;
     }
     void toString(char* buf, int len) {
-        snprintf(buf, len - 1, "x_high %u, x_low %u, y_high %u, y_low %u", (unsigned int) x_high, (unsigned int) x_low, (unsigned int) y_high, (unsigned int) y_low);
+        snprintf(buf, len - 1, "x %u, y %u", (unsigned int) x, (unsigned int) y);
     }
 
     // Sum of memory, by uint16s
