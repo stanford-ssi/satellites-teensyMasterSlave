@@ -64,7 +64,7 @@ volatile adcSample* adcGetSample() {
     volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
     toReturn->correctFormat();
     backOfBuffer = (backOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
-
+/*
     if(!assert(toReturn->axis1 < 0)) {
         debugPrintf("i %d toReturn %d\n", 1, toReturn->axis1);
     }
@@ -79,7 +79,7 @@ volatile adcSample* adcGetSample() {
         debugPrintf("i %d toReturn %d succ %d fail %d\n", 4, toReturn->axis4, succ__, fail__);
     } else {
         succ__++;
-    }
+    }*/
 
     return toReturn;
 }
