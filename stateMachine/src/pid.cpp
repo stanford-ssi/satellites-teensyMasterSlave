@@ -43,35 +43,38 @@ void pidCalculate(double pv_x, double pv_y, mirrorOutput& out){
 
     // Calculate error
     double error[2] = {(_sp[0] - pv_x), (_sp[1] - pv_y)};
+    double p_out[2];
+    double i_out[2];
+    double derivative[2];
+    double d_out[2];
 
-    // Proportional term
-    double p_out[2] = {(_Kp * error[0]), (_Kp * error[1])};
+    for (int i = 0; i < 2; i++){
+      // Proportional term
+      p_out[i] = _Kp * error[i];
 
-    // Integral term
-    _integral[0] += error[0] * _dt;
-    _integral[1] += error[1] * _dt;
-    double i_out[2] = {(_Ki * _integral[0]),(_Ki * _integral[1])};
+      // Integral term
+      _integral[i] += error[i] * _dt;
+      i_out[i] = _Ki * _integral[i];
 
-    // Derivative term
-    double derivative[2] = {((error[0] - _pre_error[0])/_dt),((error[1] - _pre_error[1])/_dt)};
-    double d_out[2] = {(_Kd * derivative[0]),(_Kd * derivative[1])};
+      // Derivative term
+      derivative[i] = (error[i] - _pre_error[i])/_dt;
+      d_out[i] = _Kd * derivative[i];
 
-    // Calculate total output
-    out.x = p_out[0] + i_out[0] + d_out[0];
-    out.y = p_out[1] + i_out[1] + d_out[1];
+      // Calculate total output
+      double output = p_out[i] + i_out[i] + d_out[i];
 
-    // Restrict to max/min
-    if (out.x > _max)
-        out.x = _max;
-    else if (out.x < _min)
-        out.x = _min;
+      // Restrict to max/min
+      if (output > _max)
+          output = _max;
+      else if (output < _min)
+          output = _min;
 
-    if (out.y > _max)
-        out.y = _max;
-    else if (out.y < _min)
-        out.y = _min;
+      if (i == 0)
+        out.x = output;
+      else
+        out.y = output;
 
-    // Save error to previous error
-    _pre_error[0] = error[0];
-    _pre_error[1] = error[1];
+      // Save error to previous error
+      _pre_error[i] = error[i];
+    }
 }
