@@ -6,10 +6,9 @@ double _min;
 double _Kp;
 double _Kd;
 double _Ki;
-double _pre_error[2];
-double _integral[2];
-double _pv[2];
-double _sp[2];
+double _pre_error[2] = {0,0};
+double _integral[2] = {0,0};
+double _sp[2] = {0,0}; // centered position
 
 void pidSetup(){
 
@@ -22,21 +21,6 @@ void pidSetup(){
 
     _max = 100;
     _min = -100;
-
-    // Changed in pid_calculate function
-    _pre_error[0] = 0.0;
-    _pre_error[1] = 0.0;
-
-    _integral[0] = 0.0;
-    _integral[1] = 0.0;
-
-    // x,y estimate
-    _pv[0] = 20.0;
-    _pv[1] = 20.0;
-
-    // centered position
-    _sp[0] = 0.0;
-    _sp[1] = 0.0;
 }
 
 void pidCalculate(double pv_x, double pv_y, mirrorOutput& out){
