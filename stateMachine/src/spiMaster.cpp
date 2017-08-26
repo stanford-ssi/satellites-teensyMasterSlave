@@ -161,7 +161,7 @@ void beginAdcRead(void) {
     if (lastSampleTime != 0) {
         lastSampleTime = timeNow;
         if(!(diff >= 245 && diff <= 255)) { //  4kHz -> 250 microseconds
-            debugPrintf("Diff is %d, %d success %d fail %d %d\n", diff, numSuccess, numFail, numStartCalls, numSpi0Calls);
+            // debugPrintf("Diff is %d, %d success %d fail %d %d\n", diff, numSuccess, numFail, numStartCalls, numSpi0Calls); // A blocking print inside an interrupt can cascade errors I think
             numFail++;
         } else {
             numSuccess++;
