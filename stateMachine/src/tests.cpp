@@ -67,7 +67,7 @@ void runTests() {
     if (DEBUG) {
         testSwap();
         testDma();
-        testBreakingLoop();
+        //testBreakingLoop();
         testInteger();
     }
 }

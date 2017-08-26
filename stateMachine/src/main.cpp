@@ -145,7 +145,7 @@ void setup() {
   //jklol();
   Serial.begin(115200);
   debugPrintf("Serial is on\n");
-  delay(500);
+  delay(5000);
   // Every 2.75 seconds - integer quantity of seconds prevents us from seeing
   // dma offset change, as sampling rate is a clean multiple of buffer size
   const int heartRate = 2751234;

@@ -1,10 +1,10 @@
 #include "spiMaster.h"
 #include "main.h"
 #include <array>
+#include "mirrorDriver.h"
 
 /* *** Private Constants *** */
 #define sizeofAdcSample (sizeof(adcSample) / 2)
-#define ENABLE_170_PIN 54
 #define ENABLE_MINUS_7_PIN 52
 #define ENABLE_7_PIN 53
 #define ADC_CS0 35
@@ -17,7 +17,7 @@
 #define ADC_OVERSAMPLING_RATE 64
 const unsigned int control_word = 0b1000110000010000;
 
-void mirrorOutputSetup();
+//void mirrorOutputSetup();
 void adcReceiveSetup();
 void init_FTM0();
 
@@ -89,7 +89,7 @@ void adcStartSampling() { // Clears out old samples so the first sample you read
 }
 
 void spiMasterSetup() {
-    mirrorOutputSetup();
+    mirrorDriverSetup();
     debugPrintf("Setting up dma, offset is %d\n", adcGetOffset());
     adcReceiveSetup();
     debugPrintf("Dma setup complete, offset is %d. Setting up ftm timers.\n", adcGetOffset());
@@ -185,10 +185,8 @@ void beginAdcRead(void) {
 }
 
 void setupHighVoltage() {
-    pinMode(ENABLE_170_PIN, OUTPUT);
     pinMode(ENABLE_MINUS_7_PIN, OUTPUT);
     pinMode(ENABLE_7_PIN, OUTPUT);
-    digitalWrite(ENABLE_170_PIN, LOW); // +170 driver enable
     digitalWrite(ENABLE_MINUS_7_PIN, HIGH); // -7 driver enable
     digitalWrite(ENABLE_7_PIN, HIGH); // +7 driver enable
 }
@@ -253,58 +251,58 @@ void adcReceiveSetup() {
 
 /* ******** Mirror output code ********* */
 
-void mirrorOutputSetup() {
+/*void mirrorOutputSetup() {
     debugPrintln("Mirror setup starting.");
     SPI2.begin();
     SPI2_RSER = 0x00020000; // Transmit FIFO Fill Request Enable -- Interrupt on transmit complete
     NVIC_ENABLE_IRQ(IRQ_SPI2);
     NVIC_SET_PRIORITY(IRQ_SPI2, 0);
     debugPrintln("Done!");
-}
+}*/
 
-unsigned long timeOfLastOutput = 0;
-
-/* Entry point to outputting a mirrorOutput; sending from SPI2 will trigger spi2_isr,
- * which sends the rest of the mirrorOutput
- */
-void sendOutput(mirrorOutput& output) {
-    long timeNow = micros();
-    long diff = timeNow - timeOfLastOutput;
-    assert(diff > 0);
-    if (!mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8)) {
-        if (diff % 100 == 0) {
-            debugPrintf("spiMaster.cpp:254: mirrorIndex %d\n", mirrorOutputIndex);
-        }
-        bugs++;
-        errors++;
-        // Not done transmitting the last mirror output
-        if (timeOfLastOutput != 0 && diff < 500) {
-            return;
-        } else {
-            // The last mirror output is taking too long, reset it
-        }
-    }
-    timeOfLastOutput = timeNow;
-    noInterrupts();
-    currentOutput = output;
-    mirrorOutputIndex = 0;
-    (void) SPI2_POPR;
-    SPI2_PUSHR = ((uint16_t) mirrorOutputIndex) | SPI_PUSHR_CTAS(1);
-    interrupts();
-}
-
-void spi2_isr(void) {
-    if (mirrorOutputIndex >= sizeof(mirrorOutput) / (16 / 8)) {
-        errors++;
-    }
-    (void) SPI2_POPR;
-    uint16_t toWrite = ((volatile uint16_t *) &currentOutput)[mirrorOutputIndex];
-    SPI2_SR |= SPI_SR_RFDF; // Clear interrupt
-    mirrorOutputIndex++;
-    if (mirrorOutputIndex < sizeof(mirrorOutput) / (16 / 8)) {
-        SPI2_PUSHR = ((uint16_t) toWrite) | SPI_PUSHR_CTAS(1);
-    } else {
-        // Done sending
-        assert(mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8));
-    }
-}
+// unsigned long timeOfLastOutput = 0;
+//
+// /* Entry point to outputting a mirrorOutput; sending from SPI2 will trigger spi2_isr,
+//  * which sends the rest of the mirrorOutput
+//  */
+// void sendOutput(mirrorOutput& output) {
+//     long timeNow = micros();
+//     long diff = timeNow - timeOfLastOutput;
+//     assert(diff > 0);
+//     if (!mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8)) {
+//         if (diff % 100 == 0) {
+//             debugPrintf("spiMaster.cpp:254: mirrorIndex %d\n", mirrorOutputIndex);
+//         }
+//         bugs++;
+//         errors++;
+//         // Not done transmitting the last mirror output
+//         if (timeOfLastOutput != 0 && diff < 500) {
+//             return;
+//         } else {
+//             // The last mirror output is taking too long, reset it
+//         }
+//     }
+//     timeOfLastOutput = timeNow;
+//     noInterrupts();
+//     currentOutput = output;
+//     mirrorOutputIndex = 0;
+//     (void) SPI2_POPR;
+//     SPI2_PUSHR = ((uint16_t) mirrorOutputIndex) | SPI_PUSHR_CTAS(1);
+//     interrupts();
+// }
+//
+// void spi2_isr(void) {
+//     if (mirrorOutputIndex >= sizeof(mirrorOutput) / (16 / 8)) {
+//         errors++;
+//     }
+//     (void) SPI2_POPR;
+//     uint16_t toWrite = ((volatile uint16_t *) &currentOutput)[mirrorOutputIndex];
+//     SPI2_SR |= SPI_SR_RFDF; // Clear interrupt
+//     mirrorOutputIndex++;
+//     if (mirrorOutputIndex < sizeof(mirrorOutput) / (16 / 8)) {
+//         SPI2_PUSHR = ((uint16_t) toWrite) | SPI_PUSHR_CTAS(1);
+//     } else {
+//         // Done sending
+//         assert(mirrorOutputIndex == sizeof(mirrorOutput) / (16 / 8));
+//     }
+// }

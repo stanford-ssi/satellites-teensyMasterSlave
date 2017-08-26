@@ -4,6 +4,7 @@
 #include <spiMaster.h>
 #include <incoherent.h>
 #include <pid.h>
+#include <mirrorDriver.h>
 
 /* *** Private variables *** */
 
@@ -17,7 +18,7 @@ volatile uint64_t totalPowerReceivedBeforeIncoherent = 0;
 volatile uint64_t totalPowerReceived = 0;
 const uint64_t maxPower = 1ULL << 32;
 
-void sendOutput(mirrorOutput& output);
+// void sendOutput(mirrorOutput& output);
 
 void trackingSetup() {
     // Begin dma transaction
@@ -90,7 +91,7 @@ void pidProcess(const volatile adcSample& s) {
     lastPidOut.copy(out);
     pidSample samplePid(s, incoherentOutput, out);
     recordPid(samplePid);
-    sendOutput(out);
+    sendMirrorOutput(out);
     samplesProcessed++;
 }
 

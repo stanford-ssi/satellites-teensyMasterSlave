@@ -38,4 +38,7 @@ typedef struct mirrorOutput {
     }
 } mirrorOutput;
 
+void mirrorDriverSetup();
+void sendMirrorOutput(const mirrorOutput& out);
+
 #endif

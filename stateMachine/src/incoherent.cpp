@@ -12,7 +12,7 @@ volatile int sample;
 //Stores the running sum of the previous four samples of each quad cell for both sine and cosine envelopes
 volatile int32_t rolling_detectors[2*numCells];
 
-void incoherentSetup(){
+void incoherentSetup() {
   sample = 0;
   //Fill in initial values of the buffer
   for(int i = 0; i < buffer_length; i++){
@@ -65,4 +65,28 @@ void incoherentDisplacement(const adcSample& incoherentOutput, double& xpos, dou
   double yposIntermediate = ((quadA + quadB) - (quadC + quadD))/(quadA + quadB + quadC + quadD);
   xpos = cos(theta) * xposIntermediate - sin(theta) * yposIntermediate;
   ypos = sin(theta) * xposIntermediate + cos(theta) * yposIntermediate;
+  // if (micros() % 4000 == 0) {
+  //     debugPrintf("\n**\n%d %d %d %d, %d %d, %d %d\n**\n", (int) (quadA * 1000), (int) (quadB * 1000), (int) (quadC * 1000), (int) (quadD * 1000), (int) (xposIntermediate * 1000), (int) (yposIntermediate * 1000), (int) (xpos * 1000), (int) (ypos * 1000));
+  // }
+  //
+  // double wat = 1ull << 33;
+  // (void) wat;
+  // uint8_t* buf = (uint8_t *) &xpos;
+  // for (int i = 0; i < 8; i++) {
+  //     debugPrintf("%x",buf[i]);
+  // }
+  // debugPrintln("");
+  // double one = 1.0;
+  // if (!(assert(xpos <= one))){
+  //     debugPrintf(/*%ld %ld %lx %ld, */"%d %d %d %d\n"/*, (uint64_t) xpos, (uint64_t) (xpos * 100), *((uint64_t *) &xpos), (uint64_t) wat*/, !(xpos <= one), !(xpos > one), !(xpos > one), !(wat <= one));
+  //     if (((int) xpos > one)) {
+  //         debugPrintf("HEY\n");
+  //     }
+  //     if (((int) xpos <= one)) {
+  //         debugPrintf("HEY2\n");
+  //     }
+  //     printDouble((uint64_t) wat);
+  //     printDouble((uint64_t) xpos);
+  // }
+  // assert(ypos <= 1.0);
 }
