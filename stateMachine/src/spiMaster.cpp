@@ -137,6 +137,7 @@ void spi0_isr(void) {
     adcIsrIndex++;
     checkChipSelect();
     if (!(adcIsrIndex < sizeofAdcSample)) {
+        digitalWriteFast(ADC_CS3, HIGH);
         // Sample complete -- push to buffer
         adcSamplesRead[frontOfBuffer] = nextSample;
         frontOfBuffer = (frontOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
