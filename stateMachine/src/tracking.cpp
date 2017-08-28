@@ -91,7 +91,9 @@ void pidProcess(const volatile adcSample& s) {
     lastPidOut.copy(out);
     pidSample samplePid(s, incoherentOutput, out);
     recordPid(samplePid);
-    sendMirrorOutput(out);
+    if (samplesProcessed % (4000 / 100) == 0) {
+        sendMirrorOutput(out);
+    }
     samplesProcessed++;
 }
 

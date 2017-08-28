@@ -29,6 +29,8 @@ uint16_t DAC_ch_C = 32768;
 uint16_t DAC_ch_D = 32768;
 float twopi = 2*3.14159265359; // good old pi
 float phase = twopi/BUFFER_LEN; // phase increment for sinusoid
+volatile uint32_t timeOfLastMirrorOutput = 0;
+
 void mirrorDriverSetup() {
     // Setup Pins:
     pinMode (slaveSelectPin, OUTPUT); // SPI SS pin 10
@@ -87,6 +89,10 @@ void mirrorDriverSetup() {
 }
 
 void sendMirrorOutput(const mirrorOutput& out) {
+    volatile uint32_t timeNow = millis();
+    // millis() subject to overflow after 40 days, causes 1 assertion error
+    assert(timeNow - timeOfLastMirrorOutput >= 10); // No more than 100Hz
+    timeOfLastMirrorOutput = timeNow;
     int16_t x = out.x * 0.9; // Important: never max out the mirror
     int16_t y = out.y * 0.9;
     // figure out the sine wave output for each channel, from -1,1 to uint16_t centered at 32768
