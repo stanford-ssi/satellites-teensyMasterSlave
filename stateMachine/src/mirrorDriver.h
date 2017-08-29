@@ -39,6 +39,7 @@ typedef struct mirrorOutput {
 } mirrorOutput;
 
 void mirrorDriverSetup();
+mirrorOutput* getNextMirrorOutput();
 void sendMirrorOutput(const mirrorOutput& out);
 
 #endif

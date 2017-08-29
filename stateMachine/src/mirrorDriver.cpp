@@ -8,8 +8,10 @@
  * then plays back the sinusoid over the MEMS driver.
  */
 #include <main.h>
-#define BUFFER_LEN 1024
-static float sine_wave[BUFFER_LEN]; // buffer to hold decimal value sine wave (scaled to uint16_t before sent to DAC)
+#define MAX_BUFFER_LEN 1024
+uint32_t calibrationBufferLength = MAX_BUFFER_LEN;
+uint32_t currentCalibrationOutputIndex = 0;
+static mirrorOutput calibrationMirrorOutputs[MAX_BUFFER_LEN]; // buffer to hold decimal value sine wave
 static uint8_t DAC_write_word[3]; // DAC input register is 24 bits, SPI writes 8 bits at a time. Need to queue up 3 bytes (24 bits) to send every time you write to it
 // Teensy 3.2 pinouts
 const int slaveSelectPin = 43;
@@ -28,7 +30,7 @@ uint16_t DAC_ch_B = 32768;
 uint16_t DAC_ch_C = 32768;
 uint16_t DAC_ch_D = 32768;
 float twopi = 2*3.14159265359; // good old pi
-float phase = twopi/BUFFER_LEN; // phase increment for sinusoid
+float phase = twopi/MAX_BUFFER_LEN; // phase increment for sinusoid
 volatile uint32_t timeOfLastMirrorOutput = 0;
 
 void mirrorDriverSetup() {
@@ -76,11 +78,10 @@ void mirrorDriverSetup() {
     digitalWrite(slaveSelectPin,HIGH);
     delayMicroseconds(1);
 
-    // Fill the sine wave buffer with 1024 points
-    // The 0.9 here prevents the driver from ever going over 150V! (It can do ~160 which can damage mirror)
     debugPrintln("Filling in sine wave");
-    for (int i = 0; i < BUFFER_LEN; i++){
-        sine_wave[i] = sin(i*phase); // fill 0 to twopi phase, output range -0.9 to 0.9 to limit HV output
+    for (int i = 0; i < MAX_BUFFER_LEN; i++){
+        calibrationMirrorOutputs[i].x = 32765. * sin(i*phase);
+        calibrationMirrorOutputs[i].y = 32765. * cos(i*phase);
     }
     // Start the LASER PWM timer
     // 50% duty cycle at desired frequency
@@ -176,4 +177,10 @@ void laserEnable(bool enable) {
         laser_state = LOW;
         analogWrite (LASER_EN_PIN, 0);
     }
+}
+
+mirrorOutput* getNextMirrorOutput() {
+    mirrorOutput* toReturn = &calibrationMirrorOutputs[currentCalibrationOutputIndex];
+    currentCalibrationOutputIndex = (currentCalibrationOutputIndex + 1) % calibrationBufferLength;
+    return toReturn;
 }

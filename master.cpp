@@ -58,8 +58,7 @@ uint16_t echo[PACKET_BODY_LENGTH] = {0x0, 0xbbbb};
 uint16_t stat[PACKET_BODY_LENGTH] = {0x1, 0xaaaa};
 uint16_t idle_[PACKET_BODY_LENGTH] = {0x2, 0xcccc};
 uint16_t shutdown_[PACKET_BODY_LENGTH] = {0x3, 0xdddd};
-uint16_t enterImu[PACKET_BODY_LENGTH] = {0x4, 0xcccc};
-uint16_t getImuData[PACKET_BODY_LENGTH] = {0x5, 0xeeee};
+uint16_t enterCalibration[PACKET_BODY_LENGTH] = {0x6, 0xffff};
 uint16_t enterPointTrack[PACKET_BODY_LENGTH] = {0x7, 0xffff};
 uint16_t reportTrack[PACKET_BODY_LENGTH] = {0x8, 0xffff};
 
@@ -259,10 +258,6 @@ void loop() {
       transmit(stat);
     } else if (incomingByte == '3') {
         transmit(idle_);
-    } else if (incomingByte == '4') {
-      transmit(enterImu);
-    } else if (incomingByte == '5') {
-      transmit(getImuData);
     } else if (incomingByte == '6') {
       transmit(enterPointTrack);
     } else if (incomingByte == '7') {
@@ -277,6 +272,8 @@ void loop() {
     } else if (incomingByte == 's') {
       transmit(shutdown_);
     } else if (incomingByte == '8') {
+      transmit(enterCalibration);
+  } else if (incomingByte == '9') {
       transmitCrappy(echo);
     } else if (incomingByte == 'd') {
       cout << digitalRead(24) << endl;
@@ -285,6 +282,6 @@ void loop() {
     } else if (incomingByte == 'm') {
       transmitMany = true;
     } else if (incomingByte == 'l') {
-        printf("1 - echo\n2 - stat\n3 - idle\n4 - imu\n5 - imuData\n6 - point\n7 - report tracking\n8 - crappy\np - report\nr - rando\n");
+        printf("1 - echo\n2 - stat\n3 - idle\n4 - imu\n5 - imuData\n6 - point\n7 - report tracking\n8 - cal\n9 - crappy\np - report\nr - rando\n");
     }
 }

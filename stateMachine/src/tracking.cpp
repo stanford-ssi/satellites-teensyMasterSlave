@@ -5,6 +5,7 @@
 #include <incoherent.h>
 #include <pid.h>
 #include <mirrorDriver.h>
+#include <states.h>
 
 /* *** Private variables *** */
 
@@ -85,14 +86,26 @@ void pidProcess(const volatile adcSample& s) {
         numLockedOn++;
     }
 
-    double xpos = 0xbeefabcd;
-    double ypos = 0xbeefdcba;
-    double theta = 0;
-    incoherentDisplacement(incoherentOutput, xpos, ypos, theta);
     mirrorOutput out;
-    pidCalculate(xpos, ypos, out);
-    if (samplesProcessed % (4000 / 100) == 0) {
-        sendMirrorOutput(out);
+    if (!changingState) {
+        if (state == TRACKING_STATE) {
+            double xpos = 0xbeefabcd;
+            double ypos = 0xbeefdcba;
+            double theta = 0;
+            incoherentDisplacement(incoherentOutput, xpos, ypos, theta);
+            pidCalculate(xpos, ypos, out);
+        } else if (state == CALIBRATION_STATE) {
+            if (samplesProcessed % (4000 / 100) == 0) {
+                out = *getNextMirrorOutput();
+            }
+        } else {
+            debugPrintf("Warning: state %d changingState %d\n", state, changingState);
+        }
+        if (samplesProcessed % (4000 / 100) == 0) {
+            sendMirrorOutput(out);
+        }
+    } else {
+        debugPrintf("Warning: changing states\n");
     }
 
     pidSample samplePid(s, incoherentOutput, out);
