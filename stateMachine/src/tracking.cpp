@@ -62,39 +62,41 @@ void leaveTracking() {
     interrupts();
 }
 
-void pidProcess(const volatile adcSample& s) {
-    lastAdcRead.copy(s);
-    totalPowerReceivedBeforeIncoherent += s.axis1;
-    totalPowerReceivedBeforeIncoherent += s.axis2;
-    totalPowerReceivedBeforeIncoherent += s.axis3;
-    totalPowerReceivedBeforeIncoherent += s.axis4;
+void logPidSample(const volatile pidSample& s) {
+    lastAdcRead.copy(s.sample);
+    lastPidOut.copy(s.out);
+    totalPowerReceivedBeforeIncoherent += s.sample.axis1;
+    totalPowerReceivedBeforeIncoherent += s.sample.axis2;
+    totalPowerReceivedBeforeIncoherent += s.sample.axis3;
+    totalPowerReceivedBeforeIncoherent += s.sample.axis4;
+    totalPowerReceived += s.incoherentOutput.axis1;
+    totalPowerReceived += s.incoherentOutput.axis2;
+    totalPowerReceived += s.incoherentOutput.axis3;
+    totalPowerReceived += s.incoherentOutput.axis4;
+    recordPid(s);
+    samplesProcessed++;
+}
 
+void pidProcess(const volatile adcSample& s) {
     adcSample incoherentOutput;
     incoherentProcess(s, incoherentOutput);
     lockedOn = false;
     if (lockedOn) {
         numLockedOn++;
     }
+
     double xpos = 0xbeefabcd;
     double ypos = 0xbeefdcba;
     double theta = 0;
     incoherentDisplacement(incoherentOutput, xpos, ypos, theta);
-
-    totalPowerReceived += incoherentOutput.axis1;
-    totalPowerReceived += incoherentOutput.axis2;
-    totalPowerReceived += incoherentOutput.axis3;
-    totalPowerReceived += incoherentOutput.axis4;
-
     mirrorOutput out;
     pidCalculate(xpos, ypos, out);
-
-    lastPidOut.copy(out);
-    pidSample samplePid(s, incoherentOutput, out);
-    recordPid(samplePid);
     if (samplesProcessed % (4000 / 100) == 0) {
         sendMirrorOutput(out);
     }
-    samplesProcessed++;
+
+    pidSample samplePid(s, incoherentOutput, out);
+    logPidSample(samplePid);
 }
 
 void taskTracking() {
