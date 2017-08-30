@@ -22,6 +22,8 @@ void adcReceiveSetup();
 void init_FTM0();
 
 /* *** Internal Telemetry -- SPI0 *** */
+volatile bool internalInterruptAdcReading = false;
+IntervalTimer readAdcTimer;
 unsigned long lastSampleTime = 0;
 volatile int numFail = 0;
 volatile int numSuccess = 0;
@@ -60,6 +62,7 @@ volatile adcSample* adcGetSample() {
     volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
     toReturn->correctFormat();
     backOfBuffer = (backOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
+    toReturn->axis4 = 0;
 /*
     if(!assert(toReturn->axis1 < 0)) {
         debugPrintf("i %d toReturn %d\n", 1, toReturn->axis1);
@@ -181,6 +184,18 @@ void beginAdcRead(void) {
     interrupts();
 }
 
+void readAdcEdgeIsr() {
+    if (!internalInterruptAdcReading) {
+        beginAdcRead();
+    }
+}
+
+void readAdcTimerIsr() {
+    if (internalInterruptAdcReading) {
+        beginAdcRead();
+    }
+}
+
 void setupHighVoltage() {
     pinMode(ENABLE_MINUS_7_PIN, OUTPUT);
     pinMode(ENABLE_7_PIN, OUTPUT);
@@ -238,10 +253,11 @@ void adcReceiveSetup() {
     setupAdc();
     SPI0_RSER = 0x00020000; // Transmit FIFO Fill Request Enable -- Interrupt on transmit complete
     pinMode(trigger_pin, INPUT_PULLUP);
-    attachInterrupt(trigger_pin, beginAdcRead, FALLING);
+    attachInterrupt(trigger_pin, readAdcEdgeIsr, FALLING);
     NVIC_ENABLE_IRQ(IRQ_SPI0);
     NVIC_SET_PRIORITY(IRQ_SPI0, 0);
     NVIC_SET_PRIORITY(IRQ_PORTA, 0); // Trigger_pin should be port A
     NVIC_SET_PRIORITY(IRQ_PORTE, 0); // Just in case it's E
+    readAdcTimer.begin(readAdcTimerIsr, 250);
     debugPrintln("Done!");
 }

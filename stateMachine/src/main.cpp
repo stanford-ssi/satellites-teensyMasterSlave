@@ -4,7 +4,7 @@
 
 const volatile bool SPI2_LOOPBACK = false;
 
-IntervalTimer timer, timer2, timer3, timer4;
+IntervalTimer timer, timer2, timer3;
 volatile uint16_t state = SETUP_STATE;
 volatile uint16_t previousState = SETUP_STATE;
 volatile bool changingState = false;
@@ -154,8 +154,6 @@ void setup() {
   timer2.begin(heartbeat2, heartRate);
   delay(1);
   timer3.begin(heartbeat3, heartRate);
-  delay(1);
-  timer4.begin(heartbeat4, heartRate);
   debugPrintf("Set up heartbeat interrupt\n");
   analogReadResolution(16);
   debugPrintf("Begin Spi2\n");
@@ -201,24 +199,22 @@ void heartbeat2() {
     debugPrintf("%d last, %d max, %d fast, %d med, %d slow loops\n", lastLoopTime, maxLoopTime, numFastLoops, numMediumLoops, numSlowLoops);
 }
 
+extern volatile int numFail;
+extern volatile int numSuccess;
+extern volatile int numStartCalls;
+extern volatile int numSpi0Calls;
 void heartbeat3() {
     if (state == TRACKING_STATE) {
         trackingHeartbeat();
     } else if (state == CALIBRATION_STATE) {
         calibrationHeartbeat();
     }
-}
-
-extern volatile int numFail;
-extern volatile int numSuccess;
-extern volatile int numStartCalls;
-extern volatile int numSpi0Calls;
-void heartbeat4() {
     debugPrintf("DMA Fail %d success %d starts %d spi0s %d\n", numFail, numSuccess, numStartCalls, numSpi0Calls);
     debugPrintf("-----------------------\n");
 }
 
 void taskIdle(void) {
+    // :)
 }
 
 void leaveCurrentState() {
