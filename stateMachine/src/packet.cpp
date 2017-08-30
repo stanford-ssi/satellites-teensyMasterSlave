@@ -191,6 +191,8 @@ void create_response() {
         } else {
             responsePidDump();
         }
+    } else if (command == COMMAND_PROBE_MEMORY) {
+        response_status();
     } else {
         responseBadPacket(INVALID_COMMAND);
     }

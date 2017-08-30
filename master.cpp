@@ -39,7 +39,7 @@ bool assertionError(const char* file, int line, const char* assertion) {
 // Set this to 0 or 1, depending on how it's connected.
 static const int CHANNEL = 0;
 
-#define PACKET_BODY_LENGTH 2
+#define PACKET_BODY_LENGTH 7
 bool transmitMany = false;
 int bytesSent = 0;
 const int KILLSWITCH = 8; // wiringPi 8, pin 3 sda1
@@ -54,13 +54,13 @@ int numError = 0;
 #define RESPONSE_MIRROR_DATA 3
 #define RESPONSE_ADCS_REQUEST 4
 
-uint16_t echo[PACKET_BODY_LENGTH] = {0x0, 0xbbbb};
-uint16_t stat[PACKET_BODY_LENGTH] = {0x1, 0xaaaa};
-uint16_t idle_[PACKET_BODY_LENGTH] = {0x2, 0xcccc};
-uint16_t shutdown_[PACKET_BODY_LENGTH] = {0x3, 0xdddd};
-uint16_t enterCalibration[PACKET_BODY_LENGTH] = {0x6, 0xffff};
-uint16_t enterPointTrack[PACKET_BODY_LENGTH] = {0x7, 0xffff};
-uint16_t reportTrack[PACKET_BODY_LENGTH] = {0x8, 0xffff};
+uint16_t echo[PACKET_BODY_LENGTH] = {0x0, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t stat[PACKET_BODY_LENGTH] = {0x1, 0xaaaa, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t idle_[PACKET_BODY_LENGTH] = {0x2, 0xcccc, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t shutdown_[PACKET_BODY_LENGTH] = {0x3, 0xdddd, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t enterCalibration[PACKET_BODY_LENGTH] = {0x6, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t enterPointTrack[PACKET_BODY_LENGTH] = {0x7, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t reportTrack[PACKET_BODY_LENGTH] = {0x8, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
 
 void rando();
 void loop();

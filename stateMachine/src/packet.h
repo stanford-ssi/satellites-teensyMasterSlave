@@ -16,9 +16,9 @@ extern volatile unsigned int packetsReceived;
 // 0xabcd is more useful than 0 because it indicates payload is alive
 #define EMPTY_WORD 0xabcd
 
-#define PACKET_SIZE 5 // Fixed size incoming packet
+#define PACKET_SIZE 10 // Fixed size incoming packet
 // Index of first word in packet body; word 0 is FIRST_WORD
-#define PACKET_BODY_BEGIN 1
+#define PACKET_BODY_BEGIN 1 // First word in body is command number
 // Exclusive; last two words are checksum and LAST_WORD
 #define PACKET_BODY_END (PACKET_SIZE - 2)
 #define BODY_LENGTH (PACKET_BODY_END - PACKET_BODY_BEGIN)
@@ -40,7 +40,8 @@ extern volatile unsigned int packetsReceived;
 #define COMMAND_CALIBRATE 6
 #define COMMAND_POINT_TRACK 7
 #define COMMAND_REPORT_TRACKING 8
-#define MAX_COMMAND 8
+#define COMMAND_PROBE_MEMORY 9
+#define MAX_COMMAND 9
 
 // Response Headers
 #define MIN_HEADER 0
