@@ -30,6 +30,7 @@ bool shouldClearSendBuffer = false;
 // Local functions
 void response_echo();
 void response_status();
+void response_probe();
 void responseBadPacket(uint16_t flag);
 void create_response();
 void responsePidDump();
@@ -192,7 +193,7 @@ void create_response() {
             responsePidDump();
         }
     } else if (command == COMMAND_PROBE_MEMORY) {
-        response_status();
+        response_probe();
     } else {
         responseBadPacket(INVALID_COMMAND);
     }
@@ -237,6 +238,30 @@ void response_status() {
         assert(outBody[bodySize-1] != 0xbeef);
         assert(outBody[bodySize] == 0xbeef);
     }
+    setupTransmission(RESPONSE_OK, bodySize);
+}
+
+void response_probe() {
+    uint16_t probe_size = packet[2];
+    uint32_t address = (packet[3] << 16) + packet[3];
+    assert(!transmitting);
+    uint64_t toReturn = 0;
+    if (probe_size == 8) {
+        toReturn = * ((uint8_t *) address); // This is safe lol
+    } else if (probe_size == 16) {
+        toReturn = * ((uint16_t *) address);
+    } else if (probe_size == 32) {
+        toReturn = * ((uint32_t *) address);
+    } else if (probe_size == 64) {
+        toReturn = * ((uint64_t *) address);
+    } else {
+        // debugPrintf("%x %x %x %x %x %x %x\n", outBody[-2], outBody[-1], outBody[0], outBody[1], outBody[2], outBody[3], outBody[4]);
+        responseBadPacket(INVALID_COMMAND);
+        return;
+    }
+    debugPrintf("toR %x %x %x\n", *((uint32_t *) address), toReturn % (1u<<31), toReturn >> 32);
+    int bodySize = 4;
+    write64(outBody, 0, toReturn);
     setupTransmission(RESPONSE_OK, bodySize);
 }
 

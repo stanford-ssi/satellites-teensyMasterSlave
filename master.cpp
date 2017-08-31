@@ -61,6 +61,7 @@ uint16_t shutdown_[PACKET_BODY_LENGTH] = {0x3, 0xdddd, 0xbbbb, 0xbbbb, 0xbbbb, 0
 uint16_t enterCalibration[PACKET_BODY_LENGTH] = {0x6, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t enterPointTrack[PACKET_BODY_LENGTH] = {0x7, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t reportTrack[PACKET_BODY_LENGTH] = {0x8, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t probe[PACKET_BODY_LENGTH] = {0x9, 32, 0x1fff, 0x0dcc, 0xbbbb, 0xbbbb, 0xbbbb};
 
 void rando();
 void loop();
@@ -273,7 +274,9 @@ void loop() {
       transmit(shutdown_);
     } else if (incomingByte == '8') {
       transmit(enterCalibration);
-  } else if (incomingByte == '9') {
+    } else if (incomingByte == '9') {
+      transmit(probe);
+    } else if (incomingByte == 'c') {
       transmitCrappy(echo);
     } else if (incomingByte == 'd') {
       cout << digitalRead(24) << endl;
@@ -282,6 +285,6 @@ void loop() {
     } else if (incomingByte == 'm') {
       transmitMany = true;
     } else if (incomingByte == 'l') {
-        printf("1 - echo\n2 - stat\n3 - idle\n4 - imu\n5 - imuData\n6 - point\n7 - report tracking\n8 - cal\n9 - crappy\np - report\nr - rando\n");
+        printf("1 - echo\n2 - stat\n3 - idle\n4 - imu\n5 - imuData\n6 - point\n7 - report tracking\n8 - cal\n9 - probe\nc - crappy\np - report\nr - rando\n");
     }
 }

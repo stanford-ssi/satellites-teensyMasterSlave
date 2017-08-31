@@ -7,10 +7,10 @@
 #define sizeofAdcSample (sizeof(adcSample) / 2)
 #define ENABLE_MINUS_7_PIN 52
 #define ENABLE_7_PIN 53
-#define ADC_CS0 35
+#define ADC_CS0 2
 #define ADC_CS1 37
 #define ADC_CS2 7
-#define ADC_CS3 2
+#define ADC_CS3 35
 #define trigger_pin 26 // test point 17
 #define sample_clock 29 // gpio1
 #define sync_pin 3 // gpio0
@@ -62,7 +62,7 @@ volatile adcSample* adcGetSample() {
     volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
     toReturn->correctFormat();
     backOfBuffer = (backOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
-    toReturn->axis4 = 0;
+    //toReturn->axis4 = 0;
 /*
     if(!assert(toReturn->axis1 < 0)) {
         debugPrintf("i %d toReturn %d\n", 1, toReturn->axis1);
@@ -142,6 +142,9 @@ void spi0_isr(void) {
         frontOfBuffer = (frontOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
         numSamplesRead += 1;
         adcIsrIndex++;
+        /*if (micros() % 1000 == 0) {
+            debugPrintf("%d\n", micros() - lastSampleTime);
+        }*/
         return;
     } else {
         SPI0_PUSHR = ((uint16_t) 0x0000) | SPI_PUSHR_CTAS(1);

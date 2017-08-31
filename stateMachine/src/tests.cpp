@@ -65,6 +65,7 @@ void testInteger() {
 
 void runTests() {
     if (DEBUG) {
+        debugPrintf("Errors at %p\n", &errors);
         testSwap();
         testDma();
         //testBreakingLoop();

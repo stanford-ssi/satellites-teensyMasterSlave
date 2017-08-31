@@ -94,16 +94,19 @@ void sendMirrorOutput(const mirrorOutput& out) {
     // millis() subject to overflow after 40 days, causes 1 assertion error
     assert(timeNow - timeOfLastMirrorOutput >= 9); // No more than 100Hz
     timeOfLastMirrorOutput = timeNow;
-    int16_t x = out.x * 0.9; // Important: never max out the mirror
-    int16_t y = out.y * 0.9;
+    int16_t x = out.x; // We truncate x to 16-bit before multiply by 0.9
+    x *= 0.9; // Important: never max out the mirror
+    int16_t y = out.y;
+    y *= 0.9;
+
     // figure out the sine wave output for each channel, from -1,1 to uint16_t centered at 32768
     // X = A - B
-    DAC_ch_A = (uint16_t) (32768*(1 + (ampl_x * x / 2)));
-    DAC_ch_B = (uint16_t) (32768*(1 - (ampl_x * x / 2)));
+    DAC_ch_A = (uint16_t) (32768 + (ampl_x * x / 2));
+    DAC_ch_B = (uint16_t) (32768 - (ampl_x * x / 2));
     // Y = C - D
     // 90 degree phase shift on Y for a circle>?
-    DAC_ch_C = (uint16_t) (32768*(1 + (ampl_y * y / 2)));
-    DAC_ch_D = (uint16_t) (32768*(1 - (ampl_y * y / 2)));
+    DAC_ch_C = (uint16_t) (32768 + (ampl_y * y / 2));
+    DAC_ch_D = (uint16_t) (32768 - (ampl_y * y / 2));
 
   /* HERE BE STUPID */
     // Write all 4 channels 1 at a time
