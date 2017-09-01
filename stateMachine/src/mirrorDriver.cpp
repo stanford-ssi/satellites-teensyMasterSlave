@@ -8,13 +8,17 @@
  * then plays back the sinusoid over the MEMS driver.
  */
 #include <main.h>
-#define MAX_BUFFER_LEN 1024
-uint32_t calibrationBufferLength = MAX_BUFFER_LEN;
+#define SINE_BUFFER_LENGTH 1024
+volatile uint16_t bufferSelect = 0;
+volatile uint16_t numMirrorBuffer = 3;
+volatile uint16_t mirrorFrequency = 100;
+volatile float calibrationAmplitudeMultiplier = 1;
+uint32_t calibrationBufferLength = SINE_BUFFER_LENGTH;
 uint32_t currentCalibrationOutputIndex = 0;
-static mirrorOutput calibrationMirrorOutputs[MAX_BUFFER_LEN]; // buffer to hold decimal value sine wave
-static mirrorOutput calibrationMirrorOutputs2[5];
-static mirrorOutput calibrationMirrorOutputs3[1];
-
+static mirrorOutput sineWave[SINE_BUFFER_LENGTH];
+static mirrorOutput corners[5];
+static mirrorOutput zero[1];
+static mirrorOutput* calibrationMirrorOutputs = sineWave;
 
 static uint8_t DAC_write_word[3]; // DAC input register is 24 bits, SPI writes 8 bits at a time. Need to queue up 3 bytes (24 bits) to send every time you write to it
 // Teensy 3.2 pinouts
@@ -34,7 +38,7 @@ uint16_t DAC_ch_B = 32768;
 uint16_t DAC_ch_C = 32768;
 uint16_t DAC_ch_D = 32768;
 float twopi = 2*3.14159265359; // good old pi
-float phase = twopi/MAX_BUFFER_LEN; // phase increment for sinusoid
+float phase = twopi / SINE_BUFFER_LENGTH; // phase increment for sinusoid
 volatile uint32_t timeOfLastMirrorOutput = 0;
 
 void mirrorDriverSetup() {
@@ -83,24 +87,26 @@ void mirrorDriverSetup() {
     delayMicroseconds(1);
 
     debugPrintln("Filling in sine wave");
-    for (int i = 0; i < MAX_BUFFER_LEN; i++){
-        calibrationMirrorOutputs[i].x = 32765. * sin(i*phase);
-        calibrationMirrorOutputs[i].y = 32765. * cos(i*phase);
+    for (int i = 0; i < SINE_BUFFER_LENGTH; i++){
+        sineWave[i].x = 32765. * sin(i*phase);
+        sineWave[i].y = 32765. * cos(i*phase);
     }
-    calibrationMirrorOutputs2[0].x = 0;
-    calibrationMirrorOutputs2[0].y = 0;
-    calibrationMirrorOutputs2[1].x = 32765;
-    calibrationMirrorOutputs2[1].y = 32765;
-    calibrationMirrorOutputs2[2].x = -32765;
-    calibrationMirrorOutputs2[2].y = -32765;
-    calibrationMirrorOutputs2[3].x = 32765;
-    calibrationMirrorOutputs2[3].y = -32765;
-    calibrationMirrorOutputs2[4].x = -32765;
-    calibrationMirrorOutputs2[4].y = 32765;
-    calibrationMirrorOutputs3[0].x = 0;
-    calibrationMirrorOutputs3[0].y = 0;
+    debugPrintln("Filling in other buffers");
+    corners[0].x = 0;
+    corners[0].y = 0;
+    corners[1].x = 32765;
+    corners[1].y = 32765;
+    corners[2].x = -32765;
+    corners[2].y = -32765;
+    corners[3].x = 32765;
+    corners[3].y = -32765;
+    corners[4].x = -32765;
+    corners[4].y = 32765;
+    zero[0].x = 0;
+    zero[0].y = 0;
     // Start the LASER PWM timer
     // 50% duty cycle at desired frequency
+    debugPrintln("Turning on laser");
     analogWriteFrequency(LASER_EN_PIN, 1000);
     analogWrite (LASER_EN_PIN,0);
 }
@@ -181,6 +187,7 @@ void sendMirrorOutput(const mirrorOutput& out) {
 }
 
 void highVoltageEnable(bool enable) {
+    debugPrintf("High voltage %d\n", enable);
     if (enable) {
         digitalWrite(DRIVER_HV_EN_pin,HIGH);
     } else {
@@ -198,8 +205,38 @@ void laserEnable(bool enable) {
     }
 }
 
-mirrorOutput* getNextMirrorOutput() {
-    mirrorOutput* toReturn = &calibrationMirrorOutputs[currentCalibrationOutputIndex];
+// Selection: from 0 to numMirrorBuffer - 1, selects the buffer to take cal sweeps from
+// Frequency: in Hz, the frequency to send outputs
+// Amplitude: from 0 to 1000, multiplies the mirror outputs by amplitude / 1000 (this is only ever used for attenuation, not gain)
+void selectMirrorBuffer(uint16_t selection, uint16_t frequency, uint16_t amplitude) {
+    assert(selection < numMirrorBuffer);
+    assert(frequency <= 1000);
+    assert(amplitude <= 1000);
+    bufferSelect = selection;
+    mirrorFrequency = frequency;
+    currentCalibrationOutputIndex = 0;
+    calibrationAmplitudeMultiplier = amplitude / 1000.0;
+    if (bufferSelect == 0) {
+        calibrationMirrorOutputs = sineWave;
+        calibrationBufferLength = sizeof(sineWave) / sizeof(mirrorOutput);
+        assert(calibrationBufferLength == SINE_BUFFER_LENGTH);
+    } else if (bufferSelect == 1) {
+        calibrationMirrorOutputs = corners;
+        calibrationBufferLength = sizeof(corners) / sizeof(mirrorOutput);
+        assert(calibrationBufferLength == 5);
+    } else if (bufferSelect == 2) {
+        calibrationMirrorOutputs = zero;
+        calibrationBufferLength = sizeof(zero) / sizeof(mirrorOutput);
+        assert(calibrationBufferLength == 1);
+    } else {
+        errors++;
+        debugPrintf("Buffer select %d requested\n", bufferSelect);
+    }
+}
+
+void getNextMirrorOutput(mirrorOutput& out) {
+    out.copy(calibrationMirrorOutputs[currentCalibrationOutputIndex]);
+    out.x *= calibrationAmplitudeMultiplier;
+    out.y *= calibrationAmplitudeMultiplier;
     currentCalibrationOutputIndex = (currentCalibrationOutputIndex + 1) % calibrationBufferLength;
-    return toReturn;
 }

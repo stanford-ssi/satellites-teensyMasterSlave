@@ -39,7 +39,11 @@ typedef struct mirrorOutput {
 } mirrorOutput;
 
 void mirrorDriverSetup();
-mirrorOutput* getNextMirrorOutput();
+void getNextMirrorOutput(mirrorOutput& out);
 void sendMirrorOutput(const mirrorOutput& out);
+void laserEnable(bool enable);
+void highVoltageEnable(bool enable);
+extern volatile uint16_t mirrorFrequency;
+void selectMirrorBuffer(uint16_t selection, uint16_t frequency, uint16_t amplitude);
 
 #endif

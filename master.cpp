@@ -18,6 +18,8 @@
 
 using namespace std;
 
+#define LINES_TO_LOG 1000
+
 unsigned int errors = 0;
 unsigned int bugs = 0;
 const int spiSpeed = 6250000;
@@ -58,7 +60,7 @@ uint16_t echo[PACKET_BODY_LENGTH] = {0x0, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb
 uint16_t stat[PACKET_BODY_LENGTH] = {0x1, 0xaaaa, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t idle_[PACKET_BODY_LENGTH] = {0x2, 0xcccc, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t shutdown_[PACKET_BODY_LENGTH] = {0x3, 0xdddd, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
-uint16_t enterCalibration[PACKET_BODY_LENGTH] = {0x6, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t enterCalibration[PACKET_BODY_LENGTH] = {0x6, 0, 1000, 1000, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t enterPointTrack[PACKET_BODY_LENGTH] = {0x7, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t reportTrack[PACKET_BODY_LENGTH] = {0x8, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t probe[PACKET_BODY_LENGTH] = {0x9, 32, 0x1fff, 0x0dcc, 0xbbbb, 0xbbbb, 0xbbbb};
@@ -163,7 +165,7 @@ void transmitH(uint16_t *buf, bool verbos) {
     }
     assert(computedChecksum == getBuf(to_send, checksumIndex));
     uint16_t responseNumber = getBuf(to_send, i+3);
-    if (responseNumber == RESPONSE_MIRROR_DATA && linesLogged < 1000) {
+    if (responseNumber == RESPONSE_MIRROR_DATA && linesLogged < LINES_TO_LOG) {
         linesLogged += 1;
         for (int j = checksumIndex - (15 * 24); j < checksumIndex; j+=24) {
             for (int k = 0; k < 22; k+=2) {

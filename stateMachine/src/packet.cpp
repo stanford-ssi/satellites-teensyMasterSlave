@@ -179,10 +179,20 @@ void create_response() {
         state = TRACKING_STATE;
         response_status();
     } else if (command == COMMAND_CALIBRATE) {
-        previousState = state;
-        changingState = true;
-        state = CALIBRATION_STATE;
-        response_status();
+        uint16_t bufferSelect = packet[2];
+        uint16_t frequency = packet[3];
+        uint16_t amplitude = packet[4];
+        if (bufferSelect >= numMirrorBuffer || frequency == 0 || frequency > 1000 || amplitude > 1000) {
+            debugPrintf("bufferSelect %d frequency %d\n", bufferSelect, frequency);
+            responseBadPacket(INVALID_COMMAND);
+        } else {
+            previousState = state;
+            selectMirrorBuffer(bufferSelect, frequency, amplitude);
+            changingState = true;
+            state = CALIBRATION_STATE;
+            response_status();
+        }
+
     } else if (command == COMMAND_REPORT_TRACKING) {
         if (!(state == TRACKING_STATE || state == CALIBRATION_STATE)) {
             responseBadPacket(INVALID_COMMAND);

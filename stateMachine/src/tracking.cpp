@@ -50,6 +50,7 @@ void firstLoopTracking() {
     enterPidData();
     debugPrintf("Entered tracking\n");
     debugPrintf("Offset %d\n", adcGetOffset());
+    highVoltageEnable(true);
 }
 
 void leaveTracking() {
@@ -60,6 +61,7 @@ void leaveTracking() {
     totalPowerReceivedBeforeIncoherent = 0;
     totalPowerReceived = 0;
     samplesProcessed = 0;
+    highVoltageEnable(false);
     interrupts();
 }
 
@@ -94,16 +96,19 @@ void pidProcess(const volatile adcSample& s) {
             double theta = 0;
             incoherentDisplacement(incoherentOutput, xpos, ypos, theta);
             pidCalculate(xpos, ypos, out);
+            if (samplesProcessed % (4000 / 10) == 0) {
+                sendMirrorOutput(out);
+            }
         } else if (state == CALIBRATION_STATE) {
-            if (samplesProcessed % (4000 / 100) == 0) {
-                out = *getNextMirrorOutput();
+            if (samplesProcessed % (4000 / mirrorFrequency) == 0) {
+                mirrorOutput out;
+                getNextMirrorOutput(out);
+                sendMirrorOutput(out);
             }
         } else {
             debugPrintf("Warning: state %d changingState %d\n", state, changingState);
         }
-        if (samplesProcessed % (4000 / 10) == 0) {
-            sendMirrorOutput(out);
-        }
+
     } else {
         debugPrintf("Warning: changing states\n");
     }

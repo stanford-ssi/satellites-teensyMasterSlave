@@ -93,7 +93,7 @@ analogWrite(LASER_EN_PIN,0);
   // Start the LASER PWM timer
   // 50% duty cycle at desired frequency
   analogWriteFrequency(LASER_EN_PIN, 1000);
-  analogWrite (LASER_EN_PIN,0);
+  analogWrite (LASER_EN_PIN,128);
 }
 void loop() {
   delay(1); // running at ~1kHz, should be a timer and interrupt but I am lazy
