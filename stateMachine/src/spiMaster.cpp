@@ -7,6 +7,7 @@
 #define sizeofAdcSample (sizeof(adcSample) / 2)
 #define ENABLE_MINUS_7_PIN 52
 #define ENABLE_7_PIN 53
+// IMPORTANT: CS0 is really 35 and CS3 is really 2.  The code is switched this way because it prevents spikes on the adcs
 #define ADC_CS0 2
 #define ADC_CS1 37
 #define ADC_CS2 7

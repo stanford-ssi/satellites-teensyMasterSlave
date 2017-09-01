@@ -1,6 +1,7 @@
 #include <main.h>
 
 extern uint32_t backOfBuffer;
+uint64_t test = 0xbeefab10;
 
 void swapUint(uint32_t &axis) {
     uint16_t temp = axis % (1 << 16);
@@ -66,6 +67,7 @@ void testInteger() {
 void runTests() {
     if (DEBUG) {
         debugPrintf("Errors at %p\n", &errors);
+        debugPrintf("Test at %p\n", &test);
         testSwap();
         testDma();
         //testBreakingLoop();

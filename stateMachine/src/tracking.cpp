@@ -101,7 +101,7 @@ void pidProcess(const volatile adcSample& s) {
         } else {
             debugPrintf("Warning: state %d changingState %d\n", state, changingState);
         }
-        if (samplesProcessed % (4000 / 100) == 0) {
+        if (samplesProcessed % (4000 / 10) == 0) {
             sendMirrorOutput(out);
         }
     } else {

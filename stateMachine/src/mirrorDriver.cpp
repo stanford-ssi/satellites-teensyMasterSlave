@@ -12,6 +12,10 @@
 uint32_t calibrationBufferLength = MAX_BUFFER_LEN;
 uint32_t currentCalibrationOutputIndex = 0;
 static mirrorOutput calibrationMirrorOutputs[MAX_BUFFER_LEN]; // buffer to hold decimal value sine wave
+static mirrorOutput calibrationMirrorOutputs2[5];
+static mirrorOutput calibrationMirrorOutputs3[1];
+
+
 static uint8_t DAC_write_word[3]; // DAC input register is 24 bits, SPI writes 8 bits at a time. Need to queue up 3 bytes (24 bits) to send every time you write to it
 // Teensy 3.2 pinouts
 const int slaveSelectPin = 43;
@@ -83,6 +87,18 @@ void mirrorDriverSetup() {
         calibrationMirrorOutputs[i].x = 32765. * sin(i*phase);
         calibrationMirrorOutputs[i].y = 32765. * cos(i*phase);
     }
+    calibrationMirrorOutputs2[0].x = 0;
+    calibrationMirrorOutputs2[0].y = 0;
+    calibrationMirrorOutputs2[1].x = 32765;
+    calibrationMirrorOutputs2[1].y = 32765;
+    calibrationMirrorOutputs2[2].x = -32765;
+    calibrationMirrorOutputs2[2].y = -32765;
+    calibrationMirrorOutputs2[3].x = 32765;
+    calibrationMirrorOutputs2[3].y = -32765;
+    calibrationMirrorOutputs2[4].x = -32765;
+    calibrationMirrorOutputs2[4].y = 32765;
+    calibrationMirrorOutputs3[0].x = 0;
+    calibrationMirrorOutputs3[0].y = 0;
     // Start the LASER PWM timer
     // 50% duty cycle at desired frequency
     analogWriteFrequency(LASER_EN_PIN, 1000);
