@@ -114,7 +114,7 @@ void mirrorDriverSetup() {
 void sendMirrorOutput(const mirrorOutput& out) {
     volatile uint32_t timeNow = millis();
     // millis() subject to overflow after 40 days, causes 1 assertion error
-    assert(timeNow - timeOfLastMirrorOutput >= 9); // No more than 100Hz
+    assert(timeNow - timeOfLastMirrorOutput >= 1); // No more than 500ish Hz
     timeOfLastMirrorOutput = timeNow;
     int16_t x = out.x; // We truncate x to 16-bit before multiply by 0.9
     x *= 0.9; // Important: never max out the mirror
