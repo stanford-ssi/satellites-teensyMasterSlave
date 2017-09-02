@@ -253,7 +253,7 @@ void response_status() {
 
 void response_probe() {
     uint16_t probe_size = packet[2];
-    uint32_t address = (packet[3] << 16) + packet[3];
+    uint32_t address = (packet[3] << 16) + packet[4];
     assert(!transmitting);
     uint64_t toReturn = 0;
     if (probe_size == 8) {
@@ -269,7 +269,6 @@ void response_probe() {
         responseBadPacket(INVALID_COMMAND);
         return;
     }
-    debugPrintf("toR %x %x %x\n", *((uint32_t *) address), toReturn % (1u<<31), toReturn >> 32);
     int bodySize = 4;
     write64(outBody, 0, toReturn);
     setupTransmission(RESPONSE_OK, bodySize);
