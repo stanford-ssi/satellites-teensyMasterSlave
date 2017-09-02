@@ -70,7 +70,10 @@ typedef struct adcSample {
     }
 } adcSample;
 
+#define ADC_OVERSAMPLING_RATE 256
 #define ADC_READ_BUFFER_SIZE 2500 // in adcSamples
+#define sample_clock 29 // gpio1
+#define sync_pin 3 // gpio0
 
 extern volatile unsigned int numSamplesRead;
 
@@ -79,4 +82,5 @@ volatile adcSample* adcGetSample();
 bool adcSampleReady();
 void spiMasterSetup();
 void adcStartSampling();
+void resetAdc();
 #endif // SPI_MASTER_H

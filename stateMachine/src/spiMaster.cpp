@@ -11,11 +11,11 @@
 #define ADC_CS1 37
 #define ADC_CS2 7
 #define ADC_CS3 2
-#define trigger_pin 26 // test point 17
 #define sample_clock 29 // gpio1
 #define sync_pin 3 // gpio0
-#define ADC_OVERSAMPLING_RATE 64
-const unsigned int control_word = 0b1000110000010000;
+#define ADC_OVERSAMPLING_RATE 256
+#define trigger_pin 26 // test point 17
+uint16_t control_word = 0b1000100000010000;
 
 //void mirrorOutputSetup();
 void adcReceiveSetup();
@@ -62,24 +62,6 @@ volatile adcSample* adcGetSample() {
     volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
     toReturn->correctFormat();
     backOfBuffer = (backOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
-    //toReturn->axis4 = 0;
-/*
-    if(!assert(toReturn->axis1 < 0)) {
-        debugPrintf("i %d toReturn %d\n", 1, toReturn->axis1);
-    }
-    if(!assert(toReturn->axis2 < 0)) {
-        debugPrintf("i %d toReturn %d\n", 2, toReturn->axis2);
-    }
-    if(!assert(toReturn->axis3 < 0)) {
-        debugPrintf("i %d toReturn %d\n", 3, toReturn->axis3);
-    }
-    if(!assert(toReturn->axis4 < 0)) {
-        fail__++;
-        debugPrintf("i %d toReturn %d succ %d fail %d\n", 4, toReturn->axis4, succ__, fail__);
-    } else {
-        succ__++;
-    }*/
-
     return toReturn;
 }
 
@@ -92,7 +74,6 @@ void spiMasterSetup() {
     debugPrintf("Setting up dma, offset is %d\n", adcGetOffset());
     adcReceiveSetup();
     debugPrintf("Dma setup complete, offset is %d. Setting up ftm timers.\n", adcGetOffset());
-    init_FTM0();
     debugPrintf("FTM timer setup complete.\n");
 }
 
@@ -217,22 +198,39 @@ void setupAdcChipSelects() {
     digitalWriteFast(ADC_CS3, HIGH);
 }
 
+void resetAdc() {
+    analogWrite(sample_clock, 0);
+    digitalWrite(sync_pin, LOW);
+    delayMicroseconds(10);
+    digitalWrite(sync_pin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(sync_pin, LOW);
+    digitalWriteFast(ADC_CS0, LOW);
+    digitalWriteFast(ADC_CS1, LOW);
+    digitalWriteFast(ADC_CS2, LOW);
+    digitalWrite(ADC_CS3, LOW);
+    delayMicroseconds(5);
+    uint16_t result = SPI.transfer16(control_word);
+    (void) result;
+    debugPrintf("Sent control word, received %x\n", result);
+    delayMicroseconds(5);
+    digitalWriteFast(ADC_CS0, HIGH);
+    digitalWriteFast(ADC_CS1, HIGH);
+    digitalWriteFast(ADC_CS2, HIGH);
+    digitalWriteFast(ADC_CS3, HIGH);
+    analogWrite(sample_clock, 5);
+}
+
 void setupAdc() {
     setupHighVoltage();
     setupAdcChipSelects();
     pinMode(sync_pin, OUTPUT);
-    digitalWrite(sync_pin, LOW);
-    digitalWrite(sync_pin, HIGH);
-    digitalWrite(sync_pin, LOW);
-    const uint8_t chipSelects[4] = {ADC_CS0, ADC_CS1, ADC_CS2, ADC_CS3};
-    for (int i = 0; i < 4; i++) {
-        delay(1);
-        digitalWrite(chipSelects[i], LOW);
-        uint16_t result = SPI.transfer16(control_word);
-        (void) result;
-        debugPrintf("Sent control word adc %d, received %x\n", i, result);
-        digitalWrite(chipSelects[i], HIGH);
-    }
+    digitalWriteFast(sync_pin, LOW);
+    delayMicroseconds(1);
+    init_FTM0();
+    // Important: for some reason the adc needs to wind up before programming with control word
+    delayMicroseconds(10000);
+    resetAdc();
 
     // Clear pop register - we don't want to fire the spi interrupt
     (void) SPI0_POPR; (void) SPI0_POPR;
@@ -252,8 +250,8 @@ void adcReceiveSetup() {
     adcSamplesRead[ADC_READ_BUFFER_SIZE].axis3 = 0xdeadbeef;
     adcSamplesRead[ADC_READ_BUFFER_SIZE].axis4 = 0xdeadbeef;
     SPI.begin();
-    SPI.beginTransaction(adcSpiSettings);
     setupAdc();
+    SPI.beginTransaction(adcSpiSettings);
     SPI0_RSER = 0x00020000; // Transmit FIFO Fill Request Enable -- Interrupt on transmit complete
     pinMode(trigger_pin, INPUT_PULLUP);
     attachInterrupt(trigger_pin, readAdcEdgeIsr, FALLING);
