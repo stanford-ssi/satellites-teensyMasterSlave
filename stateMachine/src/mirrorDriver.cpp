@@ -16,7 +16,7 @@ volatile float calibrationAmplitudeMultiplier = 1;
 uint32_t calibrationBufferLength = SINE_BUFFER_LENGTH;
 uint32_t currentCalibrationOutputIndex = 0;
 static mirrorOutput sineWave[SINE_BUFFER_LENGTH];
-static mirrorOutput corners[5];
+static mirrorOutput corners[7];
 static mirrorOutput zero[1];
 static mirrorOutput* calibrationMirrorOutputs = sineWave;
 
@@ -94,14 +94,18 @@ void mirrorDriverSetup() {
     debugPrintln("Filling in other buffers");
     corners[0].x = 0;
     corners[0].y = 0;
-    corners[1].x = 32765;
-    corners[1].y = 32765;
-    corners[2].x = -32765;
-    corners[2].y = -32765;
+    corners[1].x = 0;
+    corners[1].y = 0;
+    corners[2].x = 0;
+    corners[2].y = 0;
     corners[3].x = 32765;
-    corners[3].y = -32765;
+    corners[3].y = 32765;
     corners[4].x = -32765;
-    corners[4].y = 32765;
+    corners[4].y = -32765;
+    corners[5].x = 32765;
+    corners[5].y = -32765;
+    corners[6].x = -32765;
+    corners[6].y = 32765;
     zero[0].x = 0;
     zero[0].y = 0;
     // Start the LASER PWM timer
@@ -223,7 +227,7 @@ void selectMirrorBuffer(uint16_t selection, uint16_t frequency, uint16_t amplitu
     } else if (bufferSelect == 1) {
         calibrationMirrorOutputs = corners;
         calibrationBufferLength = sizeof(corners) / sizeof(mirrorOutput);
-        assert(calibrationBufferLength == 5);
+        assert(calibrationBufferLength == 7);
     } else if (bufferSelect == 2) {
         calibrationMirrorOutputs = zero;
         calibrationBufferLength = sizeof(zero) / sizeof(mirrorOutput);

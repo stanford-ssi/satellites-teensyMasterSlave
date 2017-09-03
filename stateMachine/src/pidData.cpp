@@ -78,7 +78,7 @@ void pidDataSetup() {
         pidDumpPacket.abcdHeader[i] = 0xabcd;
         pidDumpPacket.abcdFooter[i] = 0xabcd;
     }
-    assert ((uint32_t) pidSamples[PID_BUFFER_SIZE].sample.axis1 == 0xbeefbeef);
+    assert ((uint32_t) pidSamples[PID_BUFFER_SIZE].sample.c == 0xbeefbeef);
 }
 
 /*void restartSamplingIfApplicable() {
@@ -150,8 +150,8 @@ void recordPid(const volatile pidSample& s) {
 
 // Runs in main loop
 void taskPidData() {
-    if (!assert ((uint32_t) pidSamples[PID_BUFFER_SIZE].sample.axis1 == 0xbeefbeef)) {
-        debugPrintf("End of buf is %x\n", pidSamples[PID_BUFFER_SIZE].sample.axis1);
+    if (!assert ((uint32_t) pidSamples[PID_BUFFER_SIZE].sample.c == 0xbeefbeef)) {
+        debugPrintf("End of buf is %x\n", pidSamples[PID_BUFFER_SIZE].sample.c);
     }
     assert (pidDataPointer <= PID_BUFFER_SIZE);
     assert (!(sampling && (pidDataPointer >= PID_BUFFER_SIZE)));

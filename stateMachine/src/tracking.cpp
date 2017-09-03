@@ -68,14 +68,14 @@ void leaveTracking() {
 void logPidSample(const volatile pidSample& s) {
     lastAdcRead.copy(s.sample);
     lastPidOut.copy(s.out);
-    totalPowerReceivedBeforeIncoherent += s.sample.axis1;
-    totalPowerReceivedBeforeIncoherent += s.sample.axis2;
-    totalPowerReceivedBeforeIncoherent += s.sample.axis3;
-    totalPowerReceivedBeforeIncoherent += s.sample.axis4;
-    totalPowerReceived += s.incoherentOutput.axis1;
-    totalPowerReceived += s.incoherentOutput.axis2;
-    totalPowerReceived += s.incoherentOutput.axis3;
-    totalPowerReceived += s.incoherentOutput.axis4;
+    totalPowerReceivedBeforeIncoherent += s.sample.a;
+    totalPowerReceivedBeforeIncoherent += s.sample.b;
+    totalPowerReceivedBeforeIncoherent += s.sample.c;
+    totalPowerReceivedBeforeIncoherent += s.sample.d;
+    totalPowerReceived += s.incoherentOutput.a;
+    totalPowerReceived += s.incoherentOutput.b;
+    totalPowerReceived += s.incoherentOutput.c;
+    totalPowerReceived += s.incoherentOutput.d;
     recordPid(s);
     samplesProcessed++;
 }
@@ -144,10 +144,10 @@ void trackingHeartbeat() {
     lastAdcRead.toString(lastAdcReadBuf, 60);
     lastPidOut.toString(lastPidOutBuf, 60);
     debugPrintf("Last pid output %s, last adc read %s, total power in %u (percent of max), after incoherent %u,  samples processed %u\n", lastPidOutBuf, lastAdcReadBuf, (uint32_t) (totalPowerReceivedBeforeIncoherent / maxPower / 4), (uint32_t) (totalPowerReceived / maxPower / 4), samplesProcessed);
-    int a = lastAdcRead.axis3/4;
-    int b = lastAdcRead.axis4/4;
-    int c = lastAdcRead.axis1/4;
-    int d = lastAdcRead.axis2/4;
+    int a = lastAdcRead.a/4;
+    int b = lastAdcRead.b/4;
+    int c = lastAdcRead.c/4;
+    int d = lastAdcRead.d/4;
     (void) (a + b + c + d);
     debugPrintf("X %d Y %d\n", (a + d - b - c), a + b - c - d);
 }

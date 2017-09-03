@@ -16,6 +16,4 @@ extern volatile uint64_t numLockedOn;
 extern volatile uint64_t totalPowerReceivedBeforeIncoherent;
 extern volatile uint64_t totalPowerReceived;
 extern volatile unsigned samplesProcessed;
-extern volatile uint16_t bufferSelect;
-extern volatile uint16_t numMirrorBuffer;
 #endif

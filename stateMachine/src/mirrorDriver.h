@@ -38,6 +38,7 @@ typedef struct mirrorOutput {
     }
 } mirrorOutput;
 
+extern volatile uint16_t numMirrorBuffer;
 void mirrorDriverSetup();
 void getNextMirrorOutput(mirrorOutput& out);
 void sendMirrorOutput(const mirrorOutput& out);

@@ -3,13 +3,15 @@
 #include "mirrorDriver.h"
 #include "main.h"
 
+// Quad cell axes: BA
+//                 CD
 typedef struct adcSample {
-    int32_t axis1;
-    int32_t axis2;
-    int32_t axis3;
-    int32_t axis4;
+    int32_t a;
+    int32_t b;
+    int32_t c;
+    int32_t d;
     adcSample() {
-        axis1 = axis2 = axis3 = axis4 = 0;
+        a = b = c = d = 0;
     }
 
     void swap(volatile uint32_t &axis) volatile {
@@ -17,8 +19,10 @@ typedef struct adcSample {
         axis = (axis / (1 << 16)) + (temp << 16);
     }
 
-    // Multiply by -1 works for all ints except min_int
+    // Adc values are inverted -- reverse it back here so that
+    // negative is low and positive is high
     void negate(volatile int32_t &axis) volatile {
+        // Multiply by -1 works for all ints except min_int
         if (axis == (int32_t) (1U << 31)) { // min int
             axis += 1;
         }
@@ -29,21 +33,30 @@ typedef struct adcSample {
     // in the wrong order.  This problem appears because our spiMaster
     // makes consecutive 16-bit writes
     void correctFormat() volatile {
-        swap((uint32_t &) axis1);
-        swap((uint32_t &) axis2);
-        swap((uint32_t &) axis3);
-        swap((uint32_t &) axis4);
-        negate(axis1);
-        negate(axis2);
-        negate(axis3);
-        negate(axis4);
+        // Axes are read in order of chip select; we map chip selects onto lettered axes
+        uint32_t CS0 = a;
+        uint32_t CS1 = b;
+        uint32_t CS2 = c;
+        uint32_t CS3 = d;
+        a = CS2;
+        b = CS3;
+        c = CS0;
+        d = CS1;
+        swap((uint32_t &) a);
+        swap((uint32_t &) b);
+        swap((uint32_t &) c);
+        swap((uint32_t &) d);
+        negate(a);
+        negate(b);
+        negate(c);
+        negate(d);
     }
 
     void copy(const volatile adcSample& s) {
-        this->axis1 = s.axis1;
-        this->axis2 = s.axis2;
-        this->axis3 = s.axis3;
-        this->axis4 = s.axis4;
+        this->a = s.a;
+        this->b = s.b;
+        this->c = s.c;
+        this->d = s.d;
     }
     adcSample(const volatile adcSample& s) {
         copy(s);
@@ -56,7 +69,7 @@ typedef struct adcSample {
         return (int) (((measurement / 1.6 / (1 << 16) / (1 << 16) * 2 * 5 + 2.5) * 20.0));
     }
     void toString(char* buf, int len) {
-        snprintf(buf, len - 1, "axis1 %d (%d volt), axis2 %d, axis3 %d, axis4 %d", (int) axis1, (int) toVoltage(axis1), (int) axis2, (int) axis3, (int) axis4);
+        snprintf(buf, len - 1, "axis1 %d (%d volt), axis2 %d, axis3 %d, axis4 %d", (int) a, (int) toVoltage(a), (int) b, (int) c, (int) d);
     }
 
     // Sum of memory, by uint16s
@@ -70,10 +83,7 @@ typedef struct adcSample {
     }
 } adcSample;
 
-#define ADC_OVERSAMPLING_RATE 256
 #define ADC_READ_BUFFER_SIZE 2500 // in adcSamples
-#define sample_clock 29 // gpio1
-#define sync_pin 3 // gpio0
 
 extern volatile unsigned int numSamplesRead;
 

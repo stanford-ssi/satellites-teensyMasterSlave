@@ -46,16 +46,18 @@ x = np.arange(n) / 4000.
     # plt.legend()
     # plt.show()
 print("ADC")
-# for i in range(12):
-    # print(i, np.count_nonzero(csv_string[:, i]))
-a = csv_string[:, 2]
-b = csv_string[:, 3]
-c = csv_string[:, 0]
-d = csv_string[:, 1]
-plt.plot(csv_string[:, 0], label='0')
-plt.plot(csv_string[:, 1], label='1')
-plt.plot(csv_string[:, 2], label='2')
-plt.plot(csv_string[:, 3], label='3')
+for i in range(12):
+    print(i, np.count_nonzero(csv_string[:, i]))
+a = csv_string[:, 0]
+b = csv_string[:, 1]
+c = csv_string[:, 2]
+d = csv_string[:, 3]
+# plt.plot(a + d - b - c, label='x')
+# plt.plot(a + b - c - d, label='y')
+plt.plot(csv_string[:, 0], label='a')
+plt.plot(csv_string[:, 1], label='b')
+plt.plot(csv_string[:, 2], label='c')
+plt.plot(csv_string[:, 3], label='d')
 plt.legend()
 plt.show()
 print("Incoherent")

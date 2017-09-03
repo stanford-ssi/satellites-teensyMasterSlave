@@ -25,7 +25,7 @@ void incoherentSetup() {
 
 void incoherentProcess(const volatile adcSample& s, adcSample& output) {
   //Retrieve latest sample values;
-  int32_t latest[numCells] = {(int32_t) s.axis1, (int32_t) s.axis2, (int32_t) s.axis3, (int32_t) s.axis4};
+  int32_t latest[numCells] = {(int32_t) s.a, (int32_t) s.b, (int32_t) s.c, (int32_t) s.d};
 
   //Ensures the sample does not exceed the buffer index
   sample = sample % samples_per_cell;
@@ -48,19 +48,19 @@ void incoherentProcess(const volatile adcSample& s, adcSample& output) {
 
   //Calculates and sets the four axis incoherent values
   for(int i = 0; i < numCells; i++){
-    output.axis1 = sqrt(sq(rolling_detectors[0]/samples_per_cell) + sq(rolling_detectors[1]/samples_per_cell));
-    output.axis2 = sqrt(sq(rolling_detectors[2]/samples_per_cell) + sq(rolling_detectors[3]/samples_per_cell));
-    output.axis3 = sqrt(sq(rolling_detectors[4]/samples_per_cell) + sq(rolling_detectors[5]/samples_per_cell));
-    output.axis4 = sqrt(sq(rolling_detectors[6]/samples_per_cell) + sq(rolling_detectors[7]/samples_per_cell));
+    output.a = sqrt(sq(rolling_detectors[0]/samples_per_cell) + sq(rolling_detectors[1]/samples_per_cell));
+    output.b = sqrt(sq(rolling_detectors[2]/samples_per_cell) + sq(rolling_detectors[3]/samples_per_cell));
+    output.c = sqrt(sq(rolling_detectors[4]/samples_per_cell) + sq(rolling_detectors[5]/samples_per_cell));
+    output.d = sqrt(sq(rolling_detectors[6]/samples_per_cell) + sq(rolling_detectors[7]/samples_per_cell));
   }
 }
 
 void incoherentDisplacement(const adcSample& incoherentOutput, double& xpos, double& ypos, double theta){
   //Assuming axis number maps to quadrant number
-  double quadA = incoherentOutput.axis3;
-  double quadB = incoherentOutput.axis4;
-  double quadC = incoherentOutput.axis1;
-  double quadD = incoherentOutput.axis2;
+  double quadA = incoherentOutput.a;
+  double quadB = incoherentOutput.b;
+  double quadC = incoherentOutput.c;
+  double quadD = incoherentOutput.d;
   double xposIntermediate = ((quadA + quadD) - (quadB + quadC))/(quadA + quadB + quadC + quadD);
   double yposIntermediate = ((quadA + quadB) - (quadC + quadD))/(quadA + quadB + quadC + quadD);
   xpos = cos(theta) * xposIntermediate - sin(theta) * yposIntermediate;

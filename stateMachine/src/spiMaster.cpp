@@ -13,9 +13,9 @@
 #define ADC_CS3 2
 #define sample_clock 29 // gpio1
 #define sync_pin 3 // gpio0
-#define ADC_OVERSAMPLING_RATE 256
+#define ADC_OVERSAMPLING_RATE 64
 #define trigger_pin 26 // test point 17
-uint16_t control_word = 0b1000100000010000;
+uint16_t control_word = 0b1000011000010000;
 
 //void mirrorOutputSetup();
 void adcReceiveSetup();
@@ -245,10 +245,10 @@ void init_FTM0(){
 
 void adcReceiveSetup() {
     debugPrintln("Starting.");
-    adcSamplesRead[ADC_READ_BUFFER_SIZE].axis1 = 0xdeadbeef;
-    adcSamplesRead[ADC_READ_BUFFER_SIZE].axis2 = 0xdeadbeef;
-    adcSamplesRead[ADC_READ_BUFFER_SIZE].axis3 = 0xdeadbeef;
-    adcSamplesRead[ADC_READ_BUFFER_SIZE].axis4 = 0xdeadbeef;
+    adcSamplesRead[ADC_READ_BUFFER_SIZE].a = 0xdeadbeef;
+    adcSamplesRead[ADC_READ_BUFFER_SIZE].b = 0xdeadbeef;
+    adcSamplesRead[ADC_READ_BUFFER_SIZE].c = 0xdeadbeef;
+    adcSamplesRead[ADC_READ_BUFFER_SIZE].d = 0xdeadbeef;
     SPI.begin();
     setupAdc();
     SPI.beginTransaction(adcSpiSettings);
