@@ -13,9 +13,16 @@
 #define ADC_CS3 2
 #define sample_clock 29 // gpio1
 #define sync_pin 3 // gpio0
-#define ADC_OVERSAMPLING_RATE 64
+#define ADC_OVERSAMPLING_RATE 256
 #define trigger_pin 26 // test point 17
-uint16_t control_word = 0b1000011000010000;
+//uint16_t control_word = 0b1000011000010000; // 64 oversampling
+//uint16_t control_word = 0b1000011100010000; // 128 oversampling
+uint16_t control_word = 0b1000100000010000;
+
+// This counter goes from 0 to 4000 to count the amount of time it takes to
+// get 4000 samples
+unsigned int time_of_last_reset = 0;
+unsigned int samples_taken_since_reset = 0;
 
 //void mirrorOutputSetup();
 void adcReceiveSetup();
@@ -137,6 +144,7 @@ void spi0_isr(void) {
  */
 void beginAdcRead(void) {
     noInterrupts();
+    samples_taken_since_reset++;
     numStartCalls++;
     long timeNow = micros();
 
@@ -152,6 +160,12 @@ void beginAdcRead(void) {
         }
     }
     lastSampleTime = timeNow;
+
+    if (samples_taken_since_reset == 20000) {
+        debugPrintf("Time for 20000 samples %d\n", timeNow - time_of_last_reset);
+        time_of_last_reset = timeNow;
+        samples_taken_since_reset = 0;
+    }
 
     if (adcIsrIndex < (sizeof(adcSample) / (16 / 8)) && adcIsrIndex != 0) {
         debugPrintf("Yikes -- we're reading adc already\n");
@@ -219,6 +233,10 @@ void resetAdc() {
     digitalWriteFast(ADC_CS2, HIGH);
     digitalWriteFast(ADC_CS3, HIGH);
     analogWrite(sample_clock, 5);
+    noInterrupts();
+    time_of_last_reset = micros();
+    samples_taken_since_reset = 0;
+    interrupts();
 }
 
 void setupAdc() {
