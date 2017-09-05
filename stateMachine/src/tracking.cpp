@@ -6,6 +6,7 @@
 #include <pid.h>
 #include <mirrorDriver.h>
 #include <states.h>
+#include "modules.h"
 
 /* *** Private variables *** */
 
@@ -38,7 +39,7 @@ void firstLoopTracking() {
     lockedOn = false;
     totalPowerReceivedBeforeIncoherent = 0;
     totalPowerReceived = 0;
-    incoherentSetup();
+    incoherentDetector.incoherentSetup();
     interrupts();
     pidSetup();
 
@@ -82,7 +83,7 @@ void logPidSample(const volatile pidSample& s) {
 
 void pidProcess(const volatile adcSample& s) {
     adcSample incoherentOutput;
-    incoherentProcess(s, incoherentOutput);
+    incoherentDetector.incoherentProcess(s, incoherentOutput);
     lockedOn = false;
     if (lockedOn) {
         numLockedOn++;
@@ -94,7 +95,7 @@ void pidProcess(const volatile adcSample& s) {
             double xpos = 0xbeefabcd;
             double ypos = 0xbeefdcba;
             double theta = 0;
-            incoherentDisplacement(incoherentOutput, xpos, ypos, theta);
+            incoherentDetector.incoherentDisplacement(incoherentOutput, xpos, ypos, theta);
             pidCalculate(xpos, ypos, out);
             if (samplesProcessed % (4000 / 10) == 0) {
                 mirrorDriver.sendMirrorOutput(out);

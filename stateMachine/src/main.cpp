@@ -2,6 +2,7 @@
 #include "main.h"
 #include "states.h"
 #include "spiMaster.h"
+#include "tracking.h"
 
 const volatile bool SPI2_LOOPBACK = false;
 

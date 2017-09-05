@@ -2,7 +2,7 @@
 #define PID_H
 #include <main.h>
 #include <packet.h>
-#include <spimaster.h>
+#include <spiMaster.h>
 
 typedef struct pidSample {
     adcSample sample;

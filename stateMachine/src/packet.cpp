@@ -3,6 +3,7 @@
 #include "states.h"
 #include "pidData.h"
 #include <DMAChannel.h>
+#include "tracking.h"
 
 T3SPI SPI_SLAVE;
 

@@ -1,4 +1,5 @@
 #include "main.h"
+#include "mirrorDriver.h"
 
 double _dt;
 double _max;
