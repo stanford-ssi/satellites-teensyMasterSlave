@@ -1,6 +1,5 @@
 #include <spiMaster.h>
 
-
 const int samples_per_cell = 32;
 const int numCells = 4;
 const int envelope[4] = {0,1,0,-1};

@@ -182,12 +182,12 @@ void create_response() {
         uint16_t bufferSelect = packet[2];
         uint16_t frequency = packet[3];
         uint16_t amplitude = packet[4];
-        if (bufferSelect >= numMirrorBuffer || frequency == 0 || frequency > 1000 || amplitude > 1000) {
+        if (bufferSelect >= mirrorDriver.numMirrorBuffers || frequency == 0 || frequency > 1000 || amplitude > 1000) {
             debugPrintf("bufferSelect %d frequency %d\n", bufferSelect, frequency);
             responseBadPacket(INVALID_COMMAND);
         } else {
             previousState = state;
-            selectMirrorBuffer(bufferSelect, frequency, amplitude);
+            mirrorDriver.selectMirrorBuffer(bufferSelect, frequency, amplitude);
             changingState = true;
             state = CALIBRATION_STATE;
             response_status();
@@ -271,7 +271,7 @@ void response_probe() {
     }
     int bodySize = 4;
     write64(outBody, 0, toReturn);
-    setupTransmission(RESPONSE_OK, bodySize);
+    setupTransmission(RESPONSE_PROBE, bodySize);
 }
 
 void responsePidDump() {

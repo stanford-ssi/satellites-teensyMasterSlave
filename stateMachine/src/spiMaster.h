@@ -1,6 +1,5 @@
 #ifndef SPI_MASTER_H
 #define SPI_MASTER_H
-#include "mirrorDriver.h"
 #include "main.h"
 
 // Quad cell axes: BA

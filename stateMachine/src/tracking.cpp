@@ -50,7 +50,7 @@ void firstLoopTracking() {
     enterPidData();
     debugPrintf("Entered tracking\n");
     debugPrintf("Offset %d\n", adcGetOffset());
-    highVoltageEnable(true);
+    mirrorDriver.highVoltageEnable(true);
 }
 
 void leaveTracking() {
@@ -61,7 +61,7 @@ void leaveTracking() {
     totalPowerReceivedBeforeIncoherent = 0;
     totalPowerReceived = 0;
     samplesProcessed = 0;
-    highVoltageEnable(false);
+    mirrorDriver.highVoltageEnable(false);
     interrupts();
 }
 
@@ -97,13 +97,13 @@ void pidProcess(const volatile adcSample& s) {
             incoherentDisplacement(incoherentOutput, xpos, ypos, theta);
             pidCalculate(xpos, ypos, out);
             if (samplesProcessed % (4000 / 10) == 0) {
-                sendMirrorOutput(out);
+                mirrorDriver.sendMirrorOutput(out);
             }
         } else if (state == CALIBRATION_STATE) {
-            if (samplesProcessed % (4000 / mirrorFrequency) == 0) {
+            if (samplesProcessed % (4000 / mirrorDriver.getMirrorFrequency()) == 0) {
                 mirrorOutput out;
-                getNextMirrorOutput(out);
-                sendMirrorOutput(out);
+                mirrorDriver.getNextMirrorOutput(out);
+                mirrorDriver.sendMirrorOutput(out);
             }
         } else {
             debugPrintf("Warning: state %d changingState %d\n", state, changingState);

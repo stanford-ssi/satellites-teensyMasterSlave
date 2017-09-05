@@ -1,6 +1,7 @@
 #ifndef PACKET_H
 #define PACKET_H
 #include <t3spi.h>
+#include <modules.h>
 
 //Initialize T3SPI class as SPI_SLAVE
 extern T3SPI SPI_SLAVE;
@@ -49,7 +50,8 @@ extern volatile unsigned int packetsReceived;
 #define RESPONSE_BAD_PACKET 1
 #define RESPONSE_PID_DATA 3
 #define RESPONSE_ADCS_REQUEST 4
-#define MAX_HEADER 4
+#define RESPONSE_PROBE 5
+#define MAX_HEADER 5
 
 // Error numbers
 #define INVALID_BORDER 0

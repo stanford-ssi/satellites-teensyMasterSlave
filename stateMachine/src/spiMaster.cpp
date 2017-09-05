@@ -2,6 +2,7 @@
 #include "main.h"
 #include <array>
 #include "mirrorDriver.h"
+#include "modules.h"
 
 /* *** Private Constants *** */
 #define sizeofAdcSample (sizeof(adcSample) / 2)
@@ -77,7 +78,7 @@ void adcStartSampling() { // Clears out old samples so the first sample you read
 }
 
 void spiMasterSetup() {
-    mirrorDriverSetup();
+    mirrorDriver.mirrorDriverSetup();
     debugPrintf("Setting up dma, offset is %d\n", adcGetOffset());
     adcReceiveSetup();
     debugPrintf("Dma setup complete, offset is %d. Setting up ftm timers.\n", adcGetOffset());
