@@ -1,66 +1,108 @@
 #ifndef PACKET_H
 #define PACKET_H
 #include <t3spi.h>
-#include <modules.h>
+#include "DMAChannel.h"
 
-//Initialize T3SPI class as SPI_SLAVE
-extern T3SPI SPI_SLAVE;
-extern volatile uint16_t transmissionSize;
-extern volatile bool transmitting;
-extern volatile unsigned int packetsReceived;
+class SpiSlave {
+public:
+    SpiSlave();
 
-#define SLAVE_CHIP_SELECT 31
-// Always have first word in packet be constant for alignment checking
-#define FIRST_WORD 0x1234
-// Always have last word in packet be constant for alignment checking
-#define LAST_WORD 0x4321
-// 0xabcd is more useful than 0 because it indicates payload is alive
-#define EMPTY_WORD 0xabcd
+    //Initialize T3SPI class as SPI_SLAVE
+    T3SPI SPI_SLAVE_T3;
+    volatile uint16_t transmissionSize = 0;
+    volatile bool transmitting = false;
+    // Very little effort is made to prevent these from overflowing
+    // They will only be used for basic telemetry
+    volatile unsigned int packetsReceived = 0;
+    volatile unsigned int wordsReceived = 0;
 
-#define PACKET_SIZE 10 // Fixed size incoming packet
-// Index of first word in packet body; word 0 is FIRST_WORD
-#define PACKET_BODY_BEGIN 1 // First word in body is command number
-// Exclusive; last two words are checksum and LAST_WORD
-#define PACKET_BODY_END (PACKET_SIZE - 2)
-#define BODY_LENGTH (PACKET_BODY_END - PACKET_BODY_BEGIN)
-#define PACKET_OVERHEAD (PACKET_SIZE - BODY_LENGTH)
+    volatile uint16_t SLAVE_CHIP_SELECT = 31;
+    // Always have first word in packet be constant for alignment checking
+    const uint16_t FIRST_WORD = 0x1234;
+    // Always have last word in packet be constant for alignment checking
+    const uint16_t LAST_WORD = 0x4321;
+    // 0xabcd is more useful than 0 because it indicates payload is alive
+    const uint16_t EMPTY_WORD = 0xabcd;
 
-#define ABCD_BUFFER_SIZE 2
-#define OUT_PACKET_BODY_BEGIN 15
-#define OUT_PACKET_BODY_END_SIZE 2
-#define OUT_PACKET_OVERHEAD (OUT_PACKET_BODY_END_SIZE + OUT_PACKET_BODY_BEGIN)
+    const uint16_t PACKET_SIZE = 10; // Fixed size incoming packet
+    // Index of first word in packet body; word 0 is FIRST_WORD
+    const uint16_t PACKET_BODY_BEGIN = 1; // First word in body is command number
+    // Exclusive; last two words are checksum and LAST_WORD
+    const uint16_t PACKET_BODY_END = (PACKET_SIZE - 2);
+    const uint16_t BODY_LENGTH = (PACKET_BODY_END - PACKET_BODY_BEGIN);
+    const uint16_t PACKET_OVERHEAD = (PACKET_SIZE - BODY_LENGTH);
 
-// Commands
-#define MIN_COMMAND 0
-#define COMMAND_ECHO 0
-#define COMMAND_STATUS 1
-#define COMMAND_IDLE 2
-#define COMMAND_SHUTDOWN 3
-#define COMMAND_IMU 4
-#define COMMAND_IMU_DUMP 5
-#define COMMAND_CALIBRATE 6
-#define COMMAND_POINT_TRACK 7
-#define COMMAND_REPORT_TRACKING 8
-#define COMMAND_PROBE_MEMORY 9
-#define MAX_COMMAND 9
+    const static uint16_t ABCD_BUFFER_SIZE = 2;
+    const static uint16_t OUT_PACKET_BODY_BEGIN = 15;
+    const static uint16_t OUT_PACKET_BODY_END_SIZE = 2;
+    const static uint16_t OUT_PACKET_OVERHEAD = (OUT_PACKET_BODY_END_SIZE + OUT_PACKET_BODY_BEGIN);
 
-// Response Headers
-#define MIN_HEADER 0
-#define RESPONSE_OK 0
-#define RESPONSE_BAD_PACKET 1
-#define RESPONSE_PID_DATA 3
-#define RESPONSE_ADCS_REQUEST 4
-#define RESPONSE_PROBE 5
-#define MAX_HEADER 5
+    // Commands
+    const uint16_t MIN_COMMAND = 0;
+    const uint16_t COMMAND_ECHO = 0;
+    const uint16_t COMMAND_STATUS = 1;
+    const uint16_t COMMAND_IDLE = 2;
+    const uint16_t COMMAND_SHUTDOWN = 3;
+    const uint16_t COMMAND_IMU = 4;
+    const uint16_t COMMAND_IMU_DUMP = 5;
+    const uint16_t COMMAND_CALIBRATE = 6;
+    const uint16_t COMMAND_POINT_TRACK = 7;
+    const uint16_t COMMAND_REPORT_TRACKING = 8;
+    const uint16_t COMMAND_PROBE_MEMORY = 9;
+    const uint16_t MAX_COMMAND = 9;
 
-// Error numbers
-#define INVALID_BORDER 0
-#define INVALID_CHECKSUM 1
-#define INTERNAL_ERROR 2
-#define INVALID_COMMAND 3
-#define DATA_NOT_READY 4
-#define STATE_NOT_READY 5
+    // Response Headers
+    const uint16_t MIN_HEADER = 0;
+    const uint16_t RESPONSE_OK = 0;
+    const uint16_t RESPONSE_BAD_PACKET = 1;
+    const uint16_t RESPONSE_PID_DATA = 3;
+    const uint16_t RESPONSE_ADCS_REQUEST = 4;
+    const uint16_t RESPONSE_PROBE = 5;
+    const uint16_t MAX_HEADER = 5;
 
-void packet_setup(void);
+    // Error numbers
+    const uint16_t INVALID_BORDER = 0;
+    const uint16_t INVALID_CHECKSUM = 1;
+    const uint16_t INTERNAL_ERROR = 2;
+    const uint16_t INVALID_COMMAND = 3;
+    const uint16_t DATA_NOT_READY = 4;
+    const uint16_t STATE_NOT_READY = 5;
+
+    void packet_setup(void);
+    void receivedPacket(void);
+    void clearBuffer(void);
+    void packetReceived(void);
+
+private:
+    DMAChannel dma_rx;
+    DMAChannel dma_tx;
+    uint32_t beef_only[11];
+    const static uint16_t buffer_size = 750;
+    uint32_t spi_tx_out[buffer_size];
+    uint16_t packet[buffer_size];
+
+    // Outgoing
+    volatile uint32_t *outData = spi_tx_out + ABCD_BUFFER_SIZE;
+    volatile uint32_t *outBody = outData + OUT_PACKET_BODY_BEGIN;
+    volatile uint32_t *currentlyTransmittingPacket = outData; // One doesn't always have to supply outData as the packet buffer
+
+    bool shouldClearSendBuffer = false;
+
+    // Local functions
+    void write32(volatile uint32_t* buffer, unsigned int index, uint32_t item);
+    void write64(volatile uint32_t* buffer, unsigned int index, uint64_t item);
+    void handlePacket();
+    void response_echo();
+    void response_status();
+    void response_probe();
+    void responseBadPacket(uint16_t flag);
+    void create_response();
+    void responsePidDump();
+    void setupTransmission(uint16_t header, unsigned int bodyLength);
+    void setupTransmissionWithBuffer(uint16_t header, unsigned int bodyLength, volatile uint32_t *packetBuffer);
+    void setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uint16_t bodyChecksum, volatile uint32_t *packetBuffer);
+    uint16_t getHeader(void);
+    void setup_dma_receive(void);
+};
 
 #endif

@@ -1,8 +1,9 @@
 #ifndef PID_H
 #define PID_H
-#include <main.h>
-#include <packet.h>
-#include <spiMaster.h>
+#include "mirrorDriver.h"
+#include "main.h"
+#include "packet.h"
+#include "spiMaster.h"
 
 typedef struct pidSample {
     adcSample sample;
@@ -61,16 +62,16 @@ void writeExpandedPidSampleWithChecksum(const pidSample* in, expandedPidSample* 
 #pragma pack()
 typedef struct pidDumpPacket_t {
     // This is uint32 instead of uint16 because DMA takes in 32-bit arguments but only uses the 16 least significant bits
-    uint32_t abcdHeader[ABCD_BUFFER_SIZE];
-    uint32_t header[OUT_PACKET_BODY_BEGIN];
+    uint32_t abcdHeader[SpiSlave::ABCD_BUFFER_SIZE];
+    uint32_t header[SpiSlave::OUT_PACKET_BODY_BEGIN];
     // Last computed pid values before sample 0 of body[]
     uint32_t p_x, i_x, d_x;
     uint32_t p_y, i_y, d_y;
     uint32_t last_x, last_y; // Last read x and y on the quad
     uint32_t set_x, set_y; // Last set values on the pid controller
     expandedPidSample body[PID_DATA_DUMP_SIZE];
-    uint32_t footer[OUT_PACKET_BODY_END_SIZE];
-    uint32_t abcdFooter[ABCD_BUFFER_SIZE + 10];
+    uint32_t footer[SpiSlave::OUT_PACKET_BODY_END_SIZE];
+    uint32_t abcdFooter[SpiSlave::ABCD_BUFFER_SIZE + 10];
 } pidDumpPacket_t;
 
 // Only variable visible should be packet related

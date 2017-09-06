@@ -3,6 +3,7 @@
 #include "states.h"
 #include "spiMaster.h"
 #include "tracking.h"
+#include "modules.h"
 
 const volatile bool SPI2_LOOPBACK = false;
 
@@ -42,7 +43,7 @@ void setup() {
   analogReadResolution(16);
   debugPrintf("Begin Spi2\n");
   debugPrintf("Setting up packet:\n");
-  packet_setup();
+  spiSlave.packet_setup();
   debugPrintf("Done.\n");
   debugPrintf("Setting up dma:\n");
   spiMasterSetup();
@@ -71,7 +72,7 @@ extern DMAChannel dma_tx;
 extern DMAChannel dma_tx2;
 void heartbeat() {
     debugPrintf("State %d,", state);
-    debugPrintf("transmitting %d, packetsReceived %d, ", transmitting, packetsReceived);
+    debugPrintf("transmitting %d, packetsReceived %d, ", spiSlave.transmitting, spiSlave.packetsReceived);
     debugPrintf("%d errors, bugs %d, last loop %d micros, max loop time %d micros", errors, bugs, lastLoopTime, maxLoopTime);
     maxLoopTime = 0;
 }

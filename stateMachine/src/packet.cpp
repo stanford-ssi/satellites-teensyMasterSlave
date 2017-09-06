@@ -4,45 +4,35 @@
 #include "pidData.h"
 #include <DMAChannel.h>
 #include "tracking.h"
+#include "modules.h"
 
-T3SPI SPI_SLAVE;
-
-// Very little effort is made to prevent these from overflowing
-// They will only be used for basic telemetry
-volatile unsigned int packetsReceived = 0;
-volatile unsigned int wordsReceived = 0;
-
-DMAChannel dma_rx;
-DMAChannel dma_tx;
-uint32_t beef_only[11];
-const uint16_t buffer_size = 750;
-uint16_t packet[buffer_size];
-uint32_t spi_tx_out[buffer_size];
-volatile bool transmitting = false;
-
-// Outgoing
-volatile uint32_t *outData = spi_tx_out + ABCD_BUFFER_SIZE;
-volatile uint32_t *outBody = outData + OUT_PACKET_BODY_BEGIN;
-volatile uint32_t *currentlyTransmittingPacket = outData; // One doesn't always have to supply outData as the packet buffer
-volatile uint16_t transmissionSize = 0;
-
-bool shouldClearSendBuffer = false;
-
-// Local functions
-void response_echo();
-void response_status();
-void response_probe();
-void responseBadPacket(uint16_t flag);
-void create_response();
-void responsePidDump();
-void setupTransmission(uint16_t header, unsigned int bodyLength);
-void setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uint16_t bodyChecksum, volatile uint32_t *packetBuffer);
-uint16_t getHeader(void);
-
-void received_packet_isr(void)
+void receivedPacketIsr(void)
 {
+    spiSlave.receivedPacket();
+}
+
+void clearBufferIsr(void) {
+    spiSlave.clearBuffer();
+}
+
+SpiSlave::SpiSlave(void) {
+    for (int i = 0; i < 11; i++) {
+        beef_only[i] = 0xabcd;
+    }
+    for (int i = 0; i < buffer_size; i++) {
+        spi_tx_out[i] = 0xffff0100 + i;
+    }
+    for (int i = 0; i < ABCD_BUFFER_SIZE; i++) {
+        spi_tx_out[i] = 0xabcd;
+    }
+    for (int i = 0; i < buffer_size; i++) {
+        packet[i] = 0;
+    }
+}
+
+void SpiSlave::receivedPacket(void) {
     noInterrupts();
-    if(!(packet[0] == 0x1234)) {
+    if(!(spiSlave.packet[0] == 0x1234)) {
         errors++;
     }
     dma_rx.disable();
@@ -68,25 +58,16 @@ void received_packet_isr(void)
 }
 
 extern pidDumpPacket_t pidDumpPacket;
-void setup_dma_receive(void) {
+void SpiSlave::setup_dma_receive(void) {
     for (unsigned int i = 0; i < sizeof(pidDumpPacket.body) / 2; i++) {
         ((uint16_t *) pidDumpPacket.body)[i] = 0xabcd;
-    }
-    for (int i = 0; i < buffer_size; i++) {
-        spi_tx_out[i] = 0xffff0100 + i;
-    }
-    for (int i = 0; i < 11; i++) {
-        beef_only[i] = 0xabcd;
-    }
-    for (int i = 0; i < ABCD_BUFFER_SIZE; i++) {
-        spi_tx_out[i] = 0xabcd;
     }
     dma_rx.source((uint16_t&) KINETISK_SPI1.POPR);
     dma_rx.destinationBuffer((uint16_t*) packet, PACKET_SIZE * 2);
     dma_rx.disableOnCompletion();
     dma_rx.interruptAtCompletion();
     dma_rx.triggerAtHardwareEvent(DMAMUX_SOURCE_SPI1_RX);
-    dma_rx.attachInterrupt(received_packet_isr);
+    dma_rx.attachInterrupt(receivedPacketIsr);
 
     dma_tx.sourceBuffer((uint32_t *) beef_only, PACKET_SIZE * 2);
     dma_tx.destination(KINETISK_SPI1.PUSHR); // SPI1_PUSHR_SLAVE
@@ -100,27 +81,27 @@ void setup_dma_receive(void) {
     dma_tx.enable();
 }
 
-void packet_setup(void) {
+void SpiSlave::packet_setup(void) {
     assert(transmissionSize == 0);
     assert(transmitting == false);
-    SPI_SLAVE.begin_SLAVE(SCK1, MOSI1, MISO1, T3_SPI1_CS0);
-    SPI_SLAVE.setCTAR_SLAVE(16, T3_SPI_MODE0);
+    SPI_SLAVE_T3.begin_SLAVE(SCK1, MOSI1, MISO1, T3_SPI1_CS0);
+    SPI_SLAVE_T3.setCTAR_SLAVE(16, T3_SPI_MODE0);
     setup_dma_receive();
 
-    attachInterrupt(SLAVE_CHIP_SELECT, clearBuffer, FALLING);
+    attachInterrupt(SLAVE_CHIP_SELECT, clearBufferIsr, FALLING);
 }
 
-uint16_t getHeader() {
+uint16_t SpiSlave::getHeader() {
     return currentlyTransmittingPacket[3];
 }
 
-void packetReceived() {
+void SpiSlave::packetReceived() {
   packetsReceived++;
 
   handlePacket();
 }
 
-void handlePacket() {
+void SpiSlave::handlePacket() {
   // Check for erroneous data
   if (transmitting) {
     debugPrintln("Error: I'm already transmitting!");
@@ -152,7 +133,7 @@ void handlePacket() {
   create_response();
 }
 
-void create_response() {
+void SpiSlave::create_response() {
     //assert(packetPointer == PACKET_SIZE);
     assert(transmitting == false);
     uint16_t command = packet[1];
@@ -210,7 +191,7 @@ void create_response() {
     }
 }
 
-void response_echo() {
+void SpiSlave::response_echo() {
     //assert(packetPointer == PACKET_SIZE);
     assert(!transmitting);
     int bodySize = 7;
@@ -224,19 +205,19 @@ void response_echo() {
     setupTransmission(RESPONSE_OK, bodySize);
 }
 
-void write32(volatile uint32_t* buffer, unsigned int index, uint32_t item) {
+void SpiSlave::write32(volatile uint32_t* buffer, unsigned int index, uint32_t item) {
     buffer[index] = item >> 16;
     buffer[index + 1] = item % (1 << 16);
 }
 
-void write64(volatile uint32_t* buffer, unsigned int index, uint64_t item) {
+void SpiSlave::write64(volatile uint32_t* buffer, unsigned int index, uint64_t item) {
     buffer[index] = item >> 48;
     buffer[index + 1] = (item >> 32) % (1 << 16);
     buffer[index + 2] = (item >> 16) % (1 << 16);
     buffer[index + 3] = item  % (1 << 16);
 }
 
-void response_status() {
+void SpiSlave::response_status() {
     //assert(packetPointer == PACKET_SIZE);
     assert(!transmitting);
     int bodySize = 14;
@@ -252,7 +233,7 @@ void response_status() {
     setupTransmission(RESPONSE_OK, bodySize);
 }
 
-void response_probe() {
+void SpiSlave::response_probe() {
     uint16_t probe_size = packet[2];
     uint32_t address = (packet[3] << 16) + packet[4];
     assert(!transmitting);
@@ -275,11 +256,11 @@ void response_probe() {
     setupTransmission(RESPONSE_PROBE, bodySize);
 }
 
-void responsePidDump() {
+void SpiSlave::responsePidDump() {
     setupTransmissionWithChecksum(RESPONSE_PID_DATA, PID_DATA_DUMP_SIZE_UINT16 + PID_HEADER_SIZE, pidPacketChecksum, pidDumpPacketUints);
 }
 
-void responseBadPacket(uint16_t flag) {
+void SpiSlave::responseBadPacket(uint16_t flag) {
     errors++;
     assert(!transmitting);
     debugPrintf("Bad packet: flag %d\n", flag);
@@ -291,7 +272,7 @@ void responseBadPacket(uint16_t flag) {
     setupTransmission(RESPONSE_BAD_PACKET, bodySize);
 }
 
-void setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uint16_t bodyChecksum, volatile uint32_t *packetBuffer) {
+void SpiSlave::setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uint16_t bodyChecksum, volatile uint32_t *packetBuffer) {
     assert(!transmitting);
     assert(header <= MAX_HEADER);
     assert(bodyLength <= 500);
@@ -319,7 +300,7 @@ void setupTransmissionWithChecksum(uint16_t header, unsigned int bodyLength, uin
 }
 
 // Call this after body of transmission is filled
-void setupTransmissionWithBuffer(uint16_t header, unsigned int bodyLength, volatile uint32_t *packetBuffer) {
+void SpiSlave::setupTransmissionWithBuffer(uint16_t header, unsigned int bodyLength, volatile uint32_t *packetBuffer) {
     transmissionSize = bodyLength + OUT_PACKET_OVERHEAD;
     uint16_t bodyChecksum = 0;
     for (unsigned int i = OUT_PACKET_BODY_BEGIN; i < (unsigned int) (transmissionSize - OUT_PACKET_BODY_END_SIZE); i++) {
@@ -328,11 +309,11 @@ void setupTransmissionWithBuffer(uint16_t header, unsigned int bodyLength, volat
     setupTransmissionWithChecksum(header, bodyLength, bodyChecksum, packetBuffer);
 }
 
-void setupTransmission(uint16_t header, unsigned int bodyLength){
+void SpiSlave::setupTransmission(uint16_t header, unsigned int bodyLength){
     setupTransmissionWithBuffer(header, bodyLength, outData);
 }
 
-void clearBuffer(void) {
+void SpiSlave::clearBuffer(void) {
     noInterrupts();
     dma_rx.disable();
     dma_tx.disable();

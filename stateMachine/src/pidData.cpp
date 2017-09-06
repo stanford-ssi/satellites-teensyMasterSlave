@@ -68,13 +68,13 @@ void pidDataSetup() {
     (void) assert(((unsigned int) pidDumpPacket.body) % 4 == 0);  // Check offset; Misaligned data may segfault at 0x20000000
     (void) assert(((unsigned int) pidSamples) % 4 == 0);
     debugPrintf("pidSamples location (we want this to be far from 0x2000000): %p to %p\n", pidSamples, pidSamples + PID_BUFFER_SIZE);
-    debugPrintf("pidDumpPacket location (we want this to be far from 0x2000000): memory begins %p, samples %p to %p\n", &pidDumpPacket, pidDumpPacket.body, pidDumpPacket.abcdFooter + ABCD_BUFFER_SIZE);
+    debugPrintf("pidDumpPacket location (we want this to be far from 0x2000000): memory begins %p, samples %p to %p\n", &pidDumpPacket, pidDumpPacket.body, pidDumpPacket.abcdFooter + SpiSlave::ABCD_BUFFER_SIZE);
     pinMode(PID_DATA_READY_PIN, OUTPUT);
     for (int i = 0; i < 10; i++) {
         ((uint16_t *) &pidSamples[PID_BUFFER_SIZE])[i] = 0xbeef;
-        ((uint16_t *) pidDumpPacket.abcdFooter)[ABCD_BUFFER_SIZE + i] = 0xbeef;
+        ((uint16_t *) pidDumpPacket.abcdFooter)[SpiSlave::ABCD_BUFFER_SIZE + i] = 0xbeef;
     }
-    for (int i = 0; i < ABCD_BUFFER_SIZE; i++) {
+    for (int i = 0; i < SpiSlave::ABCD_BUFFER_SIZE; i++) {
         pidDumpPacket.abcdHeader[i] = 0xabcd;
         pidDumpPacket.abcdFooter[i] = 0xabcd;
     }
