@@ -69,6 +69,10 @@ volatile adcSample* adcGetSample() {
     assert(adcSampleReady());
     volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
     toReturn->correctFormat();
+    if (internalInterruptAdcReading && DEBUG) {
+        // FOR DEBUG PURPOSES ONLY: give a deterministic value to validate spi slave comms
+        toReturn->a = numSamplesRead;
+    }
     backOfBuffer = (backOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
     return toReturn;
 }
