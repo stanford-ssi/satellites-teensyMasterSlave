@@ -19,6 +19,6 @@ if len(sys.argv) == 1:
 else:
     oldPort = getOldPort()
     newPort = sys.argv[1]
-    for filename in ['.ftpconfig', 'stateMachine/.ftpconfig', home + '/.ssh/config']:
+    for filename in [home + '/.ssh/config', '.ftpconfig', 'stateMachine/.ftpconfig']:
         replacePort(oldPort, newPort, filename)
 
