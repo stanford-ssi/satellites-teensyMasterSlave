@@ -4,7 +4,6 @@
 #include "pidData.h"
 #include <DMAChannel.h>
 #include "tracking.h"
-#include "modules.h"
 
 SpiSlave spiSlave;
 

@@ -2,7 +2,6 @@
 #include "main.h"
 #include <array>
 #include "mirrorDriver.h"
-#include "modules.h"
 
 /* *** Private Constants *** */
 #define sizeofAdcSample (sizeof(adcSample) / 2)

@@ -1,6 +1,5 @@
 #include "incoherent.h"
 #include "spiMaster.h"
-#include "modules.h"
 
 IncoherentDetector incoherentDetector;
 
