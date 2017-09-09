@@ -1,17 +1,12 @@
 #include "main.h"
-#include "mirrorDriver.h"
+#include "pidController.h"
 
-double _dt;
-double _max;
-double _min;
-double _Kp;
-double _Kd;
-double _Ki;
-double _pre_error[2] = {0,0};
-double _integral[2] = {0,0};
-double _sp[2] = {0,0}; // centered position
+Pid pid;
 
-void pidSetup(){
+Pid::Pid() {
+}
+
+void Pid::pidSetup(){
 
     _dt = 0.1;
 
@@ -24,7 +19,7 @@ void pidSetup(){
     _min = -100;
 }
 
-void pidCalculate(double pv_x, double pv_y, mirrorOutput& out){
+void Pid::pidCalculate(double pv_x, double pv_y, mirrorOutput& out){
 
     // Calculate error
     double error[2] = {(_sp[0] - pv_x), (_sp[1] - pv_y)};

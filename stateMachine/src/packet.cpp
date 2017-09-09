@@ -6,6 +6,8 @@
 #include "tracking.h"
 #include "modules.h"
 
+SpiSlave spiSlave;
+
 void receivedPacketIsr(void)
 {
     spiSlave.receivedPacket();

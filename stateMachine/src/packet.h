@@ -105,4 +105,6 @@ private:
     void setup_dma_receive(void);
 };
 
+extern SpiSlave spiSlave;
+
 #endif

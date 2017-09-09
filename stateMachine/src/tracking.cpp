@@ -1,12 +1,12 @@
-#include <tracking.h>
-#include <pidData.h>
-#include <main.h>
-#include <spiMaster.h>
-#include <incoherent.h>
-#include <pid.h>
-#include <mirrorDriver.h>
-#include <states.h>
 #include "modules.h"
+#include "tracking.h"
+#include "pidData.h"
+#include "main.h"
+#include "spiMaster.h"
+#include "incoherent.h"
+#include "pidController.h"
+#include "mirrorDriver.h"
+#include "states.h"
 
 /* *** Private variables *** */
 
@@ -41,7 +41,7 @@ void firstLoopTracking() {
     totalPowerReceived = 0;
     incoherentDetector.incoherentSetup();
     interrupts();
-    pidSetup();
+    pid.pidSetup();
 
     debugPrintf("About to clear dma: offset is (this might be high) %d\n", adcGetOffset());
     adcStartSampling();
@@ -96,7 +96,7 @@ void pidProcess(const volatile adcSample& s) {
             double ypos = 0xbeefdcba;
             double theta = 0;
             incoherentDetector.incoherentDisplacement(incoherentOutput, xpos, ypos, theta);
-            pidCalculate(xpos, ypos, out);
+            pid.pidCalculate(xpos, ypos, out);
             if (samplesProcessed % (4000 / 10) == 0) {
                 mirrorDriver.sendMirrorOutput(out);
             }

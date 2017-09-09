@@ -87,4 +87,6 @@ private:
     volatile uint32_t timeOfLastMirrorOutput = 0;
 };
 
+extern MirrorDriver mirrorDriver;
+
 #endif

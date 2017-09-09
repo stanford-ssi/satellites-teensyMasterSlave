@@ -1,5 +1,5 @@
-#ifndef PID_H
-#define PID_H
+#ifndef PID_DATA_H
+#define PID_DATA_H
 #include "mirrorDriver.h"
 #include "main.h"
 #include "packet.h"
@@ -61,6 +61,7 @@ void writeExpandedPidSampleWithChecksum(const pidSample* in, expandedPidSample* 
 /* *** The packet buffer ships out directly to audacy, it dequeues from the pidSamples buffer *** */
 #pragma pack()
 typedef struct pidDumpPacket_t {
+public:
     // This is uint32 instead of uint16 because DMA takes in 32-bit arguments but only uses the 16 least significant bits
     uint32_t abcdHeader[SpiSlave::ABCD_BUFFER_SIZE];
     uint32_t header[SpiSlave::OUT_PACKET_BODY_BEGIN];

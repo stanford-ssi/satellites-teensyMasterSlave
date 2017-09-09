@@ -2,6 +2,8 @@
 #include "spiMaster.h"
 #include "modules.h"
 
+IncoherentDetector incoherentDetector;
+
 IncoherentDetector::IncoherentDetector() {
     // Real setup is in incoherentSetup, in setup() function
     for (int i = 0; i < buffer_length; i++) {

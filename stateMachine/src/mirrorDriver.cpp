@@ -7,7 +7,9 @@
  * This program generates a varying sinusoid in X and Y, initializes the SPI, initializes the DAC, sets a period
  * then plays back the sinusoid over the MEMS driver.
  */
-#include <mirrorDriver.h>
+#include "mirrorDriver.h"
+
+MirrorDriver mirrorDriver;
 
 MirrorDriver::MirrorDriver() {
 }

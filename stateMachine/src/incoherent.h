@@ -22,4 +22,6 @@ private:
     volatile int32_t rolling_detectors[2*numCells] = {0,0,0,0,0,0,0,0};
 };
 
+extern IncoherentDetector incoherentDetector;
+
 #endif
