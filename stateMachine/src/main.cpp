@@ -45,7 +45,7 @@ void setup() {
   spiSlave.packet_setup();
   debugPrintf("Done.\n");
   debugPrintf("Setting up dma:\n");
-  spiMasterSetup();
+  quadCell.spiMasterSetup();
   debugPrintf("Done!\n");
   debugPrintf("Setting up tracking:\n");
   pointer.trackingSetup();
@@ -78,22 +78,19 @@ void heartbeat() {
 
 extern volatile unsigned int frontOfBuffer, backOfBuffer;
 void heartbeat2() {
-    debugPrintf(", last state %d, last read %d, dma offset %d %d %d", lastLoopState, lastAnalogRead, adcGetOffset(), backOfBuffer, frontOfBuffer);
-    debugPrintf(", %d loops, time alive %d, numSamplesRead %d\n", numLoops, timeAlive, numSamplesRead);
+    debugPrintf(", last state %d, last read %d", lastLoopState, lastAnalogRead);
+    debugPrintf(", %d loops, time alive %d, numSamplesRead %d\n", numLoops, timeAlive, quadCell.numSamplesRead);
     debugPrintf("%d last, %d max, %d fast, %d med, %d slow loops\n", lastLoopTime, maxLoopTime, numFastLoops, numMediumLoops, numSlowLoops);
+    quadCell.quadCellHeartBeat();
 }
 
-extern volatile int numFail;
-extern volatile int numSuccess;
-extern volatile int numStartCalls;
-extern volatile int numSpi0Calls;
 void heartbeat3() {
     if (state == TRACKING_STATE) {
         pointer.trackingHeartbeat();
     } else if (state == CALIBRATION_STATE) {
         pointer.calibrationHeartbeat();
     }
-    debugPrintf("DMA Fail %d success %d starts %d spi0s %d\n", numFail, numSuccess, numStartCalls, numSpi0Calls);
+
     debugPrintf("-----------------------\n");
 }
 

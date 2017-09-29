@@ -37,14 +37,14 @@ void Pointer::firstLoopTracking() {
     interrupts();
     pid.pidSetup();
 
-    debugPrintf("About to clear dma: offset is (this might be high) %d\n", adcGetOffset());
-    adcStartSampling();
-    assert(!adcSampleReady());
-    debugPrintf("Cleared dma: offset is (this should be <= 4) %d\n", adcGetOffset());
+    debugPrintf("About to clear dma: offset is (this might be high) %d\n", quadCell.adcGetOffset());
+    quadCell.adcStartSampling();
+    assert(!quadCell.adcSampleReady());
+    debugPrintf("Cleared dma: offset is (this should be <= 4) %d\n", quadCell.adcGetOffset());
     assert(!enteringTracking);
     enterPidData();
     debugPrintf("Entered tracking\n");
-    debugPrintf("Offset %d\n", adcGetOffset());
+    debugPrintf("Offset %d\n", quadCell.adcGetOffset());
     mirrorDriver.highVoltageEnable(true);
 }
 
@@ -119,13 +119,13 @@ void Pointer::taskTracking() {
     }
 
     if (micros() % 100 == 0) {
-        assert(adcGetOffset() < 2); // We should be able to keep up with data generation
-        if (adcGetOffset() >= 2) {
-            debugPrintf("Offset is too high! It is %d\n", adcGetOffset());
+        assert(quadCell.adcGetOffset() < 2); // We should be able to keep up with data generation
+        if (quadCell.adcGetOffset() >= 2) {
+            debugPrintf("Offset is too high! It is %d\n", quadCell.adcGetOffset());
         }
     }
-    if (adcSampleReady()) {
-        volatile adcSample s = *adcGetSample();
+    if (quadCell.adcSampleReady()) {
+        volatile adcSample s = *quadCell.adcGetSample();
         //s.axis1 = samplesProcessed; // TODO: remove
         pidProcess(s);
     }

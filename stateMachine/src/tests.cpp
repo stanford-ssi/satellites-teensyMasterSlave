@@ -1,6 +1,7 @@
 #include <main.h>
+#include <spiMaster.h>
 
-extern uint32_t backOfBuffer;
+extern QuadCell quadCell;
 uint64_t test = 0xbeefab10;
 
 void swapUint(uint32_t &axis) {
@@ -19,8 +20,7 @@ void testSwap() {
 }
 
 void testDma() {
-    assert(backOfBuffer == 0);
-    //assert(!dmaSampleReady());
+    assert(!quadCell.adcSampleReady());
 }
 
 void testBreakingLoop() {
