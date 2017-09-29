@@ -9,29 +9,24 @@
 
 /* *** Private variables *** */
 
-mirrorOutput lastPidOut;
-adcSample lastAdcRead;
-volatile unsigned samplesProcessed = 0;
-volatile bool enteringTracking = false;
-volatile bool lockedOn = false;
-volatile uint64_t numLockedOn = 0;
-volatile uint64_t totalPowerReceivedBeforeIncoherent = 0;
-volatile uint64_t totalPowerReceived = 0;
-const uint64_t maxPower = 1ULL << 32;
+Pointer pointer;
 
 // void sendOutput(mirrorOutput& output);
 
-void trackingSetup() {
+Pointer::Pointer() {
+}
+
+void Pointer::trackingSetup() {
     // Begin dma transaction
     pidDataSetup();
 }
 
-void enterTracking() {
+void Pointer::enterTracking() {
     enteringTracking = true; // Set this flag that we want to enter tracking mode, but the real setup work is done in firstLoopTracking()
     // This is because enterTracking() is called in an interrupt before the main loop is finished doing its thing
 }
 
-void firstLoopTracking() {
+void Pointer::firstLoopTracking() {
     noInterrupts();
     numLockedOn = 0;
     samplesProcessed = 0;
@@ -53,7 +48,7 @@ void firstLoopTracking() {
     mirrorDriver.highVoltageEnable(true);
 }
 
-void leaveTracking() {
+void Pointer::leaveTracking() {
     leavePidData();
     noInterrupts();
     enteringTracking = false;
@@ -65,7 +60,7 @@ void leaveTracking() {
     interrupts();
 }
 
-void logPidSample(const volatile pidSample& s) {
+void Pointer::logPidSample(const volatile pidSample& s) {
     lastAdcRead.copy(s.sample);
     lastPidOut.copy(s.out);
     totalPowerReceivedBeforeIncoherent += s.sample.a;
@@ -80,7 +75,7 @@ void logPidSample(const volatile pidSample& s) {
     samplesProcessed++;
 }
 
-void pidProcess(const volatile adcSample& s) {
+void Pointer::pidProcess(const volatile adcSample& s) {
     adcSample incoherentOutput;
     incoherentDetector.incoherentProcess(s, incoherentOutput);
     lockedOn = false;
@@ -117,7 +112,7 @@ void pidProcess(const volatile adcSample& s) {
     logPidSample(samplePid);
 }
 
-void taskTracking() {
+void Pointer::taskTracking() {
     if (enteringTracking) {
         enteringTracking = false;
         firstLoopTracking();
@@ -137,7 +132,7 @@ void taskTracking() {
     taskPidData();
 }
 
-void trackingHeartbeat() {
+void Pointer::trackingHeartbeat() {
     pidDataHeartbeat();
     char lastAdcReadBuf[62];
     char lastPidOutBuf[62];
@@ -152,18 +147,18 @@ void trackingHeartbeat() {
     debugPrintf("X %d Y %d\n", (a + d - b - c), a + b - c - d);
 }
 
-void enterCalibration() {
+void Pointer::enterCalibration() {
     enterTracking();
 }
 
-void leaveCalibration() {
+void Pointer::leaveCalibration() {
     leaveTracking();
 }
 
-void taskCalibration() {
+void Pointer::taskCalibration() {
     taskTracking();
 }
 
-void calibrationHeartbeat() {
+void Pointer::calibrationHeartbeat() {
     trackingHeartbeat();
 }

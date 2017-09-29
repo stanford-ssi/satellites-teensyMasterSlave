@@ -223,10 +223,10 @@ void SpiSlave::response_status() {
     assert(!transmitting);
     int bodySize = 14;
 
-    write64(outBody, 0, numLockedOn);
-    write64(outBody, 4, totalPowerReceivedBeforeIncoherent);
-    write64(outBody, 8, totalPowerReceived);
-    write32(outBody, 12, samplesProcessed);
+    write64(outBody, 0, pointer.numLockedOn);
+    write64(outBody, 4, pointer.totalPowerReceivedBeforeIncoherent);
+    write64(outBody, 8, pointer.totalPowerReceived);
+    write32(outBody, 12, pointer.samplesProcessed);
     if (DEBUG && shouldClearSendBuffer) {
         assert(outBody[bodySize-1] != 0xbeef);
         assert(outBody[bodySize] == 0xbeef);
