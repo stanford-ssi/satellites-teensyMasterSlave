@@ -3,44 +3,14 @@
 #include <array>
 #include "mirrorDriver.h"
 
-/* *** Private Constants *** */
-#define sizeofAdcSample (sizeof(adcSample) / 2)
-#define ENABLE_MINUS_7_PIN 52
-#define ENABLE_7_PIN 53
-#define ADC_CS0 35
-#define ADC_CS1 37
-#define ADC_CS2 7
-#define ADC_CS3 2
-#define sample_clock 29 // gpio1
-#define sync_pin 3 // gpio0
-#define ADC_OVERSAMPLING_RATE 64
-#define trigger_pin 26 // test point 17
-uint16_t control_word = 0b1000011000010000;
-
-//void mirrorOutputSetup();
-void adcReceiveSetup();
-void init_FTM0();
-
-/* *** Internal Telemetry -- SPI0 *** */
-volatile bool internalInterruptAdcReading = false;
-IntervalTimer readAdcTimer;
-unsigned long lastSampleTime = 0;
-volatile int numFail = 0;
-volatile int numSuccess = 0;
-volatile int numStartCalls = 0;
-volatile int numSpi0Calls = 0;
-volatile unsigned int numSamplesRead = 0;
-
-/* *** SPI0 Adc Reading *** */
 SPISettings adcSpiSettings(6250000, MSBFIRST, SPI_MODE0); // For SPI0
-uint32_t frontOfBuffer = 0;
-uint32_t backOfBuffer = 0;
-adcSample adcSamplesRead[ADC_READ_BUFFER_SIZE + 1];
-volatile adcSample nextSample;
-volatile unsigned int adcIsrIndex = 0; // indexes into nextSample
+QuadCell quadCell;
+
+QuadCell::QuadCell() {
+}
 
 /* *** Adc Reading Public Functions *** */
-uint32_t adcGetOffset() { // Returns number of samples in buffer
+uint32_t QuadCell::adcGetOffset() { // Returns number of samples in buffer
     uint32_t offset;
     if (frontOfBuffer >= backOfBuffer) {
         offset = frontOfBuffer - backOfBuffer;
@@ -51,26 +21,30 @@ uint32_t adcGetOffset() { // Returns number of samples in buffer
     return offset;
 }
 
-bool adcSampleReady() {
+bool QuadCell::adcSampleReady() {
     return adcGetOffset() >= 1;
 }
 
 int succ__ = 0;
 int fail__ = 0;
-volatile adcSample* adcGetSample() {
+volatile adcSample* QuadCell::adcGetSample() {
     assert(adcSampleReady());
     volatile adcSample* toReturn = &adcSamplesRead[backOfBuffer];
     toReturn->correctFormat();
+    if (internalInterruptAdcReading && DEBUG) {
+        // FOR DEBUG PURPOSES ONLY: give a deterministic value to validate spi slave comms
+        toReturn->a = numSamplesRead;
+    }
     backOfBuffer = (backOfBuffer + 1) % ADC_READ_BUFFER_SIZE;
     return toReturn;
 }
 
-void adcStartSampling() { // Clears out old samples so the first sample you read is fresh
+void QuadCell::adcStartSampling() { // Clears out old samples so the first sample you read is fresh
     backOfBuffer = frontOfBuffer;
 }
 
-void spiMasterSetup() {
-    mirrorDriverSetup();
+void QuadCell::spiMasterSetup() {
+    mirrorDriver.mirrorDriverSetup();
     debugPrintf("Setting up dma, offset is %d\n", adcGetOffset());
     adcReceiveSetup();
     debugPrintf("Dma setup complete, offset is %d. Setting up ftm timers.\n", adcGetOffset());
@@ -79,7 +53,7 @@ void spiMasterSetup() {
 
 /* ********* Private Interrupt-based Adc Read Code ********* */
 
-void checkChipSelect(void) {
+void QuadCell::checkChipSelect(void) {
     if (adcIsrIndex == 0) {
         // Take no chances
         digitalWriteFast(ADC_CS0, LOW);
@@ -105,6 +79,10 @@ void checkChipSelect(void) {
 }
 
 void spi0_isr(void) {
+    quadCell.quadCellSpi0_isr();
+}
+
+void QuadCell::quadCellSpi0_isr(void) {
     if(adcIsrIndex >= sizeofAdcSample) {
         errors++;
     }
@@ -135,8 +113,9 @@ void spi0_isr(void) {
 /* Entry point to an adc read.  This sends the first spi word, the rest of the work
  * is done in spi0_isr interrupts
  */
-void beginAdcRead(void) {
+void QuadCell::beginAdcRead(void) {
     noInterrupts();
+    samples_taken_since_reset++;
     numStartCalls++;
     long timeNow = micros();
 
@@ -153,6 +132,12 @@ void beginAdcRead(void) {
     }
     lastSampleTime = timeNow;
 
+    if (samples_taken_since_reset == 20000) {
+        debugPrintf("Time for 20000 samples %d\n", timeNow - time_of_last_reset);
+        time_of_last_reset = timeNow;
+        samples_taken_since_reset = 0;
+    }
+
     if (adcIsrIndex < (sizeof(adcSample) / (16 / 8)) && adcIsrIndex != 0) {
         debugPrintf("Yikes -- we're reading adc already\n");
         if (diff <= 245) {
@@ -168,26 +153,34 @@ void beginAdcRead(void) {
     interrupts();
 }
 
+void readAdcTimerIsr() {
+    quadCell.quadCellReadAdcTimerIsr();
+}
+
 void readAdcEdgeIsr() {
+    quadCell.quadCellReadAdcEdgeIsr();
+}
+
+void QuadCell::quadCellReadAdcEdgeIsr() {
     if (!internalInterruptAdcReading) {
         beginAdcRead();
     }
 }
 
-void readAdcTimerIsr() {
+void QuadCell::quadCellReadAdcTimerIsr() {
     if (internalInterruptAdcReading) {
         beginAdcRead();
     }
 }
 
-void setupHighVoltage() {
+void QuadCell::setupHighVoltage() {
     pinMode(ENABLE_MINUS_7_PIN, OUTPUT);
     pinMode(ENABLE_7_PIN, OUTPUT);
     digitalWrite(ENABLE_MINUS_7_PIN, HIGH); // -7 driver enable
     digitalWrite(ENABLE_7_PIN, HIGH); // +7 driver enable
 }
 
-void setupAdcChipSelects() {
+void QuadCell::setupAdcChipSelects() {
     pinMode(ADC_CS0, OUTPUT);
     pinMode(ADC_CS1, OUTPUT);
     pinMode(ADC_CS2, OUTPUT);
@@ -198,7 +191,7 @@ void setupAdcChipSelects() {
     digitalWriteFast(ADC_CS3, HIGH);
 }
 
-void resetAdc() {
+void QuadCell::resetAdc() {
     analogWrite(sample_clock, 0);
     digitalWrite(sync_pin, LOW);
     delayMicroseconds(10);
@@ -219,9 +212,13 @@ void resetAdc() {
     digitalWriteFast(ADC_CS2, HIGH);
     digitalWriteFast(ADC_CS3, HIGH);
     analogWrite(sample_clock, 5);
+    noInterrupts();
+    time_of_last_reset = micros();
+    samples_taken_since_reset = 0;
+    interrupts();
 }
 
-void setupAdc() {
+void QuadCell::setupAdc() {
     setupHighVoltage();
     setupAdcChipSelects();
     pinMode(sync_pin, OUTPUT);
@@ -237,13 +234,13 @@ void setupAdc() {
     SPI0_SR |= SPI_SR_RFDF;
 }
 
-void init_FTM0(){
+void QuadCell::init_FTM0(){
     pinMode(sample_clock, OUTPUT);
     analogWriteFrequency(sample_clock, 4000 * ADC_OVERSAMPLING_RATE);
     analogWrite(sample_clock, 5); // Low duty cycle - if we go too low it won't even turn on
 }
 
-void adcReceiveSetup() {
+void QuadCell::adcReceiveSetup() {
     debugPrintln("Starting.");
     adcSamplesRead[ADC_READ_BUFFER_SIZE].a = 0xdeadbeef;
     adcSamplesRead[ADC_READ_BUFFER_SIZE].b = 0xdeadbeef;
@@ -261,4 +258,9 @@ void adcReceiveSetup() {
     NVIC_SET_PRIORITY(IRQ_PORTE, 0); // Just in case it's E
     readAdcTimer.begin(readAdcTimerIsr, 250);
     debugPrintln("Done!");
+}
+
+void QuadCell::quadCellHeartBeat() {
+    debugPrintf("dma offset %d %d %d", quadCell.adcGetOffset(), backOfBuffer, frontOfBuffer);
+    debugPrintf("DMA Fail %d success %d starts %d spi0s %d\n", numFail, numSuccess, numStartCalls, quadCell.numSpi0Calls);
 }

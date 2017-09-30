@@ -1,18 +1,16 @@
-#include <spiMaster.h>
+#include "incoherent.h"
+#include "spiMaster.h"
 
+IncoherentDetector incoherentDetector;
 
-const int samples_per_cell = 32;
-const int numCells = 4;
-const int envelope[4] = {0,1,0,-1};
-const int buffer_length = samples_per_cell*numCells;
-//Stores each sample for each cell to use for the incoherent detection
-volatile int32_t buff[buffer_length];
-//Keeps track of where in the rolling buffer I am
-volatile int sample;
-//Stores the running sum of the previous four samples of each quad cell for both sine and cosine envelopes
-volatile int32_t rolling_detectors[2*numCells];
+IncoherentDetector::IncoherentDetector() {
+    // Real setup is in incoherentSetup, in setup() function
+    for (int i = 0; i < buffer_length; i++) {
+        buff[i] = 0;
+    }
+}
 
-void incoherentSetup() {
+void IncoherentDetector::incoherentSetup() {
   sample = 0;
   //Fill in initial values of the buffer
   for(int i = 0; i < buffer_length; i++){
@@ -23,7 +21,7 @@ void incoherentSetup() {
   }
 }
 
-void incoherentProcess(const volatile adcSample& s, adcSample& output) {
+void IncoherentDetector::incoherentProcess(const volatile adcSample& s, adcSample& output) {
   //Retrieve latest sample values;
   int32_t latest[numCells] = {(int32_t) s.a, (int32_t) s.b, (int32_t) s.c, (int32_t) s.d};
 
@@ -55,7 +53,7 @@ void incoherentProcess(const volatile adcSample& s, adcSample& output) {
   }
 }
 
-void incoherentDisplacement(const adcSample& incoherentOutput, double& xpos, double& ypos, double theta){
+void IncoherentDetector::incoherentDisplacement(const adcSample& incoherentOutput, double& xpos, double& ypos, double theta){
   //Assuming axis number maps to quadrant number
   double quadA = incoherentOutput.a;
   double quadB = incoherentOutput.b;
@@ -65,28 +63,4 @@ void incoherentDisplacement(const adcSample& incoherentOutput, double& xpos, dou
   double yposIntermediate = ((quadA + quadB) - (quadC + quadD))/(quadA + quadB + quadC + quadD);
   xpos = cos(theta) * xposIntermediate - sin(theta) * yposIntermediate;
   ypos = sin(theta) * xposIntermediate + cos(theta) * yposIntermediate;
-  // if (micros() % 4000 == 0) {
-  //     debugPrintf("\n**\n%d %d %d %d, %d %d, %d %d\n**\n", (int) (quadA * 1000), (int) (quadB * 1000), (int) (quadC * 1000), (int) (quadD * 1000), (int) (xposIntermediate * 1000), (int) (yposIntermediate * 1000), (int) (xpos * 1000), (int) (ypos * 1000));
-  // }
-  //
-  // double wat = 1ull << 33;
-  // (void) wat;
-  // uint8_t* buf = (uint8_t *) &xpos;
-  // for (int i = 0; i < 8; i++) {
-  //     debugPrintf("%x",buf[i]);
-  // }
-  // debugPrintln("");
-  // double one = 1.0;
-  // if (!(assert(xpos <= one))){
-  //     debugPrintf(/*%ld %ld %lx %ld, */"%d %d %d %d\n"/*, (uint64_t) xpos, (uint64_t) (xpos * 100), *((uint64_t *) &xpos), (uint64_t) wat*/, !(xpos <= one), !(xpos > one), !(xpos > one), !(wat <= one));
-  //     if (((int) xpos > one)) {
-  //         debugPrintf("HEY\n");
-  //     }
-  //     if (((int) xpos <= one)) {
-  //         debugPrintf("HEY2\n");
-  //     }
-  //     printDouble((uint64_t) wat);
-  //     printDouble((uint64_t) xpos);
-  // }
-  // assert(ypos <= 1.0);
 }

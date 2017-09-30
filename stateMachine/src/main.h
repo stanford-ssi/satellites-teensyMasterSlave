@@ -4,11 +4,8 @@
 #include <Wire.h>
 #include <ssiSpi.h>
 #include <string.h>
-#include <spiMaster.h>
 #include <ChipSelect.h>
 #include <tests.h>
-#include <packet.h>
-#include <tracking.h>
 #include <DMAChannel.h>
 
 #define DEBUG true

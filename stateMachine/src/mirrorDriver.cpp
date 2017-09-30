@@ -7,41 +7,14 @@
  * This program generates a varying sinusoid in X and Y, initializes the SPI, initializes the DAC, sets a period
  * then plays back the sinusoid over the MEMS driver.
  */
-#include <main.h>
-#define SINE_BUFFER_LENGTH 1024
-volatile uint16_t bufferSelect = 0;
-volatile uint16_t numMirrorBuffer = 3;
-volatile uint16_t mirrorFrequency = 100;
-volatile float calibrationAmplitudeMultiplier = 1;
-uint32_t calibrationBufferLength = SINE_BUFFER_LENGTH;
-uint32_t currentCalibrationOutputIndex = 0;
-static mirrorOutput sineWave[SINE_BUFFER_LENGTH];
-static mirrorOutput corners[7];
-static mirrorOutput zero[1];
-static mirrorOutput* calibrationMirrorOutputs = sineWave;
+#include "mirrorDriver.h"
 
-static uint8_t DAC_write_word[3]; // DAC input register is 24 bits, SPI writes 8 bits at a time. Need to queue up 3 bytes (24 bits) to send every time you write to it
-// Teensy 3.2 pinouts
-const int slaveSelectPin = 43;
-const int DRIVER_HV_EN_pin = 54;
-const int LASER_EN_PIN = 22; // toggles laser on / off for modulation (PWM pin)
-bool laser_state = LOW;
-int count = 0;
-int freq_x = 1;
-int freq_y = 1;
-float ampl_x = 1.0;
-float ampl_y = 1.0;
-int signal_x = 0;
-int signal_y = 0;
-uint16_t DAC_ch_A = 32768;
-uint16_t DAC_ch_B = 32768;
-uint16_t DAC_ch_C = 32768;
-uint16_t DAC_ch_D = 32768;
-float twopi = 2*3.14159265359; // good old pi
-float phase = twopi / SINE_BUFFER_LENGTH; // phase increment for sinusoid
-volatile uint32_t timeOfLastMirrorOutput = 0;
+MirrorDriver mirrorDriver;
 
-void mirrorDriverSetup() {
+MirrorDriver::MirrorDriver() {
+}
+
+void MirrorDriver::mirrorDriverSetup() {
     // Setup Pins:
     pinMode (slaveSelectPin, OUTPUT); // SPI SS pin 10
     pinMode (DRIVER_HV_EN_pin, OUTPUT); // driver board high voltage output enable pin 8
@@ -115,7 +88,7 @@ void mirrorDriverSetup() {
     analogWrite (LASER_EN_PIN,0);
 }
 
-void sendMirrorOutput(const mirrorOutput& out) {
+void MirrorDriver::sendMirrorOutput(const mirrorOutput& out) {
     volatile uint32_t timeNow = millis();
     // millis() subject to overflow after 40 days, causes 1 assertion error
     assert(timeNow - timeOfLastMirrorOutput >= 1); // No more than 500ish Hz
@@ -190,7 +163,7 @@ void sendMirrorOutput(const mirrorOutput& out) {
     delayMicroseconds(10);
 }
 
-void highVoltageEnable(bool enable) {
+void MirrorDriver::highVoltageEnable(bool enable) {
     debugPrintf("High voltage %d\n", enable);
     if (enable) {
         digitalWrite(DRIVER_HV_EN_pin,HIGH);
@@ -199,7 +172,7 @@ void highVoltageEnable(bool enable) {
     }
 }
 
-void laserEnable(bool enable) {
+void MirrorDriver::laserEnable(bool enable) {
     if (enable) {
         laser_state = HIGH;
         analogWrite (LASER_EN_PIN, 128); // 50% duty cycle 1khz
@@ -209,11 +182,15 @@ void laserEnable(bool enable) {
     }
 }
 
+uint16_t MirrorDriver::getMirrorFrequency() {
+    return mirrorFrequency;
+}
+
 // Selection: from 0 to numMirrorBuffer - 1, selects the buffer to take cal sweeps from
 // Frequency: in Hz, the frequency to send outputs
 // Amplitude: from 0 to 1000, multiplies the mirror outputs by amplitude / 1000 (this is only ever used for attenuation, not gain)
-void selectMirrorBuffer(uint16_t selection, uint16_t frequency, uint16_t amplitude) {
-    assert(selection < numMirrorBuffer);
+void MirrorDriver::selectMirrorBuffer(uint16_t selection, uint16_t frequency, uint16_t amplitude) {
+    assert(selection < numMirrorBuffers);
     assert(frequency <= 1000);
     assert(amplitude <= 1000);
     bufferSelect = selection;
@@ -238,7 +215,7 @@ void selectMirrorBuffer(uint16_t selection, uint16_t frequency, uint16_t amplitu
     }
 }
 
-void getNextMirrorOutput(mirrorOutput& out) {
+void MirrorDriver::getNextMirrorOutput(mirrorOutput& out) {
     out.copy(calibrationMirrorOutputs[currentCalibrationOutputIndex]);
     out.x *= calibrationAmplitudeMultiplier;
     out.y *= calibrationAmplitudeMultiplier;

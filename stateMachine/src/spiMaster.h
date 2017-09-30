@@ -1,7 +1,8 @@
 #ifndef SPI_MASTER_H
 #define SPI_MASTER_H
-#include "mirrorDriver.h"
 #include "main.h"
+#include <array>
+#include "mirrorDriver.h"
 
 // Quad cell axes: BA
 //                 CD
@@ -83,14 +84,70 @@ typedef struct adcSample {
     }
 } adcSample;
 
-#define ADC_READ_BUFFER_SIZE 2500 // in adcSamples
+class QuadCell {
+public:
+    QuadCell();
+    const static uint16_t ADC_READ_BUFFER_SIZE = 2500; // in adcSamples
 
-extern volatile unsigned int numSamplesRead;
+    volatile unsigned int numSamplesRead = 0;
 
-uint32_t adcGetOffset();
-volatile adcSample* adcGetSample();
-bool adcSampleReady();
-void spiMasterSetup();
-void adcStartSampling();
-void resetAdc();
+    uint32_t adcGetOffset();
+    volatile adcSample* adcGetSample();
+    bool adcSampleReady();
+    void spiMasterSetup();
+    void adcStartSampling();
+    void resetAdc();
+    void quadCellSpi0_isr();
+    void quadCellReadAdcEdgeIsr();
+    void quadCellReadAdcTimerIsr();
+    void quadCellHeartBeat();
+private:
+    const uint16_t sizeofAdcSample = (sizeof(adcSample) / 2);
+    const uint16_t ENABLE_MINUS_7_PIN = 52;
+    const uint16_t ENABLE_7_PIN = 53;
+    const uint16_t ADC_CS0 = 35;
+    const uint16_t ADC_CS1 = 37;
+    const uint16_t ADC_CS2 = 7;
+    const uint16_t ADC_CS3 = 2;
+    const uint16_t sample_clock = 29; // gpio1
+    const uint16_t sync_pin = 3; // gpio0
+    const uint16_t ADC_OVERSAMPLING_RATE = 256;
+    const uint16_t trigger_pin = 26; // test point 17
+    //uint16_t control_word = 0b1000011000010000; // 64 oversampling
+    //uint16_t control_word = 0b1000011100010000; // 128 oversampling
+    uint16_t control_word = 0b1000100000010000; // 256 oversampling
+
+    // This counter goes from 0 to 4000 to count the amount of time it takes to
+    // get 4000 samples
+    unsigned int time_of_last_reset = 0;
+    unsigned int samples_taken_since_reset = 0;
+
+    //void mirrorOutputSetup();
+    void adcReceiveSetup();
+    void init_FTM0();
+    void checkChipSelect();
+    void beginAdcRead();
+    void setupHighVoltage();
+    void setupAdcChipSelects();
+    void setupAdc();
+
+    /* *** Internal Telemetry -- SPI0 *** */
+    volatile bool internalInterruptAdcReading = false;
+    IntervalTimer readAdcTimer;
+    unsigned long lastSampleTime = 0;
+    volatile int numFail = 0;
+    volatile int numSuccess = 0;
+    volatile int numStartCalls = 0;
+    volatile int numSpi0Calls = 0;
+
+    /* *** SPI0 Adc Reading *** */
+    uint32_t frontOfBuffer = 0;
+    uint32_t backOfBuffer = 0;
+    adcSample adcSamplesRead[ADC_READ_BUFFER_SIZE + 1];
+    volatile adcSample nextSample;
+    volatile unsigned int adcIsrIndex = 0; // indexes into nextSample
+};
+
+extern QuadCell quadCell;
+
 #endif // SPI_MASTER_H
