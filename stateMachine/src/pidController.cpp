@@ -4,19 +4,18 @@
 Pid pid;
 
 Pid::Pid() {
+        _dt = 0.1;
+
+        // set gain or iterate to find gain???
+        _Kp = 0.1;
+        _Ki = 0.5;
+        _Kd = 0.01;
+
+        _max = 100;
+        _min = -100;
 }
 
 void Pid::pidSetup(){
-
-    _dt = 0.1;
-
-    // set gain or iterate to find gain???
-    _Kp = 0.1;
-    _Ki = 0.5;
-    _Kd = 0.01;
-
-    _max = 100;
-    _min = -100;
 }
 
 void Pid::pidCalculate(double pv_x, double pv_y, mirrorOutput& out){

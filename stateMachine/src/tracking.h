@@ -21,6 +21,7 @@ public:
     volatile unsigned samplesProcessed = 0;
     volatile uint64_t totalPowerReceivedBeforeIncoherent = 0;
     volatile uint64_t totalPowerReceived = 0;
+    volatile double theta = 0;
 private:
     void firstLoopTracking();
     void logPidSample(const volatile pidSample& s);

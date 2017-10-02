@@ -111,11 +111,11 @@ private:
     const uint16_t ADC_CS3 = 2;
     const uint16_t sample_clock = 29; // gpio1
     const uint16_t sync_pin = 3; // gpio0
-    const uint16_t ADC_OVERSAMPLING_RATE = 256;
+    const uint16_t ADC_OVERSAMPLING_RATE = 128;
     const uint16_t trigger_pin = 26; // test point 17
     //uint16_t control_word = 0b1000011000010000; // 64 oversampling
-    //uint16_t control_word = 0b1000011100010000; // 128 oversampling
-    uint16_t control_word = 0b1000100000010000; // 256 oversampling
+    uint16_t control_word = 0b1000011100010000; // 128 oversampling
+    //uint16_t control_word = 0b1000100000010000; // 256 oversampling
 
     // This counter goes from 0 to 4000 to count the amount of time it takes to
     // get 4000 samples

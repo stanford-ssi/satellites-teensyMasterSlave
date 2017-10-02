@@ -4,12 +4,12 @@
 
 class Pid {
 public:
-    double _dt;
-    double _max;
-    double _min;
-    double _Kp;
-    double _Kd;
-    double _Ki;
+    volatile double _dt;
+    volatile double _max;
+    volatile double _min;
+    volatile double _Kp;
+    volatile double _Kd;
+    volatile double _Ki;
     double _pre_error[2] = {0,0};
     double _integral[2] = {0,0};
     double _sp[2] = {0,0}; // centered position

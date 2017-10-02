@@ -187,6 +187,10 @@ void SpiSlave::create_response() {
         }
     } else if (command == COMMAND_PROBE_MEMORY) {
         response_probe();
+    } else if (command == COMMAND_WRITE_MEMORY) {
+        response_write();
+    } else if (command == COMMAND_SET_CONSTANT) {
+        response_set_constant();
     } else {
         responseBadPacket(INVALID_COMMAND);
     }
@@ -252,6 +256,97 @@ void SpiSlave::response_probe() {
         responseBadPacket(INVALID_COMMAND);
         return;
     }
+    int bodySize = 4;
+    write64(outBody, 0, toReturn);
+    setupTransmission(RESPONSE_PROBE, bodySize);
+}
+
+void SpiSlave::response_write() {
+    uint16_t probe_size = packet[2];
+    uint32_t address = (packet[3] << 16) + packet[4];
+    uint32_t to_write = (packet[5] << 16) + packet[6];
+    uint16_t checksum = packet[7];
+    if (checksum != packet[5] + packet[6]) {
+        responseBadPacket(INVALID_CHECKSUM);
+        return;
+    }
+    assert(!transmitting);
+    uint64_t toReturn = 0;
+    if (probe_size == 8) {
+        toReturn = * ((uint8_t *) address); // This is safe lol
+        * ((uint8_t *) address) = to_write;
+    } else if (probe_size == 16) {
+        toReturn = * ((uint16_t *) address);
+        * ((uint16_t *) address) = to_write;
+    } else if (probe_size == 32) {
+        toReturn = * ((uint32_t *) address);
+        * ((uint32_t *) address) = to_write;
+    } else {
+        responseBadPacket(INVALID_COMMAND);
+        return;
+    }
+    int bodySize = 4;
+    write64(outBody, 0, toReturn);
+    setupTransmission(RESPONSE_PROBE, bodySize);
+}
+
+void SpiSlave::response_set_constant() {
+    uint16_t constant_number = packet[2];
+    uint16_t constant_type = packet[3];
+    uint32_t desired_value = (packet[4] << 16) + packet[5];
+    assert(!transmitting);
+    uint32_t toReturn = 0;
+    volatile double garbage = 0;
+    volatile double* doubleAddress = &garbage; // Just in case not initialized
+    volatile uint32_t garbage2 = 0;
+    volatile uint32_t* uintAddress = &garbage2;
+    if (constant_type == 0) { // int
+        if (constant_number == 0) {
+            toReturn = 0;
+            (void) desired_value;
+        } else if (constant_number == 1) {
+            uintAddress = &packetsReceived; // Not really used for anything
+        } else {
+            responseBadPacket(INVALID_COMMAND);
+            return;
+        }
+    } else if (constant_type == 1) { // float
+        if (constant_number == 50) {
+            toReturn = 0;
+            (void) desired_value;
+        } else if (constant_number == 51) {
+            doubleAddress = &pid._dt;
+        } else if (constant_number == 52) {
+           doubleAddress = &pid._Kp;
+        } else if (constant_number == 53) {
+           doubleAddress = &pid._Kd;
+        } else if (constant_number == 54) {
+           doubleAddress = &pid._Kd;
+        } else if (constant_number == 55) {
+           doubleAddress = &pid._Ki;
+        } else if (constant_number == 56) {
+          doubleAddress = &pid._min;
+        } else if (constant_number == 57) {
+          doubleAddress = &pid._max;
+        } else if (constant_number == 58) {
+          doubleAddress = &pointer.theta;
+        } else {
+           responseBadPacket(INVALID_COMMAND);
+           return;
+        }
+    } else {
+        responseBadPacket(INVALID_COMMAND);
+        return;
+    }
+
+    if (constant_type == 0) {
+        toReturn = *uintAddress;
+        *uintAddress = desired_value;
+    } else if (constant_type == 1) {
+        toReturn = *doubleAddress * 1000;
+        *doubleAddress = desired_value / 1000.0;
+    }
+
     int bodySize = 4;
     write64(outBody, 0, toReturn);
     setupTransmission(RESPONSE_PROBE, bodySize);

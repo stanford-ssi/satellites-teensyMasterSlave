@@ -88,7 +88,6 @@ void Pointer::pidProcess(const volatile adcSample& s) {
         if (state == TRACKING_STATE) {
             double xpos = 0xbeefabcd;
             double ypos = 0xbeefdcba;
-            double theta = 0;
             incoherentDetector.incoherentDisplacement(incoherentOutput, xpos, ypos, theta);
             pid.pidCalculate(xpos, ypos, out);
             if (samplesProcessed % (4000 / 10) == 0) {

@@ -2,6 +2,7 @@
 #define PACKET_H
 #include <t3spi.h>
 #include "DMAChannel.h"
+#include "pid.h"
 
 class SpiSlave {
 public:
@@ -13,8 +14,8 @@ public:
     volatile bool transmitting = false;
     // Very little effort is made to prevent these from overflowing
     // They will only be used for basic telemetry
-    volatile unsigned int packetsReceived = 0;
-    volatile unsigned int wordsReceived = 0;
+    volatile uint32_t packetsReceived = 0;
+    volatile uint32_t wordsReceived = 0;
 
     volatile uint16_t SLAVE_CHIP_SELECT = 31;
     // Always have first word in packet be constant for alignment checking
@@ -49,7 +50,9 @@ public:
     const uint16_t COMMAND_POINT_TRACK = 7;
     const uint16_t COMMAND_REPORT_TRACKING = 8;
     const uint16_t COMMAND_PROBE_MEMORY = 9;
-    const uint16_t MAX_COMMAND = 9;
+    const uint16_t COMMAND_WRITE_MEMORY = 10;
+    const uint16_t COMMAND_SET_CONSTANT = 11;
+    const uint16_t MAX_COMMAND = 11;
 
     // Response Headers
     const uint16_t MIN_HEADER = 0;
@@ -95,6 +98,8 @@ private:
     void response_echo();
     void response_status();
     void response_probe();
+    void response_write();
+    void response_set_constant();
     void responseBadPacket(uint16_t flag);
     void create_response();
     void responsePidDump();

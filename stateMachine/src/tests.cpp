@@ -20,6 +20,7 @@ void testSwap() {
 }
 
 void testDma() {
+    quadCell.adcStartSampling();
     assert(!quadCell.adcSampleReady());
 }
 
