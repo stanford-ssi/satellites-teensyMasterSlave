@@ -192,6 +192,7 @@ void SpiSlave::create_response() {
     } else if (command == COMMAND_SET_CONSTANT) {
         response_set_constant();
     } else {
+        debugPrintf("Command out of range\n");
         responseBadPacket(INVALID_COMMAND);
     }
 }
@@ -266,7 +267,7 @@ void SpiSlave::response_write() {
     uint32_t address = (packet[3] << 16) + packet[4];
     uint32_t to_write = (packet[5] << 16) + packet[6];
     uint16_t checksum = packet[7];
-    if (checksum != packet[5] + packet[6]) {
+    if (checksum != (uint16_t) (packet[5] + packet[6])) {
         responseBadPacket(INVALID_CHECKSUM);
         return;
     }
@@ -282,6 +283,7 @@ void SpiSlave::response_write() {
         toReturn = * ((uint32_t *) address);
         * ((uint32_t *) address) = to_write;
     } else {
+        debugPrintf("%d\n", probe_size);
         responseBadPacket(INVALID_COMMAND);
         return;
     }
@@ -293,7 +295,7 @@ void SpiSlave::response_write() {
 void SpiSlave::response_set_constant() {
     uint16_t constant_number = packet[2];
     uint16_t constant_type = packet[3];
-    uint32_t desired_value = (packet[4] << 16) + packet[5];
+    int32_t desired_value = (packet[4] << 16) + packet[5];
     assert(!transmitting);
     uint32_t toReturn = 0;
     volatile double garbage = 0;

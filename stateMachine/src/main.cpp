@@ -82,6 +82,8 @@ void heartbeat2() {
     debugPrintf(", %d loops, time alive %d, numSamplesRead %d\n", numLoops, timeAlive, quadCell.numSamplesRead);
     debugPrintf("%d last, %d max, %d fast, %d med, %d slow loops\n", lastLoopTime, maxLoopTime, numFastLoops, numMediumLoops, numSlowLoops);
     quadCell.quadCellHeartBeat();
+
+    debugPrintf("pid._dt: %d\n", (int) (pid._dt * 10000));
 }
 
 void heartbeat3() {

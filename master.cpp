@@ -55,6 +55,7 @@ int numError = 0;
 #define RESPONSE_IMU_DATA 2
 #define RESPONSE_MIRROR_DATA 3
 #define RESPONSE_ADCS_REQUEST 4
+#define RESPONSE_PROBE 5
 
 uint16_t echo[PACKET_BODY_LENGTH] = {0x0, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t stat[PACKET_BODY_LENGTH] = {0x1, 0xaaaa, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
@@ -63,7 +64,10 @@ uint16_t shutdown_[PACKET_BODY_LENGTH] = {0x3, 0xdddd, 0xbbbb, 0xbbbb, 0xbbbb, 0
 uint16_t enterCalibration[PACKET_BODY_LENGTH] = {0x6, 1, 7, 500, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t enterPointTrack[PACKET_BODY_LENGTH] = {0x7, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t reportTrack[PACKET_BODY_LENGTH] = {0x8, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
-uint16_t probe[PACKET_BODY_LENGTH] = {0x9, 32, 0x1fff, 0x0878, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t probe[PACKET_BODY_LENGTH] = {0x9, 32, 0x1fff, 0x0848, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t writeMem[PACKET_BODY_LENGTH] = {10, 32, 0x1fff, 0x0848, 0x1, 0x2, 0x3};
+uint16_t set_constant_uint[PACKET_BODY_LENGTH] = {11, 1, 0, 0, 0, 0, 0};
+uint16_t set_constant_float[PACKET_BODY_LENGTH] = {11, 51, 1, 65535, 64304, 0, 0}; // -1234
 
 void rando();
 void loop();
@@ -197,6 +201,8 @@ void transmitH(uint16_t *buf, bool verbos) {
             printf("ADCS request");
         } else if (responseNumber == RESPONSE_IMU_DATA) {
             printf("IMU data");
+        } else if (responseNumber == RESPONSE_PROBE) {
+            printf("Probe");
         } else {
             printf("Bad header");
         }
@@ -278,6 +284,12 @@ void loop() {
       transmit(enterCalibration);
     } else if (incomingByte == '9') {
       transmit(probe);
+    } else if (incomingByte == 'w') {
+      transmit(writeMem);
+    } else if (incomingByte == 'u') {
+      transmit(set_constant_uint);
+    } else if (incomingByte == 'f') {
+      transmit(set_constant_float);
     } else if (incomingByte == 'c') {
       transmitCrappy(echo);
     } else if (incomingByte == 'd') {
