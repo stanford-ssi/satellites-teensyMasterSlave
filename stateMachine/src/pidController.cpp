@@ -6,14 +6,14 @@ Pid pid;
 Pid::Pid() {
 }
 
-void Pid::pidSetup(){
+void Pid::pidSetup(double kp, double ki, double kd){
 
     _dt = 0.1;
 
-    // set gain or iterate to find gain???
-    _Kp = 0.1;
-    _Ki = 0.5;
-    _Kd = 0.01;
+    // set gain tuning
+    _Kp = kp;
+    _Ki = ki;
+    _Kd = kd;
 
     _max = 100;
     _min = -100;

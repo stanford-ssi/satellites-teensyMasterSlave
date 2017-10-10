@@ -35,7 +35,7 @@ void Pointer::firstLoopTracking() {
     totalPowerReceived = 0;
     incoherentDetector.incoherentSetup();
     interrupts();
-    pid.pidSetup();
+    pid.pidSetup(0.1, 0.5, 0.01);
 
     debugPrintf("About to clear dma: offset is (this might be high) %d\n", quadCell.adcGetOffset());
     quadCell.adcStartSampling();
@@ -90,7 +90,9 @@ void Pointer::pidProcess(const volatile adcSample& s) {
             double ypos = 0xbeefdcba;
             double theta = 0;
             incoherentDetector.incoherentDisplacement(incoherentOutput, xpos, ypos, theta);
+            
             pid.pidCalculate(xpos, ypos, out);
+            out.x = -5000;
             if (samplesProcessed % (4000 / 10) == 0) {
                 mirrorDriver.sendMirrorOutput(out);
             }
