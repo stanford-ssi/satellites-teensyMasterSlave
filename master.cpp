@@ -74,7 +74,7 @@ void loop();
 
 int main()
 {
-    fout.open("log.csv");
+    fout.open("/media/pi/memes/log.csv"); //writes to the log.csv in the 1TB external drive
     wiringPiSetup () ;
     wiringPiSPISetup(CHANNEL, spiSpeed);
     pinMode(REVERSECS, INPUT);
