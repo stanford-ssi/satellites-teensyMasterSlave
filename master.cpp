@@ -69,11 +69,16 @@ uint16_t writeMem[PACKET_BODY_LENGTH] = {10, 32, 0x1fff, 0x0848, 0x1, 0x2, 0x3};
 uint16_t set_constant_uint[PACKET_BODY_LENGTH] = {11, 1, 0, 0, 0, 0, 0};
 uint16_t set_constant_float[PACKET_BODY_LENGTH] = {11, 51, 1, 65535, 64304, 0, 0}; // -1234
 
+//Determines whether to print to stdout for the matplotlib streaming
+const bool STD_OUT_VERBOSE;
+
 void rando();
 void loop();
 
-int main()
-{
+int main(int argc, char *argv[])
+{   
+    STD_OUT_VERBOSE= argv[1]=="stdout" ? true : false;
+
     fout.open("/media/pi/memes/log.csv"); //writes to the log.csv in the 1TB external drive
     wiringPiSetup () ;
     wiringPiSPISetup(CHANNEL, spiSpeed);
@@ -174,8 +179,14 @@ void transmitH(uint16_t *buf, bool verbos) {
         for (int j = checksumIndex - (15 * 24); j < checksumIndex; j+=24) {
             for (int k = 0; k < 22; k+=2) {
                 fout << (int) (((unsigned int) getBuf(to_send, j + k)) * (1 << 16) + (unsigned int) getBuf(to_send, j + k + 1)) << ",";
+                if(STD_OUT_VERBOSE) {
+                    cout << (int) (((unsigned int) getBuf(to_send, j + k)) * (1 << 16) + (unsigned int) getBuf(to_send, j + k + 1)) << ",";
+                }
             }
             fout << (int) (getBuf(to_send, j + 22) * (1 << 16) + getBuf(to_send, j + 22 + 1)) << "," << errors << "," << computedChecksum << "," << getBuf(to_send, checksumIndex) << endl;
+            if(STD_OUT_VERBOSE) {
+                cout << (int) (getBuf(to_send, j + 22) * (1 << 16) + getBuf(to_send, j + 22 + 1)) << "," << errors << "," << computedChecksum << "," << getBuf(to_send, checksumIndex) << endl;
+            }
         }
     }
     uint16_t numToPrint = len + i + 2;
