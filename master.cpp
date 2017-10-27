@@ -77,8 +77,12 @@ void loop();
 
 int main(int argc, char *argv[])
 {   
-    STD_OUT_VERBOSE= argv[1]=="true" ? true : false;
-
+    string arg=argv[1];
+    if(arg=="true") {
+	STD_OUT_VERBOSE=true;
+    	cout<<"Writing output to stdout"<<endl;
+    }
+    
     fout.open("/media/pi/memes/log.csv"); //writes to the log.csv in the 1TB external drive
     wiringPiSetup () ;
     wiringPiSPISetup(CHANNEL, spiSpeed);
