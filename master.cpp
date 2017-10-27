@@ -70,17 +70,20 @@ uint16_t set_constant_uint[PACKET_BODY_LENGTH] = {11, 1, 0, 0, 0, 0, 0};
 uint16_t set_constant_float[PACKET_BODY_LENGTH] = {11, 51, 1, 65535, 64304, 0, 0}; // -1234
 
 //Determines whether to print to stdout for the matplotlib streaming
-bool STD_OUT_VERBOSE;
+bool STD_OUT_VERBOSE=false;
 
 void rando();
 void loop();
 
 int main(int argc, char *argv[])
 {   
-    string arg=argv[1];
-    if(arg=="true") {
-	STD_OUT_VERBOSE=true;
-    	cout<<"Writing output to stdout"<<endl;
+    
+    if(argv[1]) {
+	string arg=argv[1];
+	if(arg=="true") {
+	    STD_OUT_VERBOSE=true;
+    	    cout<<"Writing output to stdout"<<endl;
+    	}
     }
     
     fout.open("/media/pi/memes/log.csv"); //writes to the log.csv in the 1TB external drive
