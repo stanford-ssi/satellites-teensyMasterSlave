@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 import numpy
+import math
 
 def get_first_n_lines(f, args):
     if args.num_plot is None:
@@ -46,12 +47,18 @@ x = np.arange(n) / 4000.
     # plt.legend()
     # plt.show()
 print("ADC")
-for i in range(12):
+for i in range(13):
     print(i, np.count_nonzero(csv_string[:, i]))
 a = csv_string[:, 0]
 b = csv_string[:, 1]
 c = csv_string[:, 2]
 d = csv_string[:, 3]
+x = csv_string[:, 0] + csv_string[:, 3] - csv_string[:, 1] - csv_string[:, 2]
+y = csv_string[:, 0] + csv_string[:, 1] - csv_string[:, 2] - csv_string[:, 3]
+dist = x * x + y * y
+plt.plot(dist, label='distance loss')
+plt.legend()
+plt.show()
 # plt.plot(a + d - b - c, label='x')
 # plt.plot(a + b - c - d, label='y')
 plt.plot(csv_string[:, 0], label='a')
@@ -72,6 +79,8 @@ plt.plot(csv_string[:, 8], label='0')
 plt.plot(csv_string[:, 9], label='1')
 plt.plot(csv_string[:, 10], label='2')
 plt.plot(csv_string[:, 11], label='3')
+plt.plot()
 plt.legend()
 plt.show()
+
 
