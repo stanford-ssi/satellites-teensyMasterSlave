@@ -91,9 +91,10 @@ void pidDataSetup() {
     }
     interrupts();
 }
+*/
 
-void sentTriggerPacket() {
-}*/
+//void sentTriggerPacket() {
+//}
 
 /* *** Dequeues from pidSamples and moves samples into next packet *** */
 void checkDataDump() {
@@ -135,6 +136,9 @@ void checkDataDump() {
 
 // Enqueue pid sample for logging
 void recordPid(const volatile pidSample& s) {
+    if (pidBufferEmpty()) {
+        sampling = true;
+    }
     if (!sampling) {
         return;
     }
