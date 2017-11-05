@@ -4,6 +4,7 @@ import numpy as np
 import argparse
 import numpy
 import math
+import time
 
 def get_first_n_lines(f, args):
     if args.num_plot is None:
@@ -21,12 +22,19 @@ def get_first_n_lines(f, args):
     return lines
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--test', action='store_true')
 parser.add_argument('--download', action='store_true')
 parser.add_argument('--num', dest='num_plot', type=int)
 print(parser.parse_args())
-
 args = parser.parse_args()
 if args.download:
+    cmd = 'ssh pi "cd satellites-teensyMasterSlave && python loader.py"'
+    loaderProcess = subprocess.Popen(cmd, shell=True)
+    time.sleep(10)
+    #cmd = 'ssh pi "cd satellites-teensyMasterSlave && ./serial 1"'
+    #loaderProcess = subprocess.Popen(cmd, shell=True)
+    #time.sleep(3)
+    loaderProcess.terminate()
     subprocess.call("scp pi:satellites-teensyMasterSlave/log.csv .", shell=True)
 csv_string = get_first_n_lines(open("log.csv"), args)
 csv_string = np.array([[int(x) for x in line.split(',')] for line in csv_string])
@@ -47,7 +55,7 @@ x = np.arange(n) / 4000.
     # plt.legend()
     # plt.show()
 print("ADC")
-for i in range(13):
+for i in range(12):
     print(i, np.count_nonzero(csv_string[:, i]))
 a = csv_string[:, 0]
 b = csv_string[:, 1]
