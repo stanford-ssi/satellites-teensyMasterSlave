@@ -62,7 +62,6 @@ bool pidBufferEmpty() {
 bool pidBufferFull() {
     return ((pidDataPointer + 1) % PID_BUFFER_SIZE) == (pidSentDataPointer % PID_BUFFER_SIZE);
 }
-
 // Runs in main's setup()
 void pidDataSetup() {
     (void) assert(((unsigned int) pidDumpPacket.body) % 4 == 0);  // Check offset; Misaligned data may segfault at 0x20000000
@@ -136,8 +135,31 @@ void checkDataDump() {
 
 // Enqueue pid sample for logging
 void recordPid(const volatile pidSample& s) {
-    if (pidBufferEmpty()) {
+    if (pidBufferEmpty() && !sampling) {
+        //restart sampling once buffer has been cleared
         sampling = true;
+
+        //insert a dummy sample into the stream to indicate the break in sampling
+        pidSample fakeSample;
+        fakeSample.sample.a = 0x10;
+        fakeSample.sample.b = 0x11;
+        fakeSample.sample.c = 0x12;
+        fakeSample.sample.d = 0x13;
+        fakeSample.incoherentOutput.a = 0x14;
+        fakeSample.incoherentOutput.b = 0x14;
+        fakeSample.incoherentOutput.c = 0x14;
+        fakeSample.incoherentOutput.d = 0x14;
+        fakeSample.out.x = 0x13;
+        fakeSample.out.y = 0x12;
+        fakeSample.out.useless1 = 0x11;
+        fakeSample.out.useless2 = 0x10;
+        ((pidSample *) pidSamples)[pidDataPointer] = fakeSample; 
+        pidDataPointer = (pidDataPointer + 1) % PID_BUFFER_SIZE;
+        assert(pidDataPointer <= PID_BUFFER_SIZE);
+        if (pidBufferFull()) {
+            //buffer is full after one sample
+            sampling = false;
+        }
     }
     if (!sampling) {
         return;
