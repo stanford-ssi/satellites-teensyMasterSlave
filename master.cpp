@@ -70,7 +70,7 @@ uint16_t set_constant_uint[PACKET_BODY_LENGTH] = {11, 1, 0, 0, 0, 0, 0};
 uint16_t set_constant_float[PACKET_BODY_LENGTH] = {11, 51, 1, 65535, 64304, 0, 0}; // -1234
 
 //Determines whether to print to stdout for the matplotlib streaming
-const bool STD_OUT_VERBOSE;
+bool STD_OUT_VERBOSE;
 
 void rando();
 void loop();
