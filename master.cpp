@@ -83,15 +83,9 @@ int main(int argc, char *argv[])
 	string arg=argv[1];
 	if(arg=="true") {
 	    STD_OUT_VERBOSE=true;
-    	    cout<<"Writing output to stdout"<<endl;
-	      while (true) {
-      //immediately go into the "6p" case since we want streaming
-                 for (volatile int i = 0; digitalRead(24) == 0; i++) {
-                }
-          	transmitH(reportTrack, false);
-                }
-    
-	}
+    	cout<<"Writing output to stdout"<<endl;
+	 
+      }
     }
     
     fout.open("/media/pi/memes/log.csv"); //writes to the log.csv in the 1TB external drive
@@ -104,6 +98,16 @@ int main(int argc, char *argv[])
     digitalWrite(CHIPSELECT, HIGH);
     cout << "Starting" << endl;
     //unsigned char buf[2];
+    
+    //In case of streaming
+   while (STD_OUT_VERBOSE) {
+        //immediately go into the "6p" case since we want streaming
+      for (volatile int i = 0; digitalRead(24) == 0; i++) {
+      }
+    
+    transmitH(reportTrack, false);
+   }
+
     while (1) {
         /*buf[0] = 0x12;
         buf[1] = 0xab;
