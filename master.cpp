@@ -74,6 +74,7 @@ bool STD_OUT_VERBOSE=false;
 
 void rando();
 void loop();
+void transmitH(uint16_t *buf, bool verbos);
 
 int main(int argc, char *argv[])
 {   
@@ -110,8 +111,6 @@ int main(int argc, char *argv[])
        loop();
    }
 }
-
-void transmitH(uint16_t *buf, bool verbos);
 
 void transmit(uint16_t *buf) {
   if (transmitMany) {
