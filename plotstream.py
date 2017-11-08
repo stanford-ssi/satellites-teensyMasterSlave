@@ -12,8 +12,8 @@ host="10.34.199.125"
 password="dankmemes"
 port=22
 
-command= "cd satellites-teensyMasterSlave/ ; make stream"
-command="echo this is a test"
+command= "cd test/satellites-teensyMasterSlave/ ; make stream"
+stream_command="6p\n"
 client=paramiko.SSHClient()
 client.load_system_host_keys()
 client.set_missing_host_key_policy(paramiko.WarningPolicy)
@@ -23,16 +23,22 @@ stdin, stdout, stderror= client.exec_command(command)
 stdin.close()
 stderror.close()
 
+#Read in the first few info lines/ has to change based on changing initial output style
+initial_info=stdout.readline()+stdout.readline()+stdout.readline()
+print(initial_info)
+#send commands to start streaming
+stdin.write(stream_command)
+print(stdout.readline())
 
 csv_string=""
 plot_array=np.array([[]])
-for line in iter(lambda: stdout.readline(2048), "") :
+for line in iter(lambda: stdout.readline(2), "") :
     csv_string+=line
     plot_array=np.array([[int(x) for x in line.split(',')] for line in csv_string])
     plot_adc(plot_array)
     print(line)
     plt.pause(1)
-    #sys.stdout.flush() #?
+    sys.stdout.flush() #?
 
 stdout.close()
 
