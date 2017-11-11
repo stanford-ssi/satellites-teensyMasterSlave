@@ -21,6 +21,17 @@ void IncoherentDetector::incoherentSetup() {
   }
 }
 
+void IncoherentDetector::printBuffer() {
+  debugPrintf("{");
+  for (int i = 0; i < buffer_length; i++) {
+    debugPrintf("%d", buff[i]);
+    if (i < buffer_length - 1) {
+      debugPrintf(", ");
+    }
+  }
+  debugPrintf("}\n");
+}
+
 void IncoherentDetector::incoherentProcess(const volatile adcSample& s, adcSample& output) {
   //Retrieve latest sample values;
   int32_t latest[numCells] = {(int32_t) s.a, (int32_t) s.b, (int32_t) s.c, (int32_t) s.d};
@@ -32,6 +43,13 @@ void IncoherentDetector::incoherentProcess(const volatile adcSample& s, adcSampl
   int sinVal = envelope[sample%4];
   int cosVal = envelope[(sample + 1)%4];
 
+  if (count == PRINT_COUNT - 1) {
+    debugPrintf("B1: ");
+    printBuffer();
+  }
+  count = (count + 1) % PRINT_COUNT;
+
+
   //Replaces previous adc sample with new sample, and saves the previous sample for each quad cell
   for(int i = 0; i < numCells; i++){
     int32_t previous = buff[sample * numCells + i];
@@ -41,6 +59,13 @@ void IncoherentDetector::incoherentProcess(const volatile adcSample& s, adcSampl
     rolling_detectors[i * 2] += sinVal*(latest[i] - previous);
     rolling_detectors[i * 2 + 1] += cosVal*(latest[i] - previous);
   }
+
+  
+  if (count == PRINT_COUNT - 1) {
+    debugPrintf("B2: ");
+    printBuffer();
+  }
+  count = (count + 1) % PRINT_COUNT;
 
   sample++;
 

@@ -10,6 +10,8 @@ public:
     void incoherentProcess(const volatile adcSample& s, adcSample& output);
     void incoherentDisplacement(const adcSample& incoherentOutput, double& xpos, double& ypos, double theta);
 private:
+    int PRINT_COUNT = 6000;
+    int count = 0;
     const static int samples_per_cell = 32;
     const static int numCells = 4;
     int envelope[4] = {0,1,0,-1};
@@ -20,6 +22,7 @@ private:
     volatile int sample = 0;
     //Stores the running sum of the previous four samples of each quad cell for both sine and cosine envelopes
     volatile int32_t rolling_detectors[2*numCells] = {0,0,0,0,0,0,0,0};
+    void printBuffer();
 };
 
 extern IncoherentDetector incoherentDetector;
