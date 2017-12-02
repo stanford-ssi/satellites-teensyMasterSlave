@@ -1,4 +1,4 @@
-#include <SPI.h>
+#include <ssiSpi.h>
 unsigned int SYNC=3;
 unsigned int SMPL_CLK=29;
 unsigned int CS0=35;
