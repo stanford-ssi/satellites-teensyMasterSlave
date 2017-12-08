@@ -7,6 +7,17 @@ IncoherentDetector::IncoherentDetector() {
 	detectD = new IncoherentDetectorCell();
 }
 
+void IncoherentDetector::printBuffer() {
+  debugPrintf("{");
+  for (int i = 0; i < buffer_length; i++) {
+    debugPrintf("%d", buff[i]);
+    if (i < buffer_length - 1) {
+      debugPrintf(", ");
+    }
+  }
+  debugPrintf("}\n");
+}
+
 void IncoherentDetector::incoherentProcess(const volatile adcSample& s, adcSample& output) {
 	output.a = detectA->incoherentProcess(s.a);
 	output.b = detectB->incoherentProcess(s.b);

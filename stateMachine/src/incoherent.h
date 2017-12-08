@@ -14,6 +14,7 @@ private:
     IncoherentDetectorCell* detectB;
     IncoherentDetectorCell* detectC;
     IncoherentDetectorCell* detectD;
+
 };
 
 extern IncoherentDetector incoherentDetector;
