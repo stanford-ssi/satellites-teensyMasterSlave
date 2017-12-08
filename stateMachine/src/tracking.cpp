@@ -33,7 +33,7 @@ void Pointer::firstLoopTracking() {
     lockedOn = false;
     totalPowerReceivedBeforeIncoherent = 0;
     totalPowerReceived = 0;
-    incoherentDetector.incoherentSetup();
+    // incoherentDetector.incoherentSetup();
     interrupts();
     pid.pidSetup();
 
