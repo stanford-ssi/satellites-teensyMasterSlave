@@ -26,7 +26,7 @@ print(parser.parse_args())
 
 args = parser.parse_args()
 if args.download:
-    subprocess.call("scp pi:satellites-teensyMasterSlave/log.csv .", shell=True)
+    subprocess.call("scp pi:/media/pi/memes/log.csv .", shell=True)
 csv_string = get_first_n_lines(open("log.csv"), args)
 csv_string = np.array([[int(x) for x in line.split(',')] for line in csv_string])
 print("Read {} samples".format(csv_string.shape[0]))
