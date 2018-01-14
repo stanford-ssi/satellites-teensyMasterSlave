@@ -59,8 +59,13 @@ void IncoherentDetector::incoherentDisplacement(const adcSample& incoherentOutpu
   double quadB = incoherentOutput.b;
   double quadC = incoherentOutput.c;
   double quadD = incoherentOutput.d;
-  double xposIntermediate = ((quadA + quadD) - (quadB + quadC))/(quadA + quadB + quadC + quadD);
-  double yposIntermediate = ((quadA + quadB) - (quadC + quadD))/(quadA + quadB + quadC + quadD);
-  xpos = cos(theta) * xposIntermediate - sin(theta) * yposIntermediate;
-  ypos = sin(theta) * xposIntermediate + cos(theta) * yposIntermediate;
+  if (quadA + quadB + quadC + quadD == 0) {
+    xpos = 0;
+    ypos = 0;
+  } else {
+    double xposIntermediate = ((quadA + quadD) - (quadB + quadC))/(quadA + quadB + quadC + quadD);
+    double yposIntermediate = ((quadA + quadB) - (quadC + quadD))/(quadA + quadB + quadC + quadD);
+    xpos = cos(theta) * xposIntermediate - sin(theta) * yposIntermediate;
+    ypos = sin(theta) * xposIntermediate + cos(theta) * yposIntermediate;
+  }
 }
