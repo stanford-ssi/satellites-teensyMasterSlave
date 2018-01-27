@@ -92,7 +92,8 @@ int32_t IncoherentDetector::incoherentOneSinChannel(int32_t current_channel) {
   }
   rolling_sin_vals[numCells - 1] = sinAdjustedVal;
   four_value_sin_sum += rolling_sin_vals[numCells - 1];
-
+  
+  //Return the sum of sin*value for the current 4-vaule window
   return four_value_sin_sum;
 }
 
@@ -109,5 +110,6 @@ int32_t IncoherentDetector::incoherentOneCosChannel(int32_t current_channel) {
   rolling_cos_vals[numCells - 1] = cosAdjustedVal;
   four_value_cos_sum += rolling_cos_vals[numCells - 1];
 
+  //Return the sum of cos*value for the current 4-vaule window
   return four_value_cos_sum;
 }
