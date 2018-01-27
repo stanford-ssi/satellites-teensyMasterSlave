@@ -26,6 +26,14 @@ void Pointer::enterTracking() {
     // This is because enterTracking() is called in an interrupt before the main loop is finished doing its thing
 }
 
+void Pointer::setScalingFactor(uint16_t factor) {
+    if (factor == 0) {
+        scalingFactor = 1;
+    } else {
+        scalingFactor = factor;
+    }
+}
+
 void Pointer::firstLoopTracking() {
     noInterrupts();
     numLockedOn = 0;
@@ -75,7 +83,8 @@ void Pointer::logPidSample(const volatile pidSample& s) {
     samplesProcessed++;
 }
 
-void Pointer::pidProcess(const volatile adcSample& s) {
+void Pointer::pidProcess(volatile adcSample& s) {
+    s.downscale(scalingFactor);
     adcSample incoherentOutput;
     incoherentDetector.incoherentProcess(s, incoherentOutput);
     lockedOn = false;

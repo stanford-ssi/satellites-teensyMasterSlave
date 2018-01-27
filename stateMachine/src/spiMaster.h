@@ -15,6 +15,15 @@ typedef struct adcSample {
         a = b = c = d = 0;
     }
 
+    void downscale(const volatile uint16_t factor) volatile {
+        if (factor > 0) {
+            a /= factor;
+            b /= factor;
+            c /= factor;
+            d /= factor;
+        }
+    }
+
     void swap(volatile uint32_t &axis) volatile {
         uint16_t temp = axis % (1 << 16);
         axis = (axis / (1 << 16)) + (temp << 16);

@@ -16,7 +16,9 @@ public:
     void leaveCalibration();
     void taskCalibration();
     void calibrationHeartbeat();
+    void setScalingFactor(uint16_t factor);
 
+    volatile uint32_t scalingFactor = 1;
     volatile uint64_t numLockedOn = 0;
     volatile unsigned samplesProcessed = 0;
     volatile uint64_t totalPowerReceivedBeforeIncoherent = 0;
@@ -25,7 +27,7 @@ public:
 private:
     void firstLoopTracking();
     void logPidSample(const volatile pidSample& s);
-    void pidProcess(const volatile adcSample& s);
+    void pidProcess(volatile adcSample& s);
 
     mirrorOutput lastPidOut;
     adcSample lastAdcRead;

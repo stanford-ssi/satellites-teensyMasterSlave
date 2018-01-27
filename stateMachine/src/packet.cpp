@@ -160,6 +160,13 @@ void SpiSlave::create_response() {
         previousState = state;
         changingState = true;
         state = TRACKING_STATE;
+        uint16_t magic = packet[2];
+        if (magic == 0x4924) {
+            uint16_t scalingFactor = packet[3];
+            pointer.setScalingFactor(scalingFactor);
+        } else {
+            pointer.setScalingFactor(1);
+        }
         response_status();
     } else if (command == COMMAND_CALIBRATE) {
         uint16_t bufferSelect = packet[2];

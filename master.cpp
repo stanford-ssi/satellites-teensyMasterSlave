@@ -63,6 +63,9 @@ uint16_t idle_[PACKET_BODY_LENGTH] = {0x2, 0xcccc, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbb
 uint16_t shutdown_[PACKET_BODY_LENGTH] = {0x3, 0xdddd, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t enterCalibration[PACKET_BODY_LENGTH] = {0x6, 1, 7, 500, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t enterPointTrack[PACKET_BODY_LENGTH] = {0x7, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t enterPointTrack2[PACKET_BODY_LENGTH] = {0x7, 0x4924, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t enterPointTrack3[PACKET_BODY_LENGTH] = {0x7, 0x4924, 1, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
+uint16_t enterPointTrack4[PACKET_BODY_LENGTH] = {0x7, 0x4924, 0, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t reportTrack[PACKET_BODY_LENGTH] = {0x8, 0xffff, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t probe[PACKET_BODY_LENGTH] = {0x9, 32, 0x1fff, 0x0848, 0xbbbb, 0xbbbb, 0xbbbb};
 uint16_t writeMem[PACKET_BODY_LENGTH] = {10, 32, 0x1fff, 0x0848, 0x1, 0x2, 0x3};
@@ -280,6 +283,12 @@ void loop() {
         transmit(idle_);
     } else if (incomingByte == '6') {
       transmit(enterPointTrack);
+    } else if (incomingByte == 'z') {
+      transmit(enterPointTrack2);
+    } else if (incomingByte == 'x') {
+      transmit(enterPointTrack3);
+    } else if (incomingByte == 'c') {
+      transmit(enterPointTrack4);
     } else if (incomingByte == '7') {
       transmit(reportTrack);
     } else if (incomingByte == 'p') {
