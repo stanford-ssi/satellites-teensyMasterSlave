@@ -2,6 +2,7 @@
 #include "spiMaster.h"
 
 IncoherentDetector incoherentDetector;
+int maxIntRoot = sqrt(2147483647);
 
 IncoherentDetector::IncoherentDetector() {
     // Real setup is in incoherentSetup, in setup() function
@@ -46,6 +47,10 @@ void IncoherentDetector::incoherentProcess(const volatile adcSample& s, adcSampl
 
   //Calculates and sets the four axis incoherent values
   for(int i = 0; i < numCells; i++){
+	for (int j = 0; j < (2 * numCells); j++){
+		if(rolling_detectors[j] > maxIntRoot) rolling_detectors[j] = maxIntRoot;
+		if (rolling_detectors[j] < (-maxIntRoot)) rolling_detectors[j] = -maxIntRoot;
+	}
     output.a = sqrt(sq(rolling_detectors[0]/samples_per_cell) + sq(rolling_detectors[1]/samples_per_cell));
     output.b = sqrt(sq(rolling_detectors[2]/samples_per_cell) + sq(rolling_detectors[3]/samples_per_cell));
     output.c = sqrt(sq(rolling_detectors[4]/samples_per_cell) + sq(rolling_detectors[5]/samples_per_cell));
