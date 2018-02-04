@@ -1,8 +1,8 @@
 #include "incoherent.h"
 #include "spiMaster.h"
-
+#include <limits.h>
 IncoherentDetector incoherentDetector;
-int maxIntRoot = sqrt(2147483647);
+int maxIntRoot = sqrt(INT_MAX);
 
 IncoherentDetector::IncoherentDetector() {
     // Real setup is in incoherentSetup, in setup() function
@@ -21,6 +21,26 @@ void IncoherentDetector::incoherentSetup() {
     rolling_detectors[i] = 0;
   }
 }
+//Checks for overflows in the sum of two squared detector values.
+int32_t IncoherentDetector::safeSquare (volatile int32_t detector1, volatile int32_t detector2){
+  int32_t squared = 0;
+  //Checks bounds for value 1.
+  if (detector1 > (maxIntRoot - 1)) detector1 = maxIntRoot;
+  if (detector1 < (-maxIntRoot + 1)) detector1 = -maxIntRoot;
+ 
+  //Checks bounds for value 2.
+  if (detector2 > (maxIntRoot - 1)) detector2 = maxIntRoot;
+  if (detector2 < (-maxIntRoot + 1)) detector2 = -maxIntRoot;
+
+  squared += sq(detector1/samples_per_cell);
+ 
+ //Checks bounds for the squared value.
+  if (squared > ((~(1 << 31)) - sq(detector2/samples_per_cell))) return INT_MAX;
+
+  squared += sq(detector2/samples_per_cell);
+  return squared;
+}
+
 
 void IncoherentDetector::incoherentProcess(const volatile adcSample& s, adcSample& output) {
   //Retrieve latest sample values;
@@ -47,14 +67,10 @@ void IncoherentDetector::incoherentProcess(const volatile adcSample& s, adcSampl
 
   //Calculates and sets the four axis incoherent values
   for(int i = 0; i < numCells; i++){
-	for (int j = 0; j < (2 * numCells); j++){
-		if(rolling_detectors[j] > maxIntRoot) rolling_detectors[j] = maxIntRoot;
-		if (rolling_detectors[j] < (-maxIntRoot)) rolling_detectors[j] = -maxIntRoot;
-	}
-    output.a = sqrt(sq(rolling_detectors[0]/samples_per_cell) + sq(rolling_detectors[1]/samples_per_cell));
-    output.b = sqrt(sq(rolling_detectors[2]/samples_per_cell) + sq(rolling_detectors[3]/samples_per_cell));
-    output.c = sqrt(sq(rolling_detectors[4]/samples_per_cell) + sq(rolling_detectors[5]/samples_per_cell));
-    output.d = sqrt(sq(rolling_detectors[6]/samples_per_cell) + sq(rolling_detectors[7]/samples_per_cell));
+    output.a = safeSquare(rolling_detectors[0], rolling_detectors[1]);
+    output.b = safeSquare(rolling_detectors[2], rolling_detectors[3]);
+    output.c = safeSquare(rolling_detectors[4], rolling_detectors[5]);
+    output.d = safeSquare(rolling_detectors[6], rolling_detectors[7]);
   }
 }
 

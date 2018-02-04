@@ -6,9 +6,11 @@
 class IncoherentDetector {
 public:
     IncoherentDetector();
+    int32_t safeSquare (volatile int32_t detector1, volatile int32_t detector2);
     void incoherentSetup();
     void incoherentProcess(const volatile adcSample& s, adcSample& output);
     void incoherentDisplacement(const adcSample& incoherentOutput, double& xpos, double& ypos, double theta);
+
 private:
     const static int samples_per_cell = 32;
     const static int numCells = 4;
