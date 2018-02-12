@@ -67,10 +67,10 @@ void IncoherentDetector::incoherentProcess(const volatile adcSample& s, adcSampl
 
   //Calculates and sets the four axis incoherent values
   for(int i = 0; i < numCells; i++){
-    output.a = safeSquare(rolling_detectors[0], rolling_detectors[1]);
-    output.b = safeSquare(rolling_detectors[2], rolling_detectors[3]);
-    output.c = safeSquare(rolling_detectors[4], rolling_detectors[5]);
-    output.d = safeSquare(rolling_detectors[6], rolling_detectors[7]);
+    output.a = sqrt(safeSquare(rolling_detectors[0], rolling_detectors[1]));
+    output.b = sqrt(safeSquare(rolling_detectors[2], rolling_detectors[3]));
+    output.c = sqrt(safeSquare(rolling_detectors[4], rolling_detectors[5]));
+    output.d = sqrt(safeSquare(rolling_detectors[6], rolling_detectors[7]));
   }
 }
 
