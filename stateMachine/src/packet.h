@@ -2,7 +2,7 @@
 #define PACKET_H
 #include <t3spi.h>
 #include "DMAChannel.h"
-#include "pid.h"
+#include "pidController.h"
 
 class SpiSlave {
 public:
