@@ -24,20 +24,23 @@ void IncoherentDetector::incoherentSetup() {
 //Checks for overflows in the sum of two squared detector values.
 int32_t IncoherentDetector::safeSquare (volatile int32_t detector1, volatile int32_t detector2){
   int32_t squared = 0;
+  detector1 /= samples_per_cell;
+  detector2 /= samples_per_cell;
   //Checks bounds for value 1.
   if (detector1 > (maxIntRoot - 1)) detector1 = maxIntRoot;
   if (detector1 < (-maxIntRoot + 1)) detector1 = -maxIntRoot;
- 
+
   //Checks bounds for value 2.
   if (detector2 > (maxIntRoot - 1)) detector2 = maxIntRoot;
   if (detector2 < (-maxIntRoot + 1)) detector2 = -maxIntRoot;
 
-  squared += sq(detector1/samples_per_cell);
- 
- //Checks bounds for the squared value.
-  if (squared > ((~(1 << 31)) - sq(detector2/samples_per_cell))) return INT_MAX;
+  squared += sq(detector1);
 
-  squared += sq(detector2/samples_per_cell);
+ //Checks bounds for the squared value.
+  if (squared > ((~(1 << 31)) - sq(detector2))) return INT_MAX;
+
+  squared += sq(detector2);
+  //debugPrintln(squared);
   return squared;
 }
 
