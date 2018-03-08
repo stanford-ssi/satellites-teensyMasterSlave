@@ -68,9 +68,7 @@ private:
 
     // Teensy 3.6 pinouts
     const int slaveSelectPin = 43;
-    const int DRIVER_HV_EN_pin = 54;
-    const int LASER_EN_PIN = 22; // toggles laser on / off for modulation (PWM pin)
-    bool laser_state = LOW;
+
     int count = 0;
     int freq_x = 1;
     int freq_y = 1;

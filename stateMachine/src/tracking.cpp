@@ -65,6 +65,10 @@ void Pointer::leaveTracking() {
     totalPowerReceived = 0;
     samplesProcessed = 0;
     mirrorDriver.highVoltageEnable(false);
+    // shut down +-7V, laser
+    digitalWrite(ENABLE_MINUS_7_PIN, LOW); // -7 driver disable
+    digitalWrite(ENABLE_7_PIN, LOW); // +7 driver disable
+    analogWrite(LASER_EN_PIN,0); // write DAC1 register to 0 (turn off laser)
     interrupts();
 }
 

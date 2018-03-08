@@ -17,12 +17,12 @@ MirrorDriver::MirrorDriver() {
 void MirrorDriver::mirrorDriverSetup() {
     // Setup Pins:
     pinMode (slaveSelectPin, OUTPUT); // SPI SS pin 10
-    pinMode (DRIVER_HV_EN_pin, OUTPUT); // driver board high voltage output enable pin 8
-    pinMode (LASER_EN_PIN, OUTPUT); // Laser diode switching pin 7, active low.
+    // on flight board laser is connected to DAC1, no pin mode to enable (always analog)
+    analogWrite(LASER_EN_PIN,0); // write DAC1 register to 0 (turn off laser)
+    laser_state = LOW;
     // write pins low
     digitalWrite(slaveSelectPin,LOW);
     digitalWrite(DRIVER_HV_EN_pin,LOW);
-    analogWrite(LASER_EN_PIN,0);
     // setup SPI
     debugPrintln("Setting up SPI");
     // initialize SPI:
@@ -81,11 +81,12 @@ void MirrorDriver::mirrorDriverSetup() {
     corners[6].y = 32765;
     zero[0].x = 0;
     zero[0].y = 0;
+    // LASER DOES NOT BLINK IN FLIGHT VERSION! Wired to DAC not PWM
     // Start the LASER PWM timer
     // 50% duty cycle at desired frequency
-    debugPrintln("Turning on laser");
-    analogWriteFrequency(LASER_EN_PIN, 1000);
-    analogWrite (LASER_EN_PIN,0);
+    //debugPrintln("Turning on laser");
+    //analogWriteFrequency(LASER_EN_PIN, 1000);
+    //analogWrite (LASER_EN_PIN,0);
 }
 
 void MirrorDriver::sendMirrorOutput(const mirrorOutput& out) {
@@ -175,7 +176,7 @@ void MirrorDriver::highVoltageEnable(bool enable) {
 void MirrorDriver::laserEnable(bool enable) {
     if (enable) {
         laser_state = HIGH;
-        analogWrite (LASER_EN_PIN, 128); // 50% duty cycle 1khz
+        analogWrite (LASER_EN_PIN, 0xFFF); // laser on full
     } else {
         laser_state = LOW;
         analogWrite (LASER_EN_PIN, 0);
