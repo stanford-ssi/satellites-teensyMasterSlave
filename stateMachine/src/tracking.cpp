@@ -64,6 +64,8 @@ void Pointer::leaveTracking() {
     totalPowerReceivedBeforeIncoherent = 0;
     totalPowerReceived = 0;
     samplesProcessed = 0;
+    mirrorOutput zeros;
+    mirrorDriver.sendMirrorOutput(zeros);
     mirrorDriver.highVoltageEnable(false);
     interrupts();
 }
