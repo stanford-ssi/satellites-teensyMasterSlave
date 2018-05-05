@@ -17,6 +17,7 @@ public:
     Pid();
     void pidCalculate(double pv_x, double pv_y, mirrorOutput& out);
     void pidSetup();
+    void setConstants(int16_t p, int16_t i, int16_t d);
 };
 
 extern Pid pid;

@@ -18,6 +18,12 @@ Pid::Pid() {
 void Pid::pidSetup(){
 }
 
+void Pid::setConstants(int16_t p, int16_t i, int16_t d) {
+    _Kp = p;
+    _Ki = i / 100.0;
+    _Kd = d / 100.0;
+}
+
 void Pid::pidCalculate(double pv_x, double pv_y, mirrorOutput& out){
 
     // Calculate error

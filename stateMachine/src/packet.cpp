@@ -145,6 +145,13 @@ void SpiSlave::create_response() {
     if (command == COMMAND_ECHO) {
         response_echo();
     } else if (command == COMMAND_STATUS) {
+        uint16_t magic = packet[2];
+        if (magic == 0x4927) {
+            int16_t p = packet[3];
+            int16_t i = packet[4];
+            int16_t d = packet[5];
+            pid.setConstants(p, i, d);
+        }
         response_status();
     } else if (command == COMMAND_SHUTDOWN) {
         previousState = state;
