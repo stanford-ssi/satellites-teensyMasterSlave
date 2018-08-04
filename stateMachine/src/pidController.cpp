@@ -7,12 +7,12 @@ Pid::Pid() {
         _dt = 0.1;
 
         // set gain or iterate to find gain???
-        _Kp = 0.1;
-        _Ki = 0.5;
-        _Kd = 0.01;
+        _Kp = 1000;
+        _Ki = 4;
+        _Kd = 0.0;
 
-        _max = 100;
-        _min = -100;
+        _max = 65500;
+        _min = -65500;
 }
 
 void Pid::pidSetup(){
