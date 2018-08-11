@@ -10,6 +10,13 @@
 
 #define DEBUG true
 
+// Define GLOBAL pinouts: power and laser
+#define ENABLE_MINUS_7_PIN 53 //-7V enable pin
+#define ENABLE_7_PIN 54 //+7V enable pin
+#define DRIVER_HV_EN_pin 52 // 160V driver enable pin
+#define LASER_EN_PIN  A22 // laser attached to analog output A22
+extern volatile bool laser_state; // move laser state up to global access so main can ensure laser is off / record laser state
+
 #if DEBUG
     #define debugPrintf(...) do {if (Serial) { Serial.printf(__VA_ARGS__); Serial.flush(); }} while (0);
     #define debugPrintln(x) do {if (Serial) { Serial.println(x); Serial.flush(); }} while (0);

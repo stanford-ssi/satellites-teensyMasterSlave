@@ -112,8 +112,7 @@ public:
     void quadCellHeartBeat();
 private:
     const uint16_t sizeofAdcSample = (sizeof(adcSample) / 2);
-    const uint16_t ENABLE_MINUS_7_PIN = 52;
-    const uint16_t ENABLE_7_PIN = 53;
+    // TODO: DOUBLE CHECK ADC CHIP SELECT PINOUT AND QUAD CELL ORIENTATION
     const uint16_t ADC_CS0 = 35;
     const uint16_t ADC_CS1 = 37;
     const uint16_t ADC_CS2 = 7;

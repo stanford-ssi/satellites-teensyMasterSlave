@@ -26,6 +26,10 @@ volatile unsigned int numFastLoops = 0;
 volatile unsigned int numSlowLoops = 0;
 volatile unsigned int numMediumLoops = 0;
 
+// global ref to the laser state so it can be turned on / off from state transitions
+// currently done in mirrorDriver class, probably not where that should be...
+volatile bool laser_state = LOW;
+
 void setup() {
   Serial.begin(115200);
   debugPrintf("Serial is on\n");
