@@ -175,6 +175,8 @@ void QuadCell::quadCellReadAdcTimerIsr() {
 
 // turn on +-7V when entering state that needs them
 void QuadCell::setupHighVoltage() {
+    pinMode(ENABLE_MINUS_7_PIN, OUTPUT);
+    pinMode(ENABLE_7_PIN, OUTPUT);
     digitalWrite(ENABLE_MINUS_7_PIN, HIGH); // -7 driver enable
     digitalWrite(ENABLE_7_PIN, HIGH); // +7 driver enable
 }

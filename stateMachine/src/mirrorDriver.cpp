@@ -17,6 +17,8 @@ MirrorDriver::MirrorDriver() {
 void MirrorDriver::mirrorDriverSetup() {
     // Setup Pins:
     pinMode (slaveSelectPin, OUTPUT); // SPI SS pin 10
+    pinMode (DRIVER_HV_EN_pin, OUTPUT);
+    pinMode (LASER_EN_PIN, OUTPUT);
     // on flight board laser is connected to DAC1, no pin mode to enable (always analog)
     analogWrite(LASER_EN_PIN,0); // write DAC1 register to 0 (turn off laser)
     laser_state = LOW;

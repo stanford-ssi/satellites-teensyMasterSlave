@@ -24,6 +24,8 @@ void Pointer::trackingSetup() {
 void Pointer::enterTracking() {
     enteringTracking = true; // Set this flag that we want to enter tracking mode, but the real setup work is done in firstLoopTracking()
     // This is because enterTracking() is called in an interrupt before the main loop is finished doing its thing
+    digitalWrite(ENABLE_7_PIN, HIGH); // +7 driver disable
+    digitalWrite(ENABLE_MINUS_7_PIN, HIGH); // -7 driver disable
 }
 
 void Pointer::setScalingFactor(uint16_t factor) {
@@ -68,9 +70,11 @@ void Pointer::leaveTracking() {
     mirrorDriver.sendMirrorOutput(zeros);
     mirrorDriver.highVoltageEnable(false);
     // shut down +-7V, laser
+
     digitalWrite(ENABLE_MINUS_7_PIN, LOW); // -7 driver disable
     digitalWrite(ENABLE_7_PIN, LOW); // +7 driver disable
     analogWrite(LASER_EN_PIN,0); // write DAC1 register to 0 (turn off laser)
+
     interrupts();
 }
 
