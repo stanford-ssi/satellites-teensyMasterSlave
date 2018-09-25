@@ -102,6 +102,7 @@ void SpiSlave::packetReceived() {
   handlePacket();
 }
 
+// undo header / footer / checksum checks due to POINTR bad SPI reads
 void SpiSlave::handlePacket() {
   // Check for erroneous data
   if (transmitting) {
@@ -120,7 +121,7 @@ void SpiSlave::handlePacket() {
     debugPrintln("");*/
     errors++;
     responseBadPacket(INVALID_BORDER);
-    return;
+    //return;
   }
   uint16_t receivedChecksum = 0;
   for (int i = PACKET_BODY_BEGIN; i < PACKET_BODY_END; i++) {
@@ -128,10 +129,64 @@ void SpiSlave::handlePacket() {
   }
   if (receivedChecksum != packet[PACKET_SIZE - 2]) {
       responseBadPacket(INVALID_CHECKSUM);
-      return;
+      //return;
   }
 
   create_response();
+}
+
+// Pattern detect on bad SPI transmission to still get commands through
+// count through the 7 words in the manual command to look for 0xFFFF (or close enough)
+// and guess the relevant commands
+/*
+  COMMAND_ECHO            packet[1] = 0xFFFF
+  COMMAND_STATUS          packet[2] = 0xFFFF
+  COMMAND_IDLE            packet[3] = 0xFFFF
+  COMMAND_SHUTDOWN        packet[4] = 0xFFFF
+  COMMAND_CALIBRATE       packet[5] = 0xFFFF
+  COMMAND_POINT_TRACK     packet[6] = 0xFFFF
+  COMMAND_REPORT_TRACKING packet[7] = 0xFFFF
+*/
+uint16_t parsePacketPattern(){
+  uint16_t parsedCommand = COMMAND_ERR;
+  uint16_t parseWord  = 0;
+  uint8_t onesCount = 0;
+  uint8_t wordCount = 0;
+
+  // iterate through the 7 manual set words looking for first to be all ones
+  for (int i = 1; i<=7; i++){
+    parseWord = packet[i];
+    onesCount = 0;
+    // ones counting algorithm
+    for (onesCount;parseWord;onesCount++){
+      parseWord &= parseWord -1;
+    }
+    // if this packet word has more than 10 ones assume this was the message trying to send
+    if (onesCount >=10){
+      wordCount = i;
+      break;
+    }
+  }
+
+  if (wordCount == 0){
+    parsedCommand = COMMAND_ERR;
+  } else if (wordCount ==1){
+    parsedCommand = COMMAND_ECHO;
+  } else if (wordCount ==2){
+    parsedCommand = COMMAND_STATUS;
+  } else if (wordCount ==3){
+    parsedCommand = COMMAND_IDLE;
+  } else if (wordCount ==4){
+    parsedCommand = COMMAND_SHUTDOWN;
+  } else if (wordCount ==5){
+    parsedCommand = COMMAND_CALIBRATE;
+  } else if (wordCount ==6){
+    parsedCommand = COMMAND_POINT_TRACK;
+  } else if (wordCount ==7){
+    parsedCommand = COMMAND_REPORT_TRACKING;
+  }
+
+  return(parsedCommand);
 }
 
 void SpiSlave::create_response() {
@@ -142,6 +197,10 @@ void SpiSlave::create_response() {
         responseBadPacket(STATE_NOT_READY);
         return;
     }
+
+    // added this method to try and decipher poorly received SPI commands
+    command = parsePacketPattern();
+
     if (command == COMMAND_ECHO) {
         response_echo();
     } else if (command == COMMAND_STATUS) {
@@ -176,9 +235,13 @@ void SpiSlave::create_response() {
         }
         response_status();
     } else if (command == COMMAND_CALIBRATE) {
-        uint16_t bufferSelect = packet[2];
-        uint16_t frequency = packet[3];
-        uint16_t amplitude = packet[4];
+        //uint16_t bufferSelect = packet[2];
+        //uint16_t frequency = packet[3];
+        //uint16_t amplitude = packet[4];
+        // setting default calibration since command packed reading is FUBAR
+        uint16_t bufferSelect = 0; // 0 sine wave
+        uint16_t frequency = 10; // 10Hz
+        uint16_t amplitude = 500; // half amplitude
         if (bufferSelect >= mirrorDriver.numMirrorBuffers || frequency == 0 || frequency > 1000 || amplitude > 1000) {
             debugPrintf("bufferSelect %d frequency %d\n", bufferSelect, frequency);
             responseBadPacket(INVALID_COMMAND);

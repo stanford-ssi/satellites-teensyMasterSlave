@@ -109,11 +109,11 @@ void Pointer::pidProcess(volatile adcSample& s) {
             double ypos = 0xbeefdcba;
             incoherentDetector.incoherentDisplacement(incoherentOutput, xpos, ypos, theta);
             pid.pidCalculate(xpos, ypos, out);
-            if (samplesProcessed % (4000 / 10) == 0) {
+            if (samplesProcessed % (ADC_SAMPLE_FREQUENCY_HZ / 10) == 0) {
                 mirrorDriver.sendMirrorOutput(out);
             }
         } else if (state == CALIBRATION_STATE) {
-            if (samplesProcessed % (4000 / mirrorDriver.getMirrorFrequency()) == 0) {
+            if (samplesProcessed % (ADC_SAMPLE_FREQUENCY_HZ / mirrorDriver.getMirrorFrequency()) == 0) {
                 mirrorOutput out;
                 mirrorDriver.getNextMirrorOutput(out);
                 mirrorDriver.sendMirrorOutput(out);

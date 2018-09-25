@@ -53,6 +53,7 @@ public:
     const uint16_t COMMAND_WRITE_MEMORY = 10;
     const uint16_t COMMAND_SET_CONSTANT = 11;
     const uint16_t MAX_COMMAND = 11;
+    const uint16_t COMMAND_ERR = 12;
 
     // Response Headers
     const uint16_t MIN_HEADER = 0;
@@ -101,6 +102,7 @@ private:
     void response_write();
     void response_set_constant();
     void responseBadPacket(uint16_t flag);
+    uint16_t parsePacketPattern();
     void create_response();
     void responsePidDump();
     void setupTransmission(uint16_t header, unsigned int bodyLength);

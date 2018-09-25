@@ -123,7 +123,7 @@ void QuadCell::beginAdcRead(void) {
     long diff = timeNow - lastSampleTime;
     if (lastSampleTime != 0) {
         lastSampleTime = timeNow;
-        if(!(diff >= 245 && diff <= 255)) { //  4kHz -> 250 microseconds
+        if(!(diff >= ADC_SAMPLE_PERIOD_US-5 && diff <= ADC_SAMPLE_PERIOD_US+5)) { //  4kHz -> 250 microseconds
             // debugPrintf("Diff is %d, %d success %d fail %d %d\n", diff, numSuccess, numFail, numStartCalls, numSpi0Calls); // A blocking print inside an interrupt can cascade errors I think
             numFail++;
         } else {
@@ -140,7 +140,7 @@ void QuadCell::beginAdcRead(void) {
 
     if (adcIsrIndex < (sizeof(adcSample) / (16 / 8)) && adcIsrIndex != 0) {
         debugPrintf("Yikes -- we're reading adc already\n");
-        if (diff <= 245) {
+        if (diff <= ADC_SAMPLE_PERIOD_US-5) {
             interrupts();
             return;
         }
@@ -237,7 +237,7 @@ void QuadCell::setupAdc() {
 
 void QuadCell::init_FTM0(){
     pinMode(sample_clock, OUTPUT);
-    analogWriteFrequency(sample_clock, 4000 * ADC_OVERSAMPLING_RATE);
+    analogWriteFrequency(sample_clock, ADC_SAMPLE_FREQUENCY_HZ * ADC_OVERSAMPLING_RATE);
     analogWrite(sample_clock, 5); // Low duty cycle - if we go too low it won't even turn on
 }
 
