@@ -147,7 +147,7 @@ void SpiSlave::handlePacket() {
   COMMAND_POINT_TRACK     packet[6] = 0xFFFF
   COMMAND_REPORT_TRACKING packet[7] = 0xFFFF
 */
-uint16_t parsePacketPattern(){
+uint16_t SpiSlave::parsePacketPattern(){
   uint16_t parsedCommand = COMMAND_ERR;
   uint16_t parseWord  = 0;
   uint8_t onesCount = 0;

@@ -4,6 +4,9 @@
 #include <array>
 #include "mirrorDriver.h"
 
+const static uint16_t ADC_SAMPLE_PERIOD_US = 250;
+const static uint16_t ADC_SAMPLE_FREQUENCY_HZ = 4000;
+
 // Quad cell axes: BA
 //                 CD
 typedef struct adcSample {
@@ -97,9 +100,6 @@ class QuadCell {
 public:
     QuadCell();
     const static uint16_t ADC_READ_BUFFER_SIZE = 2500; // in adcSamples
-    const static uint16_t ADC_SAMPLE_PERIOD_US = 250;
-    const static uint16_t ADC_SAMPLE_FREQUENCY_HZ = 4000;
-
     volatile unsigned int numSamplesRead = 0;
 
     uint32_t adcGetOffset();
